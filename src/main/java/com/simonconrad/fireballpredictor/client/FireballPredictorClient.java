@@ -16,12 +16,14 @@ import java.util.Map;
 public class FireballPredictorClient implements ClientModInitializer {
 
     private final Map<ExplosiveProjectileEntity, PredictionData> activePredictions = new HashMap<>();
+    private java.util.Set<net.minecraft.util.math.BlockPos> currentlyHighlightedBlocks = new java.util.HashSet<>();
 
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
                 activePredictions.clear();
+                currentlyHighlightedBlocks.clear();
                 return;
             }
 
@@ -38,6 +40,31 @@ public class FireballPredictorClient implements ClientModInitializer {
                     activePredictions.put(fireball, TrajectoryPredictor.predict(fireball));
                 }
             }
+
+            java.util.Set<net.minecraft.util.math.BlockPos> newHighlightedBlocks = new java.util.HashSet<>();
+            for (PredictionData data : activePredictions.values()) {
+                if (data.brokenBlocks != null) {
+                    for (net.minecraft.util.math.BlockPos pos : data.brokenBlocks) {
+                        if (!client.world.getBlockState(pos).isAir()) {
+                            newHighlightedBlocks.add(pos);
+                        }
+                    }
+                }
+            }
+
+            for (net.minecraft.util.math.BlockPos pos : currentlyHighlightedBlocks) {
+                if (!newHighlightedBlocks.contains(pos)) {
+                    client.world.setBlockBreakingInfo(pos.hashCode(), pos, -1);
+                }
+            }
+
+            for (net.minecraft.util.math.BlockPos pos : newHighlightedBlocks) {
+                if (!currentlyHighlightedBlocks.contains(pos)) {
+                    client.world.setBlockBreakingInfo(pos.hashCode(), pos, 8);
+                }
+            }
+
+            currentlyHighlightedBlocks = newHighlightedBlocks;
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
@@ -46,7 +73,7 @@ public class FireballPredictorClient implements ClientModInitializer {
             for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 if (fireball.isAlive()) {
-                    PredictionRenderer.render(context.matrixStack(), context.consumers(), context.camera(), entry.getValue());
+                    PredictionRenderer.render(context.matrixStack(), context.consumers(), context.camera(), context.world(), entry.getValue());
                 }
             }
         });
