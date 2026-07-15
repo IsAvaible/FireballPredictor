@@ -18,7 +18,7 @@ import java.util.Map;
 public class FireballPredictorClient implements ClientModInitializer {
 
     private final Map<ExplosiveProjectileEntity, PredictionData> activePredictions = new HashMap<>();
-    private java.util.Set<net.minecraft.util.math.BlockPos> currentlyHighlightedBlocks = new java.util.HashSet<>();
+    private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
 
     @Override
     public void onInitializeClient() {
@@ -49,26 +49,45 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            java.util.Set<net.minecraft.util.math.BlockPos> newHighlightedBlocks = new java.util.HashSet<>();
-            for (PredictionData data : activePredictions.values()) {
+            java.util.Map<net.minecraft.util.math.BlockPos, Integer> newHighlightedBlocks = new java.util.HashMap<>();
+            for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
+                ExplosiveProjectileEntity fireball = entry.getKey();
+                PredictionData data = entry.getValue();
+                
                 if (data.brokenBlocks != null) {
+                    int ticksRemaining = Math.max(0, data.path.size() - 1);
+                    int age = fireball.age;
+                    int totalTicks = age + ticksRemaining;
+                    
+                    double progress = totalTicks <= 0 ? 1.0 : (double) age / totalTicks;
+                    double mappedProgress = 0.3 + (progress * 0.7);
+                    int baseStage = Math.min(9, Math.max(0, (int) (mappedProgress * 10)));
+                    
+                    int period = Math.max(2, ticksRemaining / 7);
+                    boolean isVisible = (age % period) < (period / 2);
+                    int currentStage = isVisible ? baseStage : -1;
+                    
                     for (net.minecraft.util.math.BlockPos pos : data.brokenBlocks) {
                         if (!client.world.getBlockState(pos).isAir()) {
-                            newHighlightedBlocks.add(pos);
+                            newHighlightedBlocks.merge(pos, currentStage, Math::max);
                         }
                     }
                 }
             }
 
-            for (net.minecraft.util.math.BlockPos pos : currentlyHighlightedBlocks) {
-                if (!newHighlightedBlocks.contains(pos)) {
+            for (Map.Entry<net.minecraft.util.math.BlockPos, Integer> entry : currentlyHighlightedBlocks.entrySet()) {
+                net.minecraft.util.math.BlockPos pos = entry.getKey();
+                if (!newHighlightedBlocks.containsKey(pos)) {
                     client.world.setBlockBreakingInfo(pos.hashCode(), pos, -1);
                 }
             }
 
-            for (net.minecraft.util.math.BlockPos pos : newHighlightedBlocks) {
-                if (!currentlyHighlightedBlocks.contains(pos)) {
-                    client.world.setBlockBreakingInfo(pos.hashCode(), pos, 8);
+            for (Map.Entry<net.minecraft.util.math.BlockPos, Integer> entry : newHighlightedBlocks.entrySet()) {
+                net.minecraft.util.math.BlockPos pos = entry.getKey();
+                int newStage = entry.getValue();
+                int oldStage = currentlyHighlightedBlocks.getOrDefault(pos, -2);
+                if (newStage != oldStage) {
+                    client.world.setBlockBreakingInfo(pos.hashCode(), pos, newStage);
                 }
             }
 
