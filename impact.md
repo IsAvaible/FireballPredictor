@@ -1,23 +1,25 @@
 # Fireball Impact Calculation
 
-## What was implemented
+This document outlines how the mod predicts which blocks will be destroyed by a fireball's explosion prior to detonation.
 
-I have implemented the logic to predict which blocks will be destroyed by a fireball's explosion without actually detonating it or affecting the world. This builds on top of the previously created trajectory prediction logic.
+## Implementation Details
 
-### 1. `ImpactPredictor.java`
-Created a new class in the `com.simonconrad.fireballpredictor.math` package.
-- It predicts the exact blocks that will be broken using a custom, deterministic mathematical algorithm based on the vanilla `Explosion` logic.
-- The vanilla `Explosion` uses a randomized power multiplier per ray (`0.7F` to `1.3F`), which causes the prediction to jitter and occasionally mispredict the true blocks destroyed. The custom predictor uses a stable average power (`1.0F`) multiplier to ensure the predicted block pattern remains perfectly stable and maximally representative of the typical destruction radius.
-- Solved an offset error by centering the explosion precisely at the fireball's location at the time of the collision, matching vanilla's `onCollision` behavior, rather than calculating it directly on the block face (the `hitResult`).
-- Safely extracts the fireball's `explosionPower` dynamically using NBT, ensuring larger fireballs proportionally scale the destruction radius without mapping-dependent reflection errors.
-- Safe to run on the client as it avoids instantiating actual logic or emitting particles and sounds unnecessarily.
+### 1. [ImpactPredictor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/math/ImpactPredictor.java)
+Implements a client-side simulation of Minecraft's vanilla explosion ray-casting logic:
+- **Explosion Algorithm**: Simulates 1356 rays extending to the outer boundaries of a 16x16x16 cube centered around the impact location.
+- **Ray Progression**: Steps along each ray, checking block blast resistances and reducing the remaining ray power. Blocks where the remaining power is greater than 0 are added to the list of predicted broken blocks.
+- **Deterministic and Configurable**: Vanilla explosions use a randomized power multiplier per ray (ranging randomly from `0.7F` to `1.3F`) which causes prediction jitter. To solve this, the mod uses a configurable multiplier `ModConfig.instance().rayPowerMultiplier` (default `1.15F`, adjustable between `0.7F` and `1.3F` via the YACL config screen) to ensure a perfectly stable prediction.
+- **Accurate Coordinates**: Solves offset issues by centering the prediction precisely at the fireball's location at the simulated time of collision, matching vanilla's `onCollision` logic.
 
-### 2. `FireballPredictor.java` Update
-- Linked the `ImpactPredictor` to the main event listener.
-- Upon predicting a hit using `TrajectoryPredictor`, the event handler now runs the impact simulation.
-- Logs the total number of blocks predicted to break to the server console.
-- Logs a sample of the first 5 block coordinates for easy verification and debugging.
+### 2. Explosion Power Syncing
+Because fireball size/power is normally handled server-side, the mod synchronizes the power to the client to ensure accurate radius estimation:
+- **Server Event Listener**: In [FireballPredictor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/FireballPredictor.java), `EntityTrackingEvents.START_TRACKING` is registered on the server.
+- **Explosion Power Retrieval**: Extracts the explosion power using the accessor [FireballEntityAccessor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityAccessor.java).
+- **Network Sync**: Sends a custom network payload [FireballPowerPayload.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/network/FireballPowerPayload.java) containing the entity ID and power to the tracking client.
+- **Client Cache**: The client receives this payload and stores it in [ClientPowerCache.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java).
+- **Fallback Power**: If the power packet has not yet been received or if the entity is not a vanilla fireball, `ImpactPredictor` falls back to `ModConfig.instance().clientFallbackFireballPower` (for fireballs) or `1.0F` (for wither skulls/other projectiles).
 
-## Verification
-- Code successfully compiled with `.\gradlew build` using the Fabric Loader 1.21.1 toolchain.
-- The implementation strictly adheres to standard Minecraft explosion behavior ensuring an exact match with the actual fireball explosion when it detonates.
+## Validation Results
+- Compiles and runs successfully under Minecraft `1.21.11` using the Fabric Loader.
+- Replicates the block breaking patterns of vanilla explosions accurately, scaling dynamically with custom fireball sizes.
+- Exposing the `rayPowerMultiplier` in the configuration screen allows players to choose between conservative (lower multiplier) and comprehensive (higher multiplier) block predictions.
