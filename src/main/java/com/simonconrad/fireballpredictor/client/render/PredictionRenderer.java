@@ -3,9 +3,15 @@ package com.simonconrad.fireballpredictor.client.render;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.*;
+import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import org.joml.Matrix4f;
@@ -14,6 +20,35 @@ public class PredictionRenderer {
 
     private static final RenderLayer FIREBALL_TRAIL = net.minecraft.client.render.RenderLayers.lightning();
     private static final RenderLayer SHOCKWAVE_DOME = net.minecraft.client.render.RenderLayers.lightning();
+    private static final ItemStack WARNING_ICON = new ItemStack(Items.FIRE_CHARGE);
+
+    public static void renderImpactWarningBadge(DrawContext context, MinecraftClient client, boolean visible, float progress) {
+        if (!visible || client.player == null) {
+            return;
+        }
+
+        if (client.world == null) {
+            return;
+        }
+
+        int x = 8;
+        int y = 8;
+        int size = 20;
+
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.ofVanilla("textures/gui/sprites/hud/effect_background.png"), x, y, 0.0f, 0.0f, size, size, 20, 20);
+
+        context.drawItem(WARNING_ICON, x + 2, y + 2);
+
+        int barX = x + 2;
+        int barY = y + size - 2;
+        int barWidth = 15;
+        int barHeight = 1;
+        int filledWidth = Math.max(1, Math.round(MathHelper.clamp(progress, 0.0f, 1.0f) * barWidth));
+
+        context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
+        context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
+        context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+    }
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {
         Vec3d cameraPos = camera.getCameraPos();

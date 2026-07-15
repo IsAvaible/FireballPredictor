@@ -7,10 +7,15 @@ import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,6 +25,8 @@ public class FireballPredictorClient implements ClientModInitializer {
 
     private final Map<ExplosiveProjectileEntity, PredictionData> activePredictions = new HashMap<>();
     private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
+    private boolean impactWarningVisible;
+    private float impactWarningProgress;
 
     @Override
     public void onInitializeClient() {
@@ -31,6 +38,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 activePredictions.clear();
                 currentlyHighlightedBlocks.clear();
                 ClientPowerCache.POWER_CACHE.clear();
+                impactWarningVisible = false;
+                impactWarningProgress = 0.0f;
                 return;
             }
 
@@ -51,9 +60,29 @@ public class FireballPredictorClient implements ClientModInitializer {
             }
 
             java.util.Map<net.minecraft.util.math.BlockPos, Integer> newHighlightedBlocks = new java.util.HashMap<>();
+            boolean impactWarningDetected = false;
+            float mostRelevantWarningProgress = 0.0f;
+
+            ClientPlayerEntity player = client.player;
+            Vec3d playerPosition = player != null ? new Vec3d(player.getX(), player.getY(), player.getZ()) : Vec3d.ZERO;
+            Vec3d playerVelocity = player != null ? player.getVelocity() : Vec3d.ZERO;
+
             for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 PredictionData data = entry.getValue();
+
+                if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
+                    int ticksToImpact = data.path.size() - 1;
+                    float power = ClientPowerCache.POWER_CACHE.getOrDefault(fireball.getId(), fireball instanceof net.minecraft.entity.projectile.FireballEntity ? ModConfig.instance().clientFallbackFireballPower : 1.0f);
+                    double dangerRadius = power * 2.0f * 2.0f;
+                    double dangerRadiusSq = dangerRadius * dangerRadius;
+
+                    if (isDangerousPath(playerPosition, playerVelocity, data.path, dangerRadiusSq)) {
+                        impactWarningDetected = true;
+                        float travelProgress = getTravelProgress(fireball.age, ticksToImpact);
+                        mostRelevantWarningProgress = Math.max(mostRelevantWarningProgress, travelProgress);
+                    }
+                }
                 
                 if (data.brokenBlocks != null) {
                     int ticksRemaining = Math.max(0, data.path.size() - 1);
@@ -97,6 +126,14 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
+            if (impactWarningDetected) {
+                impactWarningProgress = mostRelevantWarningProgress;
+            } else {
+                impactWarningProgress = 0.0f;
+            }
+
+            impactWarningVisible = impactWarningDetected;
+
             for (Map.Entry<net.minecraft.util.math.BlockPos, Integer> entry : currentlyHighlightedBlocks.entrySet()) {
                 net.minecraft.util.math.BlockPos pos = entry.getKey();
                 if (!newHighlightedBlocks.containsKey(pos)) {
@@ -116,6 +153,10 @@ public class FireballPredictorClient implements ClientModInitializer {
             currentlyHighlightedBlocks = newHighlightedBlocks;
         });
 
+        HudRenderCallback.EVENT.register((drawContext, tickCounter) -> {
+            PredictionRenderer.renderImpactWarningBadge(drawContext, MinecraftClient.getInstance(), impactWarningVisible, impactWarningProgress);
+        });
+
         WorldRenderEvents.END_MAIN.register(context -> {
             if (activePredictions.isEmpty()) return;
 
@@ -126,5 +167,25 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
         });
+    }
+
+    private static boolean isDangerousPath(Vec3d playerPosition, Vec3d playerVelocity, java.util.List<Vec3d> path, double dangerRadiusSq) {
+        for (int i = 0; i < path.size(); i++) {
+            Vec3d predictedPlayerPos = playerPosition.add(playerVelocity.multiply(i));
+            if (path.get(i).squaredDistanceTo(predictedPlayerPos) <= dangerRadiusSq) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static float getTravelProgress(int age, int ticksToImpact) {
+        int totalTicks = age + ticksToImpact;
+        if (totalTicks <= 0) {
+            return 1.0f;
+        }
+
+        return MathHelper.clamp((float) age / (float) totalTicks, 0.0f, 1.0f);
     }
 }
