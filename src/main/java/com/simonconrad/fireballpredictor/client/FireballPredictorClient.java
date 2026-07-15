@@ -68,7 +68,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < (period / 2);
                     int currentStage = isVisible ? baseStage : -1;
                     
-                    if (client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                    if (ModConfig.instance().renderParticleAccents && client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
                         int particleCount = 1 + client.world.random.nextInt(3);
                         for (int i = 0; i < particleCount; i++) {
                             net.minecraft.util.math.BlockPos randomPos = data.brokenBlocks.get(client.world.random.nextInt(data.brokenBlocks.size()));
@@ -87,9 +87,11 @@ public class FireballPredictorClient implements ClientModInitializer {
                         }
                     }
 
-                    for (net.minecraft.util.math.BlockPos pos : data.brokenBlocks) {
-                        if (!client.world.getBlockState(pos).isAir()) {
-                            newHighlightedBlocks.merge(pos, currentStage, Math::max);
+                    if (ModConfig.instance().renderBlockHighlights) {
+                        for (net.minecraft.util.math.BlockPos pos : data.brokenBlocks) {
+                            if (!client.world.getBlockState(pos).isAir()) {
+                                newHighlightedBlocks.merge(pos, currentStage, Math::max);
+                            }
                         }
                     }
                 }

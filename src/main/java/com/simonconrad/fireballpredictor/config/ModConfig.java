@@ -28,6 +28,26 @@ public class ModConfig {
     @FloatField(min = 0.7f, max = 1.3f)
     public float rayPowerMultiplier = 1.15F;
 
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderTrajectory = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderShockwaveDome = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderBlockHighlights = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderParticleAccents = true;
+
     // 3. Helper methods to match your existing client initialization calls
     public static void load() {
         HANDLER.load();

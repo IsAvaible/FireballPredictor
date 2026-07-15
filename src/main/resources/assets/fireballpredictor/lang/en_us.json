@@ -7,5 +7,19 @@
   "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "The power to use for fireballs if the server doesn't provide it.\nDefault: 1.0",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Ray Power Multiplier",
-  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplier for the explosion ray power calculation.\nAdjust between 0.7 and 1.3 to visualize max/min damage potential.\nDefault: 1.15"
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplier for the explosion ray power calculation.\nAdjust between 0.7 and 1.3 to visualize max/min damage potential.\nDefault: 1.15",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "Visual Options",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "Render Trajectory",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Toggle the fiery ribbon trail drawn behind the fireball.\nDefault: True",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "Render Shockwave Dome",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "Toggle the translucent 3D dome rendered at the predicted impact site.\nDefault: True",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "Render Block Highlights",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "Toggle the blinking block-breaking animation for blocks in the impact radius.\nDefault: True",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "Render Particle Accents",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Toggle environmental storytelling particles (flame, lava, smoke) on stressed blocks.\nDefault: True"
 }

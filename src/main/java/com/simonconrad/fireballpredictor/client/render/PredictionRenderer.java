@@ -48,7 +48,7 @@ public class PredictionRenderer {
         Vec3d camLook = Vec3d.fromPolar(pitch, yaw);
 
         // Render Trajectory Ribbon
-        if (data.path != null && data.path.size() > 1) {
+        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderTrajectory && data.path != null && data.path.size() > 1) {
             VertexConsumer consumer = vertexConsumers.getBuffer(FIREBALL_TRAIL);
             matrices.push();
             matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
@@ -101,7 +101,7 @@ public class PredictionRenderer {
         }
 
         // Render Shockwave Dome
-        if (data.hitResult != null) {
+        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderShockwaveDome && data.hitResult != null) {
             Vec3d hitPos = data.hitResult.getPos();
             VertexConsumer consumer = vertexConsumers.getBuffer(SHOCKWAVE_DOME);
             
