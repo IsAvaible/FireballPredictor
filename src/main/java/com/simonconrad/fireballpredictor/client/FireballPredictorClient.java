@@ -7,7 +7,7 @@ import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.particle.ParticleTypes;
@@ -46,7 +46,7 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             for (Entity entity : client.world.getEntities()) {
                 if (entity instanceof ExplosiveProjectileEntity fireball) {
-                    activePredictions.put(fireball, TrajectoryPredictor.predict(fireball));
+                    activePredictions.put(fireball, TrajectoryPredictor.predict(fireball, client.world));
                 }
             }
 
@@ -82,7 +82,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                                 if (pType == 1) effect = ParticleTypes.LAVA;
                                 else if (pType == 2) effect = ParticleTypes.CAMPFIRE_COSY_SMOKE;
                                 
-                                client.world.addParticle(effect, px, py, pz, 0, 0.05, 0);
+                                client.world.addParticleClient(effect, px, py, pz, 0, 0.05, 0);
                             }
                         }
                     }
@@ -116,13 +116,13 @@ public class FireballPredictorClient implements ClientModInitializer {
             currentlyHighlightedBlocks = newHighlightedBlocks;
         });
 
-        WorldRenderEvents.LAST.register(context -> {
-            if (context.world() == null || activePredictions.isEmpty()) return;
+        WorldRenderEvents.END_MAIN.register(context -> {
+            if (activePredictions.isEmpty()) return;
 
             for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 if (fireball.isAlive()) {
-                    PredictionRenderer.render(context.matrixStack(), context.consumers(), context.camera(), context.world(), entry.getValue(), fireball);
+                    PredictionRenderer.render(context.matrices(), context.consumers(), net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera(), net.minecraft.client.MinecraftClient.getInstance().world, entry.getValue(), fireball);
                 }
             }
         });

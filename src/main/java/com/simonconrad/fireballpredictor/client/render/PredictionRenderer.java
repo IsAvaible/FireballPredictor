@@ -12,35 +12,11 @@ import org.joml.Matrix4f;
 
 public class PredictionRenderer {
 
-    private static final RenderLayer FIREBALL_TRAIL = RenderLayer.of(
-            "fireball_trail",
-            VertexFormats.POSITION_COLOR,
-            VertexFormat.DrawMode.QUADS,
-            256,
-            false,
-            true,
-            RenderLayer.MultiPhaseParameters.builder()
-                    .program(RenderPhase.COLOR_PROGRAM)
-                    .transparency(RenderPhase.TRANSLUCENT_TRANSPARENCY)
-                    .cull(RenderPhase.DISABLE_CULLING)
-                    .build(false)
-    );
-
-    private static final RenderLayer SHOCKWAVE_DOME = RenderLayer.of(
-            "shockwave_dome",
-            VertexFormats.POSITION_COLOR,
-            VertexFormat.DrawMode.QUADS,
-            256,
-            false,
-            true,
-            RenderLayer.MultiPhaseParameters.builder()
-                    .program(RenderPhase.COLOR_PROGRAM)
-                    .transparency(RenderPhase.TRANSLUCENT_TRANSPARENCY)
-                    .build(false)
-    );
+    private static final RenderLayer FIREBALL_TRAIL = net.minecraft.client.render.RenderLayers.debugQuads();
+    private static final RenderLayer SHOCKWAVE_DOME = net.minecraft.client.render.RenderLayers.debugQuads();
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {
-        Vec3d cameraPos = camera.getPos();
+        Vec3d cameraPos = camera.getCameraPos();
         // Use camera's yaw and pitch
         // Better yet, just use camera's yaw and pitch
         float yaw = camera.getYaw();

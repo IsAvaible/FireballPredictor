@@ -77,10 +77,17 @@ tasks.register('printFields') {
     doLast {
         def urls = project.configurations.compileClasspath.files.collect { it.toURI().toURL() }
         def classLoader = new java.net.URLClassLoader(urls.toArray(new java.net.URL[0]), this.class.classLoader)
-        def clazz = Class.forName('net.minecraft.entity.projectile.ExplosiveProjectileEntity', true, classLoader)
-        println "--- FIELDS ---"
-        clazz.getDeclaredFields().each { println it }
-        println "--- METHODS ---"
-        clazz.getDeclaredMethods().each { println it }
+//        println "--- CAMERA METHODS ---"
+//        Class.forName('net.minecraft.client.render.Camera', true, classLoader).getDeclaredMethods().each { println it.name + " " + it.returnType }
+//        println "--- EXPLOSIVEPROJECTILEENTITY METHODS ---"
+//        Class.forName('net.minecraft.entity.projectile.ExplosiveProjectileEntity', true, classLoader).getMethods().findAll { it.name.contains("World") || it.name.contains("Pos")}.each { println it.name + " " + it.returnType }
+//        println "--- ENTITY METHODS ---"
+//        Class.forName('net.minecraft.entity.Entity', true, classLoader).getMethods().findAll { it.name.contains("World") || it.name.contains("Pos") || it.name.contains("Level")}.each { println it.name + " " + it.returnType }
+//        println "--- RENDERPHASE FIELDS ---"
+//        Class.forName('net.minecraft.client.render.RenderPhase', true, classLoader).getDeclaredFields().each { println it.name }
+//        println "--- RENDERLAYER METHODS ---"
+//        Class.forName('net.minecraft.client.render.RenderLayer', true, classLoader).getDeclaredMethods().each { println it.name }
+//        println "--- VERTEXFORMAT DRAWMODE ---"
+//        Class.forName('net.minecraft.client.render.VertexFormat$DrawMode', true, classLoader).getDeclaredFields().each { println it.name }
     }
 }

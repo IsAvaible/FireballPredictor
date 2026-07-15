@@ -17,9 +17,7 @@ import java.util.Set;
 
 public class ImpactPredictor {
 
-    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos) {
-        World world = fireball.getWorld();
-        
+    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, World world) {
         float power;
         
         if (com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {

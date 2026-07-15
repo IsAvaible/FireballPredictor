@@ -16,9 +16,8 @@ import java.util.List;
 
 public class TrajectoryPredictor {
 
-    public static PredictionData predict(ExplosiveProjectileEntity fireball) {
-        World world = fireball.getWorld();
-        Vec3d currentPos = fireball.getPos();
+    public static PredictionData predict(ExplosiveProjectileEntity fireball, World world) {
+        Vec3d currentPos = fireball.getEntityPos();
         Vec3d initialVelocity = fireball.getVelocity();
         Vec3d velocity = initialVelocity;
         
@@ -74,7 +73,7 @@ public class TrajectoryPredictor {
         if (finalHit != null) {
             // Vanilla explosion triggers at the fireball's position at the time of the collision,
             // NOT exactly at the raycast hitResult on the block's surface.
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, currentPos);
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, currentPos, world);
         }
         
         return new PredictionData(path, finalHit, brokenBlocks, initialVelocity);
