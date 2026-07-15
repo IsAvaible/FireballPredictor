@@ -3,16 +3,16 @@
   "id": "fireballpredictor",
   "version": "${version}",
   "name": "Fireball Predictor",
-  "description": "A comprehensive minecraft mod.",
+  "description": "Predicts and visualizes the trajectory and explosive impact of fireballs and Wither skulls in real-time.",
   "authors": [
     "simonconrad"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://modrinth.com/mod/fireball-predictor",
+    "sources": "https://github.com/IsAvaible/FireballPredictor"
   },
-  "license": "CC0-1.0",
-  "icon": "assets/fireballpredictor/icon.png",
+  "license": "MIT",
+  "icon": "assets/fireballpredictor/icon-512px.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -33,9 +33,9 @@
     "minecraft": "~1.21.11",
     "java": ">=21",
     "fabric-api": "*",
-      "yet_another_config_lib_v3": ">=3.8.2"
+    "yet_another_config_lib_v3": ">=3.8.2"
   },
   "suggests": {
-    "another-mod": "*"
+    "modmenu": "*"
   }
 }
