@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "fireballpredictor",
+  "version": "${version}",
+  "name": "Fireball Predictor",
+  "description": "A comprehensive minecraft mod.",
+  "authors": [
+    "simonconrad"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/fireballpredictor/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.simonconrad.fireballpredictor.FireballPredictor"
+    ]
+  },
+  "mixins": [
+    "fireballpredictor.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.2",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
