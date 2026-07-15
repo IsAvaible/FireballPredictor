@@ -28,7 +28,7 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "general")
     @FloatField(min = 0.7f, max = 1.3f)
-    public float rayPowerMultiplier = 1.15F;
+    public float rayPowerMultiplier = 1.3F;
 
     @SerialEntry
     @AutoGen(category = "visuals")

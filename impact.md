@@ -8,8 +8,8 @@ This document outlines how the mod predicts which blocks will be destroyed by a 
 Implements a client-side simulation of Minecraft's vanilla explosion ray-casting logic:
 - **Explosion Algorithm**: Simulates 1356 rays extending to the outer boundaries of a 16x16x16 cube centered around the impact location.
 - **Ray Progression**: Steps along each ray, checking block blast resistances and reducing the remaining ray power. Blocks where the remaining power is greater than 0 are added to the list of predicted broken blocks.
-- **Deterministic and Configurable**: Vanilla explosions use a randomized power multiplier per ray (ranging randomly from `0.7F` to `1.3F`) which causes prediction jitter. To solve this, the mod uses a configurable multiplier `ModConfig.instance().rayPowerMultiplier` (default `1.15F`, adjustable between `0.7F` and `1.3F` via the YACL config screen) to ensure a perfectly stable prediction.
-- **Accurate Coordinates**: Solves offset issues by centering the prediction precisely at the fireball's location at the simulated time of collision, matching vanilla's `onCollision` logic.
+- **Deterministic and Configurable**: Vanilla explosions use a randomized power multiplier per ray (ranging randomly from `0.7F` to `1.3F`) which causes prediction jitter. To solve this, the mod uses a configurable multiplier `ModConfig.instance().rayPowerMultiplier` (default `1.3F`, adjustable between `0.7F` and `1.3F` via the YACL config screen) to ensure a perfectly stable prediction.
+- **Accurate Coordinates**: Adhers to modern fireball logic where the raycast impact location, not the location of the fireball itself is the center of the explosion.
 
 ### 2. Explosion Power Syncing
 Because fireball size/power is normally handled server-side, the mod synchronizes the power to the client to ensure accurate radius estimation:

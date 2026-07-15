@@ -26,7 +26,9 @@ public class TrajectoryPredictor {
         
         int maxTicks = 200;
         List<Vec3d> path = new ArrayList<>();
+        List<Vec3d> velocities = new ArrayList<>();
         path.add(currentPos);
+        velocities.add(velocity);
         
         HitResult finalHit = null;
         
@@ -47,9 +49,16 @@ public class TrajectoryPredictor {
             }
             
             // Raycast for entities
-            Box box = fireball.getBoundingBox().stretch(velocity).expand(1.0);
+            // Calculate the box at the simulated current position
+            Vec3d offset = currentPos.subtract(fireball.getEntityPos());
+            Box currentBox = fireball.getBoundingBox().offset(offset);
+            Box box = currentBox.stretch(velocity).expand(1.0);
+
+
             EntityHitResult entityHitResult = ProjectileUtil.getEntityCollision(
-                world, fireball, currentPos, nextPos, box, entity -> !entity.isSpectator() && entity.canHit()
+                world, fireball, currentPos, nextPos, box, 
+                entity -> false // Completely ignore entities for trajectory prediction
+                // entity -> !entity.isSpectator() && entity.canHit()
             );
             
             if (entityHitResult != null) {
@@ -58,6 +67,7 @@ public class TrajectoryPredictor {
             
             if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
                 path.add(hitResult.getPos());
+                velocities.add(velocity);
                 finalHit = hitResult;
                 break;
             }
@@ -67,17 +77,16 @@ public class TrajectoryPredictor {
             
             // Add acceleration to velocity and apply drag (usually 0.95)
             velocity = velocity.add(acceleration).multiply(0.95);
+            velocities.add(velocity);
         }
         
         List<BlockPos> brokenBlocks = new ArrayList<>();
         if (finalHit != null) {
-            // Vanilla explosion triggers at the fireball's position at the time of the collision,
-            // NOT exactly at the raycast hitResult on the block's surface.
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, currentPos, world);
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, finalHit.getPos(), world);
         }
         
         float explosionPower = finalHit != null ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
-        return new PredictionData(path, finalHit, brokenBlocks, initialVelocity, createRenderData(path, explosionPower));
+        return new PredictionData(path, velocities, finalHit, brokenBlocks, initialVelocity, createRenderData(path, explosionPower), fireball.age);
     }
 
     private static PredictionRenderData createRenderData(List<Vec3d> path, float explosionPower) {

@@ -85,9 +85,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 TrackedPrediction trackedPrediction = entry.getValue();
 
-                if (trackedPrediction.shouldRefresh(worldTime)) {
+                if (trackedPrediction.shouldRefresh(fireball, client.world)) {
                     trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, client.world);
-                    trackedPrediction.lastPredictionTick = worldTime;
                 }
             }
 
@@ -107,13 +106,15 @@ public class FireballPredictorClient implements ClientModInitializer {
                     continue;
                 }
 
+                int elapsedTicks = Math.max(0, fireball.age - data.predictionAge);
+
                 if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
-                    int ticksToImpact = data.path.size() - 1;
+                    int ticksToImpact = Math.max(0, data.path.size() - 1 - elapsedTicks);
                     float power = ClientPowerCache.POWER_CACHE.getOrDefault(fireball.getId(), fireball instanceof net.minecraft.entity.projectile.FireballEntity ? ModConfig.instance().clientFallbackFireballPower : 1.0f);
                     double dangerRadius = power * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 
-                    if (isDangerousPath(playerPosition, playerVelocity, data.path, dangerRadiusSq)) {
+                    if (isDangerousPath(playerPosition, playerVelocity, data.path, elapsedTicks, dangerRadiusSq)) {
                         impactWarningDetected = true;
                         float travelProgress = getTravelProgress(fireball.age, ticksToImpact);
                         mostRelevantWarningProgress = Math.max(mostRelevantWarningProgress, travelProgress);
@@ -121,7 +122,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
                 
                 if (data.brokenBlocks != null) {
-                    int ticksRemaining = Math.max(0, data.path.size() - 1);
+                    int ticksRemaining = Math.max(0, data.path.size() - 1 - elapsedTicks);
                     int age = fireball.age;
                     int totalTicks = age + ticksRemaining;
                     
@@ -226,7 +227,6 @@ public class FireballPredictorClient implements ClientModInitializer {
         if (entity instanceof ExplosiveProjectileEntity fireball) {
             TrackedPrediction trackedPrediction = new TrackedPrediction();
             trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
-            trackedPrediction.lastPredictionTick = trackedWorld.getTime();
             activePredictions.put(fireball, trackedPrediction);
         }
     }
@@ -237,9 +237,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
     }
 
-    private static boolean isDangerousPath(Vec3d playerPosition, Vec3d playerVelocity, java.util.List<Vec3d> path, double dangerRadiusSq) {
-        for (int i = 0; i < path.size(); i++) {
-            Vec3d predictedPlayerPos = playerPosition.add(playerVelocity.multiply(i));
+    private static boolean isDangerousPath(Vec3d playerPosition, Vec3d playerVelocity, java.util.List<Vec3d> path, int elapsedTicks, double dangerRadiusSq) {
+        for (int i = elapsedTicks; i < path.size(); i++) {
+            Vec3d predictedPlayerPos = playerPosition.add(playerVelocity.multiply(i - elapsedTicks));
             if (path.get(i).squaredDistanceTo(predictedPlayerPos) <= dangerRadiusSq) {
                 return true;
             }
@@ -259,10 +259,48 @@ public class FireballPredictorClient implements ClientModInitializer {
 
     private static final class TrackedPrediction {
         private PredictionData predictionData;
-        private long lastPredictionTick = Long.MIN_VALUE;
 
-        private boolean shouldRefresh(long worldTime) {
-            return predictionData == null || lastPredictionTick == Long.MIN_VALUE || worldTime - lastPredictionTick >= PREDICTION_REFRESH_INTERVAL_TICKS;
+        private boolean shouldRefresh(ExplosiveProjectileEntity fireball, ClientWorld world) {
+            if (predictionData == null || predictionData.path == null || predictionData.velocities == null) {
+                return true;
+            }
+            
+            // Check if the entity was deflected or velocity/position drifted
+            int elapsedTicks = fireball.age - predictionData.predictionAge;
+            if (elapsedTicks < 0 || elapsedTicks >= predictionData.path.size()) {
+                return true;
+            }
+
+            Vec3d expectedPos = predictionData.path.get(elapsedTicks);
+            Vec3d expectedVel = predictionData.velocities.get(elapsedTicks);
+            Vec3d actualPos = fireball.getEntityPos();
+            Vec3d actualVel = fireball.getVelocity();
+
+            double maxPosDevSq = 0.25 * 0.25;
+            double maxVelDevSq = 0.05 * 0.05;
+
+            if (actualPos.squaredDistanceTo(expectedPos) > maxPosDevSq || actualVel.squaredDistanceTo(expectedVel) > maxVelDevSq) {
+                return true;
+            }
+
+            // Check if path is obstructed or block states along it changed
+            if (predictionData.hitResult != null && predictionData.hitResult.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK) {
+                net.minecraft.util.hit.BlockHitResult blockHit = (net.minecraft.util.hit.BlockHitResult) predictionData.hitResult;
+                net.minecraft.util.math.BlockPos hitPos = blockHit.getBlockPos();
+                if (world.getBlockState(hitPos).isAir()) {
+                    return true;
+                }
+            }
+
+            for (int i = elapsedTicks; i < predictionData.path.size() - 1; i++) {
+                Vec3d pos = predictionData.path.get(i);
+                net.minecraft.util.math.BlockPos blockPos = net.minecraft.util.math.BlockPos.ofFloored(pos.x, pos.y, pos.z);
+                if (!world.getBlockState(blockPos).getCollisionShape(world, blockPos).isEmpty()) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

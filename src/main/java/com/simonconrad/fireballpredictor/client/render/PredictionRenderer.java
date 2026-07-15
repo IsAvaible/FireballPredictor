@@ -74,6 +74,8 @@ public class PredictionRenderer {
         float pitch = camera.getPitch();
         Vec3d camLook = Vec3d.fromPolar(pitch, yaw);
 
+        int elapsedTicks = Math.max(0, fireball.age - data.predictionAge);
+
         // Render Trajectory Ribbon
         if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderTrajectory && data.path != null && data.path.size() > 1) {
             VertexConsumer consumer = vertexConsumers.getBuffer(FIREBALL_TRAIL);
@@ -86,7 +88,7 @@ public class PredictionRenderer {
             int g = 128;
             int b = 0;
 
-            for (int i = 0; i < data.path.size() - 1; i++) {
+            for (int i = elapsedTicks; i < data.path.size() - 1; i++) {
                 Vec3d p1 = data.path.get(i);
                 Vec3d p2 = data.path.get(i + 1);
                 
