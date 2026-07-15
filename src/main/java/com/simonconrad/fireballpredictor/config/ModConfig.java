@@ -31,6 +31,11 @@ public class ModConfig {
     public float rayPowerMultiplier = 1.3F;
 
     @SerialEntry
+    @AutoGen(category = "general")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean trackWitherSkulls = true;
+
+    @SerialEntry
     @AutoGen(category = "visuals")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderTrajectory = true;

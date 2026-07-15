@@ -9,6 +9,9 @@
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Ray Power Multiplier",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplier for the explosion ray power calculation.\nAdjust between 0.7 and 1.3 to visualize max/min damage potential.\nDefault: 1.3",
   
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Track Wither Skulls",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Toggle whether wither skeleton skulls should also be tracked by the mod.\nDefault: True",
+  
   "yacl3.config.fireballpredictor:config.category.visuals": "Visual Options",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "Render Trajectory",

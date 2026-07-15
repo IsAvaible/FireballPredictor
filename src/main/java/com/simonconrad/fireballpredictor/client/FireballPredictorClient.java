@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -71,11 +72,12 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             long worldTime = client.world.getTime();
 
-            // Clean up dead fireballs
+            // Clean up dead fireballs or disabled wither skulls
             Iterator<Map.Entry<ExplosiveProjectileEntity, TrackedPrediction>> it = activePredictions.entrySet().iterator();
             while (it.hasNext()) {
                 ExplosiveProjectileEntity fireball = it.next().getKey();
-                if (!fireball.isAlive()) {
+                boolean isWitherSkull = fireball instanceof WitherSkullEntity;
+                if (!fireball.isAlive() || (isWitherSkull && !ModConfig.instance().trackWitherSkulls)) {
                     ClientPowerCache.POWER_CACHE.remove(fireball.getId());
                     it.remove();
                 }
@@ -225,6 +227,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
 
         if (entity instanceof ExplosiveProjectileEntity fireball) {
+            if (fireball instanceof WitherSkullEntity && !ModConfig.instance().trackWitherSkulls) {
+                return;
+            }
             TrackedPrediction trackedPrediction = new TrackedPrediction();
             trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
             activePredictions.put(fireball, trackedPrediction);
