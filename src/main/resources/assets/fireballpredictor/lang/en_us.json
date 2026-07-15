@@ -1,0 +1,11 @@
+{
+  "yacl3.config.fireballpredictor:config": "Fireball Predictor Configuration",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "General Options",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Fallback Fireball Power",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "The power to use for fireballs if the server doesn't provide it.\nDefault: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Ray Power Multiplier",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplier for the explosion ray power calculation.\nAdjust between 0.7 and 1.3 to visualize max/min damage potential.\nDefault: 1.15"
+}

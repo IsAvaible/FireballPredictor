@@ -23,6 +23,11 @@ public class ModConfig {
     @FloatField(min = 0.0f, max = 100.0f)
     public float clientFallbackFireballPower = 1.0F;
 
+    @SerialEntry
+    @AutoGen(category = "general")
+    @FloatField(min = 0.7f, max = 1.3f)
+    public float rayPowerMultiplier = 1.15F;
+
     // 3. Helper methods to match your existing client initialization calls
     public static void load() {
         HANDLER.load();

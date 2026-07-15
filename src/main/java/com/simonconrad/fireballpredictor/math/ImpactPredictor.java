@@ -52,7 +52,8 @@ public class ImpactPredictor {
                         // Vanilla uses random: power * (0.7F + world.random.nextFloat() * 0.6F)
                         // We use the exact middle (1.0F) for deterministic, stable prediction.
                         // You can adjust this to 1.3F to show the "maximum possible" destruction instead.
-                        float rayPower = power * 1.15F;
+                        float rayPowerMultiplier = com.simonconrad.fireballpredictor.config.ModConfig.instance().rayPowerMultiplier;
+                        float rayPower = power * rayPowerMultiplier;
                         
                         double x = explosionPos.x;
                         double y = explosionPos.y;
