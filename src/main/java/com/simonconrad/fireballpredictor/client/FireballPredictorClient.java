@@ -93,8 +93,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                     double mappedProgress = 0.3 + (progress * 0.7);
                     int baseStage = Math.min(9, Math.max(0, (int) (mappedProgress * 10)));
                     
-                    int period = Math.max(2, ticksRemaining / 7);
-                    boolean isVisible = (age % period) < (period / 2);
+                    int period = Math.max(3, ticksRemaining / 4);
+                    boolean isVisible = (age % period) < ((period * 3) / 4);
                     int currentStage = isVisible ? baseStage : -1;
                     
                     if (ModConfig.instance().renderParticleAccents && client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
