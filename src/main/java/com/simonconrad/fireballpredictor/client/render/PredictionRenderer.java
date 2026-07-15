@@ -1,6 +1,7 @@
 package com.simonconrad.fireballpredictor.client.render;
 
 import com.simonconrad.fireballpredictor.math.PredictionData;
+import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.*;
 import net.minecraft.client.gl.RenderPipelines;
@@ -69,8 +70,6 @@ public class PredictionRenderer {
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {
         Vec3d cameraPos = camera.getCameraPos();
-        // Use camera's yaw and pitch
-        // Better yet, just use camera's yaw and pitch
         float yaw = camera.getYaw();
         float pitch = camera.getPitch();
         Vec3d camLook = Vec3d.fromPolar(pitch, yaw);
@@ -83,6 +82,9 @@ public class PredictionRenderer {
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
             
             float width = 0.5f;
+            int r = 255;
+            int g = 128;
+            int b = 0;
 
             for (int i = 0; i < data.path.size() - 1; i++) {
                 Vec3d p1 = data.path.get(i);
@@ -99,10 +101,6 @@ public class PredictionRenderer {
                 Vec3d p1R = p1.subtract(right);
                 Vec3d p2L = p2.add(right);
                 Vec3d p2R = p2.subtract(right);
-                
-                int r = 255;
-                int g = 128;
-                int b = 0;
                 
                 // Fade out the trajectory as it approaches the end to blend into the dome
                 float progress1 = (float) i / (data.path.size() - 1);
@@ -129,65 +127,22 @@ public class PredictionRenderer {
         }
 
         // Render Shockwave Dome
-        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderShockwaveDome && data.hitResult != null) {
+        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderShockwaveDome && data.hitResult != null && data.renderData != null && !data.renderData.domeQuads().isEmpty()) {
             Vec3d hitPos = data.hitResult.getPos();
             VertexConsumer consumer = vertexConsumers.getBuffer(SHOCKWAVE_DOME);
             
             matrices.push();
             matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
+            int r = 255;
+            int g = 128;
+            int b = 0;
 
-            float power = com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.getOrDefault(fireball.getId(), 1.0f);
-            float radius = power * 2.0f;
-            int latitudeBands = 16;
-            int longitudeBands = 16;
-
-            for (int lat = 0; lat < latitudeBands; lat++) {
-                float theta1 = (float) (lat * Math.PI / latitudeBands);
-                float theta2 = (float) ((lat + 1) * Math.PI / latitudeBands);
-
-                float sinTheta1 = (float) Math.sin(theta1);
-                float cosTheta1 = (float) Math.cos(theta1);
-                float sinTheta2 = (float) Math.sin(theta2);
-                float cosTheta2 = (float) Math.cos(theta2);
-
-                int alpha1 = (int) (60 * (1.0f - Math.abs((float)lat / latitudeBands - 0.5f) * 2));
-                int alpha2 = (int) (60 * (1.0f - Math.abs((float)(lat + 1) / latitudeBands - 0.5f) * 2));
-                
-                // Match the trajectory color (255, 128, 0)
-                int r1 = 255, g1 = 128, b1 = 0;
-                int r2 = 255, g2 = 128, b2 = 0;
-
-                for (int lon = 0; lon < longitudeBands; lon++) {
-                    float phi1 = (float) (lon * 2 * Math.PI / longitudeBands);
-                    float phi2 = (float) ((lon + 1) * 2 * Math.PI / longitudeBands);
-
-                    float sinPhi1 = (float) Math.sin(phi1);
-                    float cosPhi1 = (float) Math.cos(phi1);
-                    float sinPhi2 = (float) Math.sin(phi2);
-                    float cosPhi2 = (float) Math.cos(phi2);
-
-                    float x1 = radius * cosPhi1 * cosTheta1;
-                    float y1 = radius * sinTheta1;
-                    float z1 = radius * sinPhi1 * cosTheta1;
-
-                    float x2 = radius * cosPhi2 * cosTheta1;
-                    float y2 = radius * sinTheta1;
-                    float z2 = radius * sinPhi2 * cosTheta1;
-
-                    float x3 = radius * cosPhi2 * cosTheta2;
-                    float y3 = radius * sinTheta2;
-                    float z3 = radius * sinPhi2 * cosTheta2;
-
-                    float x4 = radius * cosPhi1 * cosTheta2;
-                    float y4 = radius * sinTheta2;
-                    float z4 = radius * sinPhi1 * cosTheta2;
-
-                    consumer.vertex(positionMatrix, x1, y1, z1).color(r1, g1, b1, alpha1);
-                    consumer.vertex(positionMatrix, x2, y2, z2).color(r1, g1, b1, alpha1);
-                    consumer.vertex(positionMatrix, x3, y3, z3).color(r2, g2, b2, alpha2);
-                    consumer.vertex(positionMatrix, x4, y4, z4).color(r2, g2, b2, alpha2);
-                }
+            for (PredictionRenderData.DomeQuad quad : data.renderData.domeQuads()) {
+                consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).color(r, g, b, quad.alpha1());
+                consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).color(r, g, b, quad.alpha1());
+                consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).color(r, g, b, quad.alpha2());
+                consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).color(r, g, b, quad.alpha2());
             }
             matrices.pop();
         }

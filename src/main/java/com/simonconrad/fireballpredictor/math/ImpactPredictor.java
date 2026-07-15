@@ -17,20 +17,20 @@ import java.util.Set;
 
 public class ImpactPredictor {
 
-    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, World world) {
-        float power;
-        
+    public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
         if (com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
-            power = com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.get(fireball.getId());
-        } else {
-            if (fireball instanceof net.minecraft.entity.projectile.FireballEntity) {
-                power = com.simonconrad.fireballpredictor.config.ModConfig.instance().clientFallbackFireballPower;
-            } else if (fireball instanceof net.minecraft.entity.projectile.WitherSkullEntity) {
-                power = 1.0F; 
-            } else {
-                power = 1.0F; 
-            }
+            return com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.get(fireball.getId());
         }
+
+        if (fireball instanceof net.minecraft.entity.projectile.FireballEntity) {
+            return com.simonconrad.fireballpredictor.config.ModConfig.instance().clientFallbackFireballPower;
+        }
+
+        return 1.0F;
+    }
+
+    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, World world) {
+        float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();
 

@@ -14,7 +14,7 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 ### 2. [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)
 - Listens to `ClientTickEvents.END_CLIENT_TICK`.
 - Iterates over all active, alive `ExplosiveProjectileEntity` instances in the client world.
-- Calculates and stores updated `PredictionData` containing the simulated flight path and collision results.
+- Calculates and stores updated `PredictionData` containing the simulated flight path, collision results, and pre-calculated static render data (like the shockwave dome) every tick.
 - Cleans up tracking data when fireballs are destroyed or unloaded.
 
 ## Validation Results

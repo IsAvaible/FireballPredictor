@@ -13,6 +13,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -23,10 +24,30 @@ import java.util.Map;
 
 public class FireballPredictorClient implements ClientModInitializer {
 
-    private final Map<ExplosiveProjectileEntity, PredictionData> activePredictions = new HashMap<>();
+    private static final int PREDICTION_REFRESH_INTERVAL_TICKS = 1;
+    private static FireballPredictorClient INSTANCE;
+
+    private final Map<ExplosiveProjectileEntity, TrackedPrediction> activePredictions = new HashMap<>();
     private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
     private boolean impactWarningVisible;
     private float impactWarningProgress;
+    private ClientWorld trackedWorld;
+
+    public FireballPredictorClient() {
+        INSTANCE = this;
+    }
+
+    public static void trackWorldEntity(Entity entity) {
+        if (INSTANCE != null) {
+            INSTANCE.handleEntityAdded(entity);
+        }
+    }
+
+    public static void untrackWorldEntity(Entity entity) {
+        if (INSTANCE != null) {
+            INSTANCE.handleEntityRemoved(entity);
+        }
+    }
 
     @Override
     public void onInitializeClient() {
@@ -40,11 +61,18 @@ public class FireballPredictorClient implements ClientModInitializer {
                 ClientPowerCache.POWER_CACHE.clear();
                 impactWarningVisible = false;
                 impactWarningProgress = 0.0f;
+                trackedWorld = null;
                 return;
             }
 
+            if (client.world != trackedWorld) {
+                resetWorldState(client.world);
+            }
+
+            long worldTime = client.world.getTime();
+
             // Clean up dead fireballs
-            Iterator<Map.Entry<ExplosiveProjectileEntity, PredictionData>> it = activePredictions.entrySet().iterator();
+            Iterator<Map.Entry<ExplosiveProjectileEntity, TrackedPrediction>> it = activePredictions.entrySet().iterator();
             while (it.hasNext()) {
                 ExplosiveProjectileEntity fireball = it.next().getKey();
                 if (!fireball.isAlive()) {
@@ -53,9 +81,13 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            for (Entity entity : client.world.getEntities()) {
-                if (entity instanceof ExplosiveProjectileEntity fireball) {
-                    activePredictions.put(fireball, TrajectoryPredictor.predict(fireball, client.world));
+            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
+                ExplosiveProjectileEntity fireball = entry.getKey();
+                TrackedPrediction trackedPrediction = entry.getValue();
+
+                if (trackedPrediction.shouldRefresh(worldTime)) {
+                    trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, client.world);
+                    trackedPrediction.lastPredictionTick = worldTime;
                 }
             }
 
@@ -67,9 +99,13 @@ public class FireballPredictorClient implements ClientModInitializer {
             Vec3d playerPosition = player != null ? new Vec3d(player.getX(), player.getY(), player.getZ()) : Vec3d.ZERO;
             Vec3d playerVelocity = player != null ? player.getVelocity() : Vec3d.ZERO;
 
-            for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
+            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
-                PredictionData data = entry.getValue();
+                PredictionData data = entry.getValue().predictionData;
+
+                if (data == null) {
+                    continue;
+                }
 
                 if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
                     int ticksToImpact = data.path.size() - 1;
@@ -160,13 +196,45 @@ public class FireballPredictorClient implements ClientModInitializer {
         WorldRenderEvents.END_MAIN.register(context -> {
             if (activePredictions.isEmpty()) return;
 
-            for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
+            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 if (fireball.isAlive()) {
-                    PredictionRenderer.render(context.matrices(), context.consumers(), net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera(), net.minecraft.client.MinecraftClient.getInstance().world, entry.getValue(), fireball);
+                    PredictionData predictionData = entry.getValue().predictionData;
+                    if (predictionData != null) {
+                        PredictionRenderer.render(context.matrices(), context.consumers(), net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera(), net.minecraft.client.MinecraftClient.getInstance().world, predictionData, fireball);
+                    }
                 }
             }
         });
+    }
+
+    private void resetWorldState(ClientWorld world) {
+        trackedWorld = world;
+        activePredictions.clear();
+        currentlyHighlightedBlocks.clear();
+
+        for (Entity entity : world.getEntities()) {
+            handleEntityAdded(entity);
+        }
+    }
+
+    private void handleEntityAdded(Entity entity) {
+        if (trackedWorld == null || !entity.isAlive()) {
+            return;
+        }
+
+        if (entity instanceof ExplosiveProjectileEntity fireball) {
+            TrackedPrediction trackedPrediction = new TrackedPrediction();
+            trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
+            trackedPrediction.lastPredictionTick = trackedWorld.getTime();
+            activePredictions.put(fireball, trackedPrediction);
+        }
+    }
+
+    private void handleEntityRemoved(Entity entity) {
+        if (entity instanceof ExplosiveProjectileEntity fireball) {
+            activePredictions.remove(fireball);
+        }
     }
 
     private static boolean isDangerousPath(Vec3d playerPosition, Vec3d playerVelocity, java.util.List<Vec3d> path, double dangerRadiusSq) {
@@ -187,5 +255,14 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
 
         return MathHelper.clamp((float) age / (float) totalTicks, 0.0f, 1.0f);
+    }
+
+    private static final class TrackedPrediction {
+        private PredictionData predictionData;
+        private long lastPredictionTick = Long.MIN_VALUE;
+
+        private boolean shouldRefresh(long worldTime) {
+            return predictionData == null || lastPredictionTick == Long.MIN_VALUE || worldTime - lastPredictionTick >= PREDICTION_REFRESH_INTERVAL_TICKS;
+        }
     }
 }

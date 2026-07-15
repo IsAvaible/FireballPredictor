@@ -11,7 +11,7 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ### 2. Shockwave Dome
 - **Render Buffer**: Also uses `RenderLayers.lightning()` within [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java).
-- **Geometric Dome**: Generated via a 3D sphere mesh algorithm using 16 latitude and 16 longitude bands.
+- **Geometric Dome**: Generated via a 3D sphere mesh algorithm using 16 latitude and 16 longitude bands. To optimize performance, the dome mesh is pre-computed and cached in `PredictionRenderData` during the tick prediction phase, rather than rebuilt every frame.
 - **Blending**: Matches the orange trajectory color (`255, 128, 0`) with a low, semi-transparent maximum alpha of `60` at the equator, fading out towards the poles. This prevents visual clutter while clearly delineating the damage radius.
 
 ### 3. Dynamic Block Highlights (Cracking & Blinking)

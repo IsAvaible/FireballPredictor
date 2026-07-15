@@ -11,11 +11,13 @@ public class PredictionData {
     public final HitResult hitResult;
     public final List<BlockPos> brokenBlocks;
     public final Vec3d initialVelocity;
+    public final PredictionRenderData renderData;
 
-    public PredictionData(List<Vec3d> path, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3d initialVelocity) {
+    public PredictionData(List<Vec3d> path, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3d initialVelocity, PredictionRenderData renderData) {
         this.path = path;
         this.hitResult = hitResult;
         this.brokenBlocks = brokenBlocks;
         this.initialVelocity = initialVelocity;
+        this.renderData = renderData;
     }
 }

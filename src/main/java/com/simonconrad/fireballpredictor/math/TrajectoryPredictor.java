@@ -76,6 +76,50 @@ public class TrajectoryPredictor {
             brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, currentPos, world);
         }
         
-        return new PredictionData(path, finalHit, brokenBlocks, initialVelocity);
+        float explosionPower = finalHit != null ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
+        return new PredictionData(path, finalHit, brokenBlocks, initialVelocity, createRenderData(path, explosionPower));
+    }
+
+    private static PredictionRenderData createRenderData(List<Vec3d> path, float explosionPower) {
+        if (explosionPower <= 0.0f) {
+            return PredictionRenderData.EMPTY;
+        }
+
+        List<PredictionRenderData.DomeQuad> domeQuads = new ArrayList<>(16 * 16);
+        float radius = explosionPower * 2.0f;
+        int latitudeBands = 16;
+        int longitudeBands = 16;
+
+        for (int lat = 0; lat < latitudeBands; lat++) {
+            float theta1 = (float) (lat * Math.PI / latitudeBands);
+            float theta2 = (float) ((lat + 1) * Math.PI / latitudeBands);
+
+            float sinTheta1 = (float) Math.sin(theta1);
+            float cosTheta1 = (float) Math.cos(theta1);
+            float sinTheta2 = (float) Math.sin(theta2);
+            float cosTheta2 = (float) Math.cos(theta2);
+
+            int alpha1 = (int) (60 * (1.0f - Math.abs((float) lat / latitudeBands - 0.5f) * 2));
+            int alpha2 = (int) (60 * (1.0f - Math.abs((float) (lat + 1) / latitudeBands - 0.5f) * 2));
+
+            for (int lon = 0; lon < longitudeBands; lon++) {
+                float phi1 = (float) (lon * 2 * Math.PI / longitudeBands);
+                float phi2 = (float) ((lon + 1) * 2 * Math.PI / longitudeBands);
+
+                float sinPhi1 = (float) Math.sin(phi1);
+                float cosPhi1 = (float) Math.cos(phi1);
+                float sinPhi2 = (float) Math.sin(phi2);
+                float cosPhi2 = (float) Math.cos(phi2);
+
+                Vec3d p1 = new Vec3d(radius * cosPhi1 * cosTheta1, radius * sinTheta1, radius * sinPhi1 * cosTheta1);
+                Vec3d p2 = new Vec3d(radius * cosPhi2 * cosTheta1, radius * sinTheta1, radius * sinPhi2 * cosTheta1);
+                Vec3d p3 = new Vec3d(radius * cosPhi2 * cosTheta2, radius * sinTheta2, radius * sinPhi2 * cosTheta2);
+                Vec3d p4 = new Vec3d(radius * cosPhi1 * cosTheta2, radius * sinTheta2, radius * sinPhi1 * cosTheta2);
+
+                domeQuads.add(new PredictionRenderData.DomeQuad(p1, p2, p3, p4, alpha1, alpha2));
+            }
+        }
+
+        return new PredictionRenderData(domeQuads);
     }
 }
