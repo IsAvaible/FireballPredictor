@@ -5,12 +5,12 @@ This document describes the client-side visual effects (VFX) used to represent p
 ## Implemented Visual Effects
 
 ### 1. Trajectory Ribbon Trail
-- **Render Buffer**: Uses [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) drawing to a standard translucent buffer (`RenderLayers.debugQuads()`).
+- **Render Buffer**: Uses [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) drawing to a standard translucent buffer (`RenderLayers.lightning()`).
 - **Billboard Geometry**: Builds a 3D procedural billboarded ribbon by mapping coordinates along the predicted path. The ribbon's width is dynamically calculated based on the camera look vector to maintain visual thickness.
 - **Color and Alpha Gradients**: Colored orange (`255, 128, 0`). The edges are set to an alpha of `0` to create a soft, blurred glow. The center alpha fades from `200` at the start to `60` at the end to seamlessly merge with the impact shockwave dome.
 
 ### 2. Shockwave Dome
-- **Render Buffer**: Also uses `RenderLayers.debugQuads()` within [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java).
+- **Render Buffer**: Also uses `RenderLayers.lightning()` within [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java).
 - **Geometric Dome**: Generated via a 3D sphere mesh algorithm using 16 latitude and 16 longitude bands.
 - **Blending**: Matches the orange trajectory color (`255, 128, 0`) with a low, semi-transparent maximum alpha of `60` at the equator, fading out towards the poles. This prevents visual clutter while clearly delineating the damage radius.
 
@@ -36,5 +36,5 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Verification & Environment Compatibility
 - **Renderer Performance**: Completely client-side; has zero impact on server ticks.
-- **Compat Notes**: Using standard `RenderLayers.debugQuads()` and vanilla breaking progress prevents compatibility issues with modern rendering optimization mods like Sodium and Iris shaders.
+- **Compat Notes**: Using standard `RenderLayers.lightning()` (which is fully supported by optimization and shader mods like Sodium and Iris) and vanilla breaking progress prevents compatibility issues with modern rendering environments.
 - **Java Requirements**: Source and target code compile under Java 21, conforming to modern Fabric Loader standards.

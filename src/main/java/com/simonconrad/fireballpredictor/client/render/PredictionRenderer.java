@@ -12,8 +12,8 @@ import org.joml.Matrix4f;
 
 public class PredictionRenderer {
 
-    private static final RenderLayer FIREBALL_TRAIL = net.minecraft.client.render.RenderLayers.debugQuads();
-    private static final RenderLayer SHOCKWAVE_DOME = net.minecraft.client.render.RenderLayers.debugQuads();
+    private static final RenderLayer FIREBALL_TRAIL = net.minecraft.client.render.RenderLayers.lightning();
+    private static final RenderLayer SHOCKWAVE_DOME = net.minecraft.client.render.RenderLayers.lightning();
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {
         Vec3d cameraPos = camera.getCameraPos();
