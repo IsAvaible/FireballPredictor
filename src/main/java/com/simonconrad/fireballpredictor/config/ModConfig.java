@@ -1,9 +1,11 @@
 package com.simonconrad.fireballpredictor.config;
 
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
+import dev.isxander.yacl3.config.v2.api.autogen.Dropdown;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
+import dev.isxander.yacl3.config.v2.api.autogen.IntField;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
@@ -47,6 +49,21 @@ public class ModConfig {
     @AutoGen(category = "visuals")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderParticleAccents = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @Dropdown(values = {"topleft", "topcenter", "topright", "bottomleft", "bottomcenter", "bottomright"})
+    public String impactWarningBadgeAnchor = "topleft";
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @IntField(min = -1000, max = 1000, format = "%d")
+    public int impactWarningBadgeOffsetX = 0;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @IntField(min = -1000, max = 1000, format = "%d")
+    public int impactWarningBadgeOffsetY = 0;
 
     // 3. Helper methods to match your existing client initialization calls
     public static void load() {

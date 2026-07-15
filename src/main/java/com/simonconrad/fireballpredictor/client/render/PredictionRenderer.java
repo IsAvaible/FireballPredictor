@@ -31,8 +31,25 @@ public class PredictionRenderer {
             return;
         }
 
-        int x = 8;
-        int y = 8;
+        com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        int badgeWidth = 20;
+        int badgeHeight = 20;
+        int margin = 8;
+        int windowWidth = client.getWindow().getScaledWidth();
+        int windowHeight = client.getWindow().getScaledHeight();
+        String anchor = config.impactWarningBadgeAnchor == null ? "topleft" : config.impactWarningBadgeAnchor.trim().toLowerCase(java.util.Locale.ROOT);
+
+        int x = switch (anchor) {
+            case "topright", "bottomright" -> windowWidth - badgeWidth - margin;
+            case "topcenter", "bottomcenter" -> (windowWidth - badgeWidth) / 2;
+            default -> margin;
+        } + config.impactWarningBadgeOffsetX;
+
+        int y = switch (anchor) {
+            case "bottomleft", "bottomcenter", "bottomright" -> windowHeight - badgeHeight - margin;
+            default -> margin;
+        } + config.impactWarningBadgeOffsetY;
+
         int size = 20;
 
         context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.ofVanilla("textures/gui/sprites/hud/effect_background.png"), x, y, 0.0f, 0.0f, size, size, 20, 20);

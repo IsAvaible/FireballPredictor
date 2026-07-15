@@ -21,5 +21,14 @@
   "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "Toggle the blinking block-breaking animation for blocks in the impact radius.\nDefault: True",
   
   "yacl3.config.fireballpredictor:config.renderParticleAccents": "Render Particle Accents",
-  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Toggle environmental storytelling particles (flame, lava, smoke) on stressed blocks.\nDefault: True"
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Toggle environmental storytelling particles (flame, lava, smoke) on stressed blocks.\nDefault: True",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "Impact Warning Badge Anchor",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "Choose which corner or edge the HUD badge should start from.\nDefault: Top Left",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "Impact Warning Badge Offset X",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Horizontal offset applied after anchor placement. Positive values move right.\nDefault: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Impact Warning Badge Offset Y",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertical offset applied after anchor placement. Positive values move down.\nDefault: 0"
 }
