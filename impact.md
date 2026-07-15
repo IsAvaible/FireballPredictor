@@ -9,6 +9,7 @@ Created a new class in the `com.simonconrad.fireballpredictor.math` package.
 - It predicts the exact blocks that will be broken using a custom, deterministic mathematical algorithm based on the vanilla `Explosion` logic.
 - The vanilla `Explosion` uses a randomized power multiplier per ray (`0.7F` to `1.3F`), which causes the prediction to jitter and occasionally mispredict the true blocks destroyed. The custom predictor uses a stable average power (`1.0F`) multiplier to ensure the predicted block pattern remains perfectly stable and maximally representative of the typical destruction radius.
 - Solved an offset error by centering the explosion precisely at the fireball's location at the time of the collision, matching vanilla's `onCollision` behavior, rather than calculating it directly on the block face (the `hitResult`).
+- Safely extracts the fireball's `explosionPower` dynamically using NBT, ensuring larger fireballs proportionally scale the destruction radius without mapping-dependent reflection errors.
 - Safe to run on the client as it avoids instantiating actual logic or emitting particles and sounds unnecessarily.
 
 ### 2. `FireballPredictor.java` Update

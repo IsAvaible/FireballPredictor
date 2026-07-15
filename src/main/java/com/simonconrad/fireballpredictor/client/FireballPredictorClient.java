@@ -1,5 +1,7 @@
 package com.simonconrad.fireballpredictor.client;
 
+import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
@@ -20,17 +22,23 @@ public class FireballPredictorClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ModConfig.load();
+        ClientPowerCache.registerReceivers();
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
                 activePredictions.clear();
                 currentlyHighlightedBlocks.clear();
+                ClientPowerCache.POWER_CACHE.clear();
                 return;
             }
 
             // Clean up dead fireballs
             Iterator<Map.Entry<ExplosiveProjectileEntity, PredictionData>> it = activePredictions.entrySet().iterator();
             while (it.hasNext()) {
-                if (!it.next().getKey().isAlive()) {
+                ExplosiveProjectileEntity fireball = it.next().getKey();
+                if (!fireball.isAlive()) {
+                    ClientPowerCache.POWER_CACHE.remove(fireball.getId());
                     it.remove();
                 }
             }

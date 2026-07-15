@@ -8,6 +8,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
+import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,14 +20,17 @@ public class ImpactPredictor {
     public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos) {
         World world = fireball.getWorld();
         
-        float power = 1.0F; // Default Ghast fireball power
-        if (fireball instanceof FireballEntity fireballEntity) {
-            try {
-                java.lang.reflect.Field field = FireballEntity.class.getDeclaredField("explosionPower");
-                field.setAccessible(true);
-                power = (int) field.get(fireballEntity);
-            } catch (Exception e) {
-                // Ignore and use default
+        float power;
+        
+        if (com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
+            power = com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.get(fireball.getId());
+        } else {
+            if (fireball instanceof net.minecraft.entity.projectile.FireballEntity) {
+                power = com.simonconrad.fireballpredictor.config.ModConfig.instance().clientFallbackFireballPower;
+            } else if (fireball instanceof net.minecraft.entity.projectile.WitherSkullEntity) {
+                power = 1.0F; 
+            } else {
+                power = 1.0F; 
             }
         }
         
@@ -48,7 +52,7 @@ public class ImpactPredictor {
                         // Vanilla uses random: power * (0.7F + world.random.nextFloat() * 0.6F)
                         // We use the exact middle (1.0F) for deterministic, stable prediction.
                         // You can adjust this to 1.3F to show the "maximum possible" destruction instead.
-                        float rayPower = power * 1.0F; 
+                        float rayPower = power * 1.15F;
                         
                         double x = explosionPos.x;
                         double y = explosionPos.y;
