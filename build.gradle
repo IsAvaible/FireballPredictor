@@ -63,3 +63,15 @@ publishing {
 		// Add repositories to publish to here.
 	}
 }
+
+tasks.register('printFields') {
+    doLast {
+        def urls = project.configurations.compileClasspath.files.collect { it.toURI().toURL() }
+        def classLoader = new java.net.URLClassLoader(urls.toArray(new java.net.URL[0]), this.class.classLoader)
+        def clazz = Class.forName('net.minecraft.entity.projectile.ExplosiveProjectileEntity', true, classLoader)
+        println "--- FIELDS ---"
+        clazz.getDeclaredFields().each { println it }
+        println "--- METHODS ---"
+        clazz.getDeclaredMethods().each { println it }
+    }
+}
