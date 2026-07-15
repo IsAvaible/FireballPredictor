@@ -72,7 +72,9 @@ public class TrajectoryPredictor {
         
         List<BlockPos> brokenBlocks = new ArrayList<>();
         if (finalHit != null) {
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, finalHit);
+            // Vanilla explosion triggers at the fireball's position at the time of the collision,
+            // NOT exactly at the raycast hitResult on the block's surface.
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, currentPos);
         }
         
         return new PredictionData(path, finalHit, brokenBlocks, initialVelocity);

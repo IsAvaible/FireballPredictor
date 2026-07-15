@@ -20,4 +20,3 @@ This class contains the physics simulation:
 
 - The Java code compiles successfully under Minecraft 1.21.1 and Fabric Loader mappings.
 - The acceleration logic strictly follows the `accelerationPower` standard introduced in recent versions of the game.
-- **Note:** While running `.\gradlew runServer`, the server encounters an environment issue `java.lang.RuntimeException: java.lang.ClassNotFoundException: java.lang.System` which is caused by a known incompatibility between Mixin `0.8.7` and your current JDK version (Java 25). However, the mod code itself compiled cleanly and correctly targets the required API methods! You may want to downgrade your Java version to JDK 21 to run the game client/server reliably.
