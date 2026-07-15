@@ -9,17 +9,27 @@ import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.entity.projectile.ProjectileUtil;
 
+import net.minecraft.util.math.BlockPos;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class TrajectoryPredictor {
 
-    public static HitResult predict(ExplosiveProjectileEntity fireball) {
+    public static PredictionData predict(ExplosiveProjectileEntity fireball) {
         World world = fireball.getWorld();
         Vec3d currentPos = fireball.getPos();
-        Vec3d velocity = fireball.getVelocity();
+        Vec3d initialVelocity = fireball.getVelocity();
+        Vec3d velocity = initialVelocity;
         
         double accelerationPower = fireball.accelerationPower;
         Vec3d acceleration = velocity.normalize().multiply(accelerationPower);
         
         int maxTicks = 200;
+        List<Vec3d> path = new ArrayList<>();
+        path.add(currentPos);
+        
+        HitResult finalHit = null;
         
         for (int i = 0; i < maxTicks; i++) {
             Vec3d nextPos = currentPos.add(velocity);
@@ -48,15 +58,23 @@ public class TrajectoryPredictor {
             }
             
             if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
-                return hitResult;
+                path.add(hitResult.getPos());
+                finalHit = hitResult;
+                break;
             }
             
             currentPos = nextPos;
+            path.add(currentPos);
             
             // Add acceleration to velocity and apply drag (usually 0.95)
             velocity = velocity.add(acceleration).multiply(0.95);
         }
         
-        return null;
+        List<BlockPos> brokenBlocks = new ArrayList<>();
+        if (finalHit != null) {
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, finalHit);
+        }
+        
+        return new PredictionData(path, finalHit, brokenBlocks, initialVelocity);
     }
 }

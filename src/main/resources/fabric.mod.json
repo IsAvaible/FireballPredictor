@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "com.simonconrad.fireballpredictor.FireballPredictor"
+    ],
+    "client": [
+      "com.simonconrad.fireballpredictor.client.FireballPredictorClient"
     ]
   },
   "mixins": [
