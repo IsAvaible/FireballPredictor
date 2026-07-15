@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.particle.ParticleTypes;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -67,6 +68,25 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < (period / 2);
                     int currentStage = isVisible ? baseStage : -1;
                     
+                    if (client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                        int particleCount = 1 + client.world.random.nextInt(3);
+                        for (int i = 0; i < particleCount; i++) {
+                            net.minecraft.util.math.BlockPos randomPos = data.brokenBlocks.get(client.world.random.nextInt(data.brokenBlocks.size()));
+                            if (!client.world.getBlockState(randomPos).isAir()) {
+                                double px = randomPos.getX() + client.world.random.nextDouble();
+                                double py = randomPos.getY() + 1.1;
+                                double pz = randomPos.getZ() + client.world.random.nextDouble();
+                                
+                                int pType = client.world.random.nextInt(3);
+                                net.minecraft.particle.ParticleEffect effect = ParticleTypes.FLAME;
+                                if (pType == 1) effect = ParticleTypes.LAVA;
+                                else if (pType == 2) effect = ParticleTypes.CAMPFIRE_COSY_SMOKE;
+                                
+                                client.world.addParticle(effect, px, py, pz, 0, 0.05, 0);
+                            }
+                        }
+                    }
+
                     for (net.minecraft.util.math.BlockPos pos : data.brokenBlocks) {
                         if (!client.world.getBlockState(pos).isAir()) {
                             newHighlightedBlocks.merge(pos, currentStage, Math::max);
@@ -94,13 +114,13 @@ public class FireballPredictorClient implements ClientModInitializer {
             currentlyHighlightedBlocks = newHighlightedBlocks;
         });
 
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+        WorldRenderEvents.LAST.register(context -> {
             if (context.world() == null || activePredictions.isEmpty()) return;
 
             for (Map.Entry<ExplosiveProjectileEntity, PredictionData> entry : activePredictions.entrySet()) {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 if (fireball.isAlive()) {
-                    PredictionRenderer.render(context.matrixStack(), context.consumers(), context.camera(), context.world(), entry.getValue());
+                    PredictionRenderer.render(context.matrixStack(), context.consumers(), context.camera(), context.world(), entry.getValue(), fireball);
                 }
             }
         });
