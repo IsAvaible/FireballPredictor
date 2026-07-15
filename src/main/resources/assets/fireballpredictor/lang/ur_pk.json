@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "فائر بال پریڈیکٹر کنفیگریشن",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "عمومی اختیارات",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "فال بیک فائر بال پاور",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "فائر بالز کے لیے استعمال ہونے والی پاور اگر سرور اسے فراہم نہ کرے۔\nڈیفالٹ: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "رے پاور ملٹی پلائر",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "دھماکے کی شعاع کی طاقت کے حساب کتاب کے لیے ضرب۔\nزیادہ سے زیادہ/کم سے کم ممکنہ نقصان کو دیکھنے کے لیے 0.7 اور 1.3 کے درمیان ترتیب دیں۔\nڈیفالٹ: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "ودر اسکلز کو ٹریک کریں",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "ٹگل کریں کہ آیا ودر سکیلیٹن کھوپڑیوں کو بھی موڈ کے ذریعے ٹریک کیا جانا چاہیے۔\nڈیفالٹ: سچ",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "بصری اختیارات",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "راستہ رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "فائر بال کے پیچھے کھینچی گئی آگ کی پٹی کے نشان کو ٹگل کریں۔\nڈیفالٹ: سچ",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "شاک ویو ڈوم رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "پیش گوئی شدہ اثر کی جگہ پر رینڈر کیے گئے شفاف 3D گنبد کو ٹگل کریں۔\nڈیفالٹ: سچ",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "بلاک ہائی لائٹس رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "اثر کے دائرے میں موجود بلاکس کے لیے بلاک توڑنے والی اینیمیشن کو ٹگل کریں۔\nڈیفالٹ: سچ",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "ذرہ دار لہجے رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "تناؤ والے بلاکس پر ماحولیاتی ذرات (شعلہ، لاوا، دھواں) کو ٹگل کریں۔\nڈیفالٹ: سچ",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "اثر کی وارننگ بیج اینکر",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "منتخب کریں کہ HUD بیج کس کونے یا کنارے سے شروع ہونا چاہیے۔\nڈیفالٹ: اوپر بائیں",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "اثر کی وارننگ بیج آفسیٹ X",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "اینکر کی جگہ کے بعد افقی آفسیٹ لاگو ہوتا ہے۔ مثبت قدریں دائیں طرف منتقل ہوتی ہیں۔\nڈیفالٹ: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "اثر کی وارننگ بیج آفسیٹ Y",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "اینکر کی جگہ کے بعد عمودی آفسیٹ لاگو ہوتا ہے۔ مثبت قدریں نیچے منتقل ہوتی ہیں۔\nڈیفالٹ: 0"
+}

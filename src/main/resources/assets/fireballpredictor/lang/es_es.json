@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "Configuración del Predictor de Bolas de Fuego",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "Opciones Generales",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Poder de Bola de Fuego de Reserva",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "El poder a usar para las bolas de fuego si el servidor no lo proporciona.\nPredeterminado: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Multiplicador de Poder de Rayo",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplicador para el cálculo del poder del rayo de explosión.\nAjustar entre 0.7 y 1.3 para visualizar el potencial de daño máximo/mínimo.\nPredeterminado: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Rastrear Calaveras de Wither",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Alternar si las calaveras de esqueleto wither también deben ser rastreadas por el mod.\nPredeterminado: Verdadero",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "Opciones Visuales",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "Renderizar Trayectoria",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Alternar la estela de cinta ardiente dibujada detrás de la bola de fuego.\nPredeterminado: Verdadero",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "Renderizar Cúpula de Onda de Choque",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "Alternar la cúpula 3D translúcida renderizada en el lugar de impacto previsto.\nPredeterminado: Verdadero",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "Renderizar Resaltados de Bloques",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "Alternar la animación parpadeante de rotura de bloques para los bloques en el radio de impacto.\nPredeterminado: Verdadero",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "Renderizar Acentos de Partículas",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Alternar partículas narrativas ambientales (llama, lava, humo) en bloques estresados.\nPredeterminado: Verdadero",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "Anclaje de Insignia de Advertencia de Impacto",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "Elige desde qué esquina o borde debe comenzar la insignia del HUD.\nPredeterminado: Arriba a la Izquierda",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "Desplazamiento X de Insignia de Advertencia de Impacto",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Desplazamiento horizontal aplicado después de colocar el anclaje. Los valores positivos mueven a la derecha.\nPredeterminado: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Desplazamiento Y de Insignia de Advertencia de Impacto",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Desplazamiento vertical aplicado después de colocar el anclaje. Los valores positivos mueven hacia abajo.\nPredeterminado: 0"
+}

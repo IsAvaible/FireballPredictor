@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "फ़ायरबॉल प्रिडिक्टर कॉन्फ़िगरेशन",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "सामान्य विकल्प",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "फ़ॉलबैक फ़ायरबॉल शक्ति",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "यदि सर्वर इसे प्रदान नहीं करता है तो फ़ायरबॉल के लिए उपयोग की जाने वाली शक्ति।\nडिफ़ॉल्ट: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "रे पावर मल्टीप्लायर",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "विस्फोट किरण शक्ति गणना के लिए गुणक।\nअधिकतम/न्यूनतम संभावित क्षति को देखने के लिए 0.7 और 1.3 के बीच समायोजित करें।\nडिफ़ॉल्ट: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "विदर खोपड़ी ट्रैक करें",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "टॉगल करें कि क्या विदर स्केलेटन खोपड़ियों को भी मॉड द्वारा ट्रैक किया जाना चाहिए।\nडिफ़ॉल्ट: सही",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "दृश्य विकल्प",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "प्रक्षेपवक्र रेंडर करें",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "फ़ायरबॉल के पीछे खींचे गए ज्वलंत रिबन निशान को टॉगल करें।\nडिफ़ॉल्ट: सही",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "शॉकवेव डोम रेंडर करें",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "पूर्वानुमानित प्रभाव स्थल पर रेंडर किए गए पारभासी 3D गुंबद को टॉगल करें।\nडिफ़ॉल्ट: सही",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "ब्लॉक हाइलाइट्स रेंडर करें",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "प्रभाव त्रिज्या में ब्लॉकों के लिए ब्लिंकिंग ब्लॉक-ब्रेकिंग एनीमेशन को टॉगल करें।\nडिफ़ॉल्ट: सही",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "कण एक्सेंट रेंडर करें",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "तनावग्रस्त ब्लॉकों पर पर्यावरणीय कहानी कहने वाले कणों (लौ, लावा, धुआं) को टॉगल करें।\nडिफ़ॉल्ट: सही",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "प्रभाव चेतावनी बैज एंकर",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "चुनें कि HUD बैज किस कोने या किनारे से शुरू होना चाहिए।\nडिफ़ॉल्ट: ऊपर बाईं ओर",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "प्रभाव चेतावनी बैज ऑफ़सेट X",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "एंकर प्लेसमेंट के बाद लागू क्षैतिज ऑफ़सेट। सकारात्मक मान दाईं ओर ले जाते हैं।\nडिफ़ॉल्ट: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "प्रभाव चेतावनी बैज ऑफ़सेट Y",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "एंकर प्लेसमेंट के बाद लागू लंबवत ऑफ़सेट। सकारात्मक मान नीचे ले जाते हैं।\nडिफ़ॉल्ट: 0"
+}

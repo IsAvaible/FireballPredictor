@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "Configuration de Fireball Predictor",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "Options Générales",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Puissance de Boule de Feu de Secours",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "La puissance à utiliser pour les boules de feu si le serveur ne la fournit pas.\nPar défaut : 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Multiplicateur de Puissance de Rayon",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplicateur pour le calcul de la puissance du rayon d'explosion.\nAjustez entre 0.7 et 1.3 pour visualiser le potentiel de dégâts max/min.\nPar défaut : 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Suivre les Crânes de Wither",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Activer/désactiver si les crânes de squelette wither doivent également être suivis par le mod.\nPar défaut : Vrai",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "Options Visuelles",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "Rendu de la Trajectoire",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Activer/désactiver la traînée de ruban enflammé dessinée derrière la boule de feu.\nPar défaut : Vrai",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "Rendu du Dôme d'Onde de Choc",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "Activer/désactiver le dôme 3D translucide rendu sur le site d'impact prévu.\nPar défaut : Vrai",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "Rendu de la Brillance des Blocs",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "Activer/désactiver l'animation clignotante de destruction de blocs pour les blocs dans le rayon d'impact.\nPar défaut : Vrai",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "Rendu des Accents de Particules",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Activer/désactiver les particules de narration environnementale (flamme, lave, fumée) sur les blocs sous tension.\nPar défaut : Vrai",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "Ancrage du Badge d'Avertissement d'Impact",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "Choisissez le coin ou le bord d'où le badge du HUD doit commencer.\nPar défaut : En Haut à Gauche",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "Décalage X du Badge d'Avertissement d'Impact",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Décalage horizontal appliqué après le placement de l'ancrage. Les valeurs positives déplacent vers la droite.\nPar défaut : 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Décalage Y du Badge d'Avertissement d'Impact",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Décalage vertical appliqué après le placement de l'ancrage. Les valeurs positives déplacent vers le bas.\nPar défaut : 0"
+}

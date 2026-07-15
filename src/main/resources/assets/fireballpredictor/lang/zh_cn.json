@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "火球轨迹预测器配置",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "常规选项",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "后备火球威力",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "如果服务器未提供火球威力，则使用此后备值。\n默认值：1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "爆炸射线威力倍增器",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "爆炸射线威力计算的倍增器。\n在 0.7 到 1.3 之间调整以可视化最大/最小潜在伤害。\n默认值：1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "追踪凋灵骷髅头颅",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "是否开启对凋灵骷髅头颅的追踪。\n默认值：开启",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "视觉选项",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "渲染轨迹",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "是否开启在火球后方绘制的火焰丝带尾迹。\n默认值：开启",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "渲染冲击波圆顶",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "是否开启在预测落点处渲染的半透明 3D 圆顶。\n默认值：开启",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "渲染方块高亮",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "是否开启受波及半径内方块的闪烁方块破坏动画。\n默认值：开启",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "渲染粒子特效",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "是否开启在受压方块上渲染的环境叙事粒子（火焰、岩浆、烟雾）。\n默认值：开启",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "碰撞警告徽章锚点",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "选择 HUD 徽章应该从哪个角落或边缘开始定位。\n默认值：左上",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "碰撞警告徽章水平偏移",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "确定锚点后应用的水平偏移。正值向右移动。\n默认值：0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "碰撞警告徽章垂直偏移",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "确定锚点后应用的垂直偏移。正值向下移动。\n默认值：0"
+}

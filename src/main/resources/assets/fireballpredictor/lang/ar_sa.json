@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "تكوين متنبئ كرة النار",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "خيارات عامة",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "قوة كرة النار الاحتياطية",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "القوة المستخدمة لكرات النار إذا لم يوفرها الخادم.\nالافتراضي: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "مضاعف قوة الشعاع",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "مضاعف لحساب قوة شعاع الانفجار.\nاضبط بين 0.7 و 1.3 لتصور أقصى/أدنى ضرر محتمل.\nالافتراضي: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "تتبع جماجم الويذر",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "تبديل ما إذا كان ينبغي تتبع جماجم الهيكل العظمي للويذر بواسطة المعدل أيضًا.\nالافتراضي: صحيح",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "الخيارات المرئية",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "رسم المسار",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "تبديل ذيل الشريط الناري المرسوم خلف كرة النار.\nالافتراضي: صحيح",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "رسم قبة موجة الصدمة",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "تبديل القبة ثلاثية الأبعاد شبه الشفافة المرسومة في موقع التأثير المتوقع.\nالافتراضي: صحيح",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "رسم تحديدات الكتل",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "تبديل الرسوم المتحركة الوامضة لكسر الكتل للكتل الموجودة في نصف قطر التأثير.\nالافتراضي: صحيح",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "رسم تأثيرات الجسيمات",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "تبديل جسيمات السرد البيئي (لهب، لافا، دخان) على الكتل المجهدة.\nالافتراضي: صحيح",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "مرساة شارة تحذير التأثير",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "اختر الزاوية أو الحافة التي يجب أن تبدأ منها شارة شاشة العرض (HUD).\nالافتراضي: أعلى اليسار",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "إزاحة شارة تحذير التأثير الأفقية (X)",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "الإزاحة الأفقية المطبقة بعد وضع المرساة. القيم الموجبة تحرك لليمين.\nالافتراضي: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "إزاحة شارة تحذير التأثير الرأسية (Y)",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "الإزاحة الرأسية المطبقة بعد وضع المرساة. القيم الموجبة تحرك لأسفل.\nالافتراضي: 0"
+}

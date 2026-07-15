@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "ফায়ারবল প্রেডিক্টর কনফিগারেশন",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "সাধারণ অপশন",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "ফলব্যাক ফায়ারবল পাওয়ার",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "সার্ভার প্রদান না করলে ফায়ারবলের জন্য ব্যবহার করার ক্ষমতা।\nডিফল্ট: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "রে পাওয়ার মাল্টিপ্লায়ার",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "বিস্ফোরণ রশ্মি ক্ষমতা গণনার জন্য গুণক।\nসর্বোচ্চ/সর্বনিম্ন সম্ভাব্য ক্ষতি কল্পনা করতে ০.৭ এবং ১.৩ এর মধ্যে সামঞ্জস্য করুন।\nডিফল্ট: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "উইদার স্কাল ট্র্যাক করুন",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "উইদার স্কেলেটন স্কালও মড দ্বারা ট্র্যাক করা হবে কিনা তা টগল করুন।\nডিফল্ট: সত্য",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "ভিজ্যুয়াল অপশন",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "গতিপথ রেন্ডার করুন",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "ফায়ারবলের পিছনে আঁকা জ্বলন্ত ফিতার পথ টগল করুন।\nডিফল্ট: সত্য",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "শকওয়েভ ডোম রেন্ডার করুন",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "অনুমানিত প্রভাবের স্থানে রেন্ডার করা স্বচ্ছ 3D ডোম টগল করুন।\nডিফল্ট: সত্য",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "ব্লক হাইলাইট রেন্ডার করুন",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "প্রভাব ব্যাসার্ধের ব্লকের জন্য জ্বলজ্বলে ব্লক-ভাঙা অ্যানিমেশন টগল করুন।\nডিফল্ট: সত্য",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "পার্টিকেল অ্যাকসেন্ট রেন্ডার করুন",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "চাপযুক্ত ব্লকে পরিবেশগত কণা (শিখা, লাভা, ধোঁয়া) টগল করুন।\nডিফল্ট: সত্য",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "প্রভাব সতর্কতা ব্যাজ অ্যাঙ্কর",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "HUD ব্যাজটি কোন কোণ বা প্রান্ত থেকে শুরু হওয়া উচিত তা চয়ন করুন।\nডিফল্ট: উপরে বাম",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "প্রভাব সতর্কতা ব্যাজ অফসেট X",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "অ্যাঙ্কর স্থাপনের পরে প্রয়োগ করা অনুভূমিক অফসেট। ধনাত্মক মান ডানদিকে নিয়ে যায়।\nডিফল্ট: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "প্রভাব সতর্কতা ব্যাজ অফসেট Y",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "অ্যাঙ্কর স্থাপনের পরে প্রয়োগ করা উল্লম্ব অফসেট। ধনাত্মক মান নিচে নিয়ে যায়।\nডিফল্ট: 0"
+}

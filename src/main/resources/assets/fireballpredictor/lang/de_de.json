@@ -1,0 +1,37 @@
+{
+  "yacl3.config.fireballpredictor:config": "Feuerball-Prädiktor-Konfiguration",
+  
+  "yacl3.config.fireballpredictor:config.category.general": "Allgemeine Optionen",
+  
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Fallback-Feuerballstärke",
+  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "Die Stärke, die für Feuerbälle verwendet wird, wenn der Server sie nicht bereitstellt.\nStandard: 1.0",
+  
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Strahlenstärke-Multiplikator",
+  "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplikator für die Berechnung der Explosionsstrahlenstärke.\nZwischen 0,7 und 1,3 anpassen, um das maximale/minimale Schadenspotenzial zu visualisieren.\nStandard: 1.3",
+  
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Wither-Skelettschädel verfolgen",
+  "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Umschalten, ob Wither-Skelettschädel ebenfalls vom Mod verfolgt werden sollen.\nStandard: Wahr",
+  
+  "yacl3.config.fireballpredictor:config.category.visuals": "Visuelle Optionen",
+  
+  "yacl3.config.fireballpredictor:config.renderTrajectory": "Trajektorie rendern",
+  "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Schaltet die feurige Bandspur um, die hinter dem Feuerball gezeichnet wird.\nStandard: Wahr",
+  
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome": "Druckwellen-Kuppel rendern",
+  "yacl3.config.fireballpredictor:config.renderShockwaveDome.desc": "Schaltet die halbtransparente 3D-Kuppel um, die an der vorhergesagten Einschlagstelle gerendert wird.\nStandard: Wahr",
+  
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights": "Block-Hervorhebungen rendern",
+  "yacl3.config.fireballpredictor:config.renderBlockHighlights.desc": "Schaltet die blinkende Blockabbau-Animation für Blöcke im Einschlagsradius um.\nStandard: Wahr",
+  
+  "yacl3.config.fireballpredictor:config.renderParticleAccents": "Partikel-Akzente rendern",
+  "yacl3.config.fireballpredictor:config.renderParticleAccents.desc": "Schaltet Umgebungspartikel (Flamme, Lava, Rauch) auf beanspruchten Blöcken um.\nStandard: Wahr",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor": "Einschlagswarnungs-Plaketten-Anker",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeAnchor.desc": "Wählen Sie aus, an welcher Ecke oder Kante die HUD-Plakette beginnen soll.\nStandard: Oben Links",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX": "Einschlagswarnungs-Plaketten-Offset X",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Horizontaler Offset, der nach der Platzierung des Ankers angewendet wird. Positive Werte bewegen sich nach rechts.\nStandard: 0",
+
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Einschlagswarnungs-Plaketten-Offset Y",
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertikaler Offset, der nach der Platzierung des Ankers angewendet wird. Positive Werte bewegen sich nach unten.\nStandard: 0"
+}
