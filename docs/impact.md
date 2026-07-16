@@ -19,6 +19,11 @@ Because fireball size/power is normally handled server-side, the mod synchronize
 - **Client Cache**: The client receives this payload and stores it in [ClientPowerCache.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java).
 - **Fallback Power**: If the power packet has not yet been received or if the entity is not a vanilla fireball, `ImpactPredictor` falls back to `ModConfig.instance().clientFallbackFireballPower` (for fireballs) or `1.0F` (for wither skulls/other projectiles).
 
+### 3. Asynchronous Execution & Snapshot Caching
+To prevent game micro-stutters and keep frame rendering smooth when predicting multiple fireballs:
+- **[BlockStateSnapshot.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java)**: When a collision is predicted on the main thread, a thread-safe local block state snapshot is captured inside the bounding box of the explosion. It implements `BlockView` and stores immutable references to `BlockState` and `FluidState`.
+- **Asynchronous Raycasting**: The 1,356 explosion rays are simulated asynchronously on a background worker thread using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
+
 ## Validation Results
 - Compiles and runs successfully under Minecraft `1.21.11` using the Fabric Loader.
 - Replicates the block breaking patterns of vanilla explosions accurately, scaling dynamically with custom fireball sizes.

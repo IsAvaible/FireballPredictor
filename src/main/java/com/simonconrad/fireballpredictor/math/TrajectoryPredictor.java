@@ -16,7 +16,20 @@ import java.util.List;
 
 public class TrajectoryPredictor {
 
+    public record TrajectoryResult(
+        List<Vec3d> path,
+        List<Vec3d> velocities,
+        HitResult hitResult,
+        float explosionPower,
+        BlockStateSnapshot snapshot
+    ) {}
+
     public static PredictionData predict(ExplosiveProjectileEntity fireball, World world) {
+        TrajectoryResult result = simulateTrajectory(fireball, world);
+        return computePrediction(fireball, result, fireball.age);
+    }
+
+    public static TrajectoryResult simulateTrajectory(ExplosiveProjectileEntity fireball, World world) {
         Vec3d currentPos = fireball.getEntityPos();
         Vec3d initialVelocity = fireball.getVelocity();
         Vec3d velocity = initialVelocity;
@@ -80,13 +93,29 @@ public class TrajectoryPredictor {
             velocities.add(velocity);
         }
         
-        List<BlockPos> brokenBlocks = new ArrayList<>();
-        if (finalHit != null) {
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, finalHit.getPos(), world);
+        float explosionPower = finalHit != null ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
+        BlockStateSnapshot snapshot = null;
+        if (finalHit != null && explosionPower > 0.0f) {
+            Vec3d hitPos = finalHit.getPos();
+            float radius = explosionPower * 2.0f;
+            BlockPos minPos = BlockPos.ofFloored(hitPos.x - radius - 2, hitPos.y - radius - 2, hitPos.z - radius - 2);
+            BlockPos maxPos = BlockPos.ofFloored(hitPos.x + radius + 2, hitPos.y + radius + 2, hitPos.z + radius + 2);
+            snapshot = new BlockStateSnapshot(world, minPos, maxPos);
         }
         
-        float explosionPower = finalHit != null ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
-        return new PredictionData(path, velocities, finalHit, brokenBlocks, initialVelocity, createRenderData(path, explosionPower), fireball.age);
+        return new TrajectoryResult(path, velocities, finalHit, explosionPower, snapshot);
+    }
+
+    public static PredictionData computePrediction(ExplosiveProjectileEntity fireball, TrajectoryResult result, int predictionAge) {
+        List<BlockPos> brokenBlocks = new ArrayList<>();
+        if (result.hitResult != null && result.explosionPower > 0.0f && result.snapshot != null) {
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, result.hitResult.getPos(), result.snapshot);
+        }
+        
+        PredictionRenderData renderData = createRenderData(result.path, result.explosionPower);
+        Vec3d initialVelocity = result.velocities.isEmpty() ? Vec3d.ZERO : result.velocities.get(0);
+        
+        return new PredictionData(result.path, result.velocities, result.hitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
     }
 
     private static PredictionRenderData createRenderData(List<Vec3d> path, float explosionPower) {

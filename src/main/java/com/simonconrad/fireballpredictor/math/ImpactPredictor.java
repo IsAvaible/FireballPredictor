@@ -6,6 +6,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.BlockView;
 
 import net.minecraft.entity.projectile.WitherSkullEntity;
 
@@ -27,7 +28,7 @@ public class ImpactPredictor {
         return 1.0F;
     }
 
-    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, World world) {
+    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
         float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();
@@ -57,7 +58,7 @@ public class ImpactPredictor {
                         for (float step = 0.3F; rayPower > 0.0F; rayPower -= 0.225F) {
                             BlockPos blockPos = BlockPos.ofFloored(x, y, z);
 
-                            if (!world.isInBuildLimit(blockPos)) {
+                            if (world.isOutOfHeightLimit(blockPos.getY())) {
                                 break;
                             }
 

@@ -26,6 +26,13 @@ import java.util.Map;
 public class FireballPredictorClient implements ClientModInitializer {
     private static FireballPredictorClient INSTANCE;
 
+    private static final java.util.concurrent.ExecutorService PREDICTION_EXECUTOR = 
+        java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "FireballPredictor-Worker");
+            thread.setDaemon(true);
+            return thread;
+        });
+
     private final Map<ExplosiveProjectileEntity, TrackedPrediction> activePredictions = new HashMap<>();
     private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
     private boolean impactWarningVisible;
@@ -85,8 +92,27 @@ public class FireballPredictorClient implements ClientModInitializer {
                 ExplosiveProjectileEntity fireball = entry.getKey();
                 TrackedPrediction trackedPrediction = entry.getValue();
 
-                if (trackedPrediction.shouldRefresh(fireball, client.world)) {
-                    trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, client.world);
+                if (trackedPrediction.shouldRefresh(fireball, client.world) && !trackedPrediction.isCalculating) {
+                    trackedPrediction.isCalculating = true;
+                    TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, client.world);
+                    int predictionAge = fireball.age;
+                    
+                    PREDICTION_EXECUTOR.submit(() -> {
+                        try {
+                            PredictionData data = TrajectoryPredictor.computePrediction(fireball, result, predictionAge);
+                            client.execute(() -> {
+                                if (INSTANCE != null && INSTANCE.activePredictions.get(fireball) == trackedPrediction) {
+                                    trackedPrediction.predictionData = data;
+                                    trackedPrediction.isCalculating = false;
+                                }
+                            });
+                        } catch (Exception e) {
+                            com.simonconrad.fireballpredictor.FireballPredictor.LOGGER.error("Failed to calculate fireball prediction", e);
+                            client.execute(() -> {
+                                trackedPrediction.isCalculating = false;
+                            });
+                        }
+                    });
                 }
             }
 
@@ -263,6 +289,7 @@ public class FireballPredictorClient implements ClientModInitializer {
 
     private static final class TrackedPrediction {
         private PredictionData predictionData;
+        private boolean isCalculating = false;
 
         private boolean shouldRefresh(ExplosiveProjectileEntity fireball, ClientWorld world) {
             if (predictionData == null || predictionData.path == null || predictionData.velocities == null) {
