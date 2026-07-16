@@ -26,7 +26,7 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Rendering System Integration
 
-- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `WorldRenderEvents.END_MAIN` in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
+- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
 - **YACL Config Integration**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle these features:
   - `renderTrajectory`: Enables/disables the ribbon path.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
@@ -37,4 +37,4 @@ This document describes the client-side visual effects (VFX) used to represent p
 ## Verification & Environment Compatibility
 - **Renderer Performance**: Completely client-side; has zero impact on server ticks.
 - **Compat Notes**: Using standard `RenderLayers.lightning()` (which is fully supported by optimization and shader mods like Sodium and Iris) and vanilla breaking progress prevents compatibility issues with modern rendering environments.
-- **Java Requirements**: Source and target code compile under Java 21, conforming to modern Fabric Loader standards.
+- **Java Requirements**: Source and target code compile under Java 25, conforming to modern Fabric Loader standards.

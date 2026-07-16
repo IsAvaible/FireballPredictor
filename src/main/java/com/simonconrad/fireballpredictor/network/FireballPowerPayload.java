@@ -1,22 +1,22 @@
 package com.simonconrad.fireballpredictor.network;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record FireballPowerPayload(int entityId, float power) implements CustomPayload {
-    public static final CustomPayload.Id<FireballPowerPayload> ID = new CustomPayload.Id<>(Identifier.of("fireballpredictor", "sync_power"));
+public record FireballPowerPayload(int entityId, float power) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<FireballPowerPayload> ID = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("fireballpredictor", "sync_power"));
 
-    public static final PacketCodec<RegistryByteBuf, FireballPowerPayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.INTEGER, FireballPowerPayload::entityId,
-            PacketCodecs.FLOAT, FireballPowerPayload::power,
+    public static final StreamCodec<RegistryFriendlyByteBuf, FireballPowerPayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, FireballPowerPayload::entityId,
+            ByteBufCodecs.FLOAT, FireballPowerPayload::power,
             FireballPowerPayload::new
     );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

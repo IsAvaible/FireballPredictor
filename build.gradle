@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.17-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -24,15 +24,14 @@ repositories {
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// YACL
-	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
-	modImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
+	implementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
+	implementation "maven.modrinth:modmenu:${project.modmenu_version}"
 }
 
 fabricApi {
@@ -52,14 +51,17 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
 	withSourcesJar()
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {
@@ -81,21 +83,3 @@ publishing {
 	}
 }
 
-tasks.register('printFields') {
-    doLast {
-        def urls = project.configurations.compileClasspath.files.collect { it.toURI().toURL() }
-        def classLoader = new java.net.URLClassLoader(urls.toArray(new java.net.URL[0]), this.class.classLoader)
-//        println "--- CAMERA METHODS ---"
-//        Class.forName('net.minecraft.client.render.Camera', true, classLoader).getDeclaredMethods().each { println it.name + " " + it.returnType }
-//        println "--- EXPLOSIVEPROJECTILEENTITY METHODS ---"
-//        Class.forName('net.minecraft.entity.projectile.ExplosiveProjectileEntity', true, classLoader).getMethods().findAll { it.name.contains("World") || it.name.contains("Pos")}.each { println it.name + " " + it.returnType }
-//        println "--- ENTITY METHODS ---"
-//        Class.forName('net.minecraft.entity.Entity', true, classLoader).getMethods().findAll { it.name.contains("World") || it.name.contains("Pos") || it.name.contains("Level")}.each { println it.name + " " + it.returnType }
-//        println "--- RENDERPHASE FIELDS ---"
-//        Class.forName('net.minecraft.client.render.RenderPhase', true, classLoader).getDeclaredFields().each { println it.name }
-//        println "--- RENDERLAYER METHODS ---"
-//        Class.forName('net.minecraft.client.render.RenderLayer', true, classLoader).getDeclaredMethods().each { println it.name }
-//        println "--- VERTEXFORMAT DRAWMODE ---"
-//        Class.forName('net.minecraft.client.render.VertexFormat$DrawMode', true, classLoader).getDeclaredFields().each { println it.name }
-    }
-}

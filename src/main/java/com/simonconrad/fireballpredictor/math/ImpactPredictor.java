@@ -1,24 +1,21 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.BlockView;
-
-import net.minecraft.entity.projectile.WitherSkullEntity;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 
 public class ImpactPredictor {
 
-    public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
-        if (!fireball.getEntityWorld().isClient()) {
-            if (fireball instanceof net.minecraft.entity.projectile.FireballEntity f) {
+    public static float resolveExplosionPower(AbstractHurtingProjectile fireball) {
+        if (!fireball.level().isClientSide()) {
+            if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball f) {
                 return ((com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor) f).getExplosionPower();
             }
             return 1.0F;
@@ -29,7 +26,7 @@ public class ImpactPredictor {
 
 
 
-    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
+    public static List<BlockPos> predictBrokenBlocks(AbstractHurtingProjectile fireball, Vec3 explosionPos, BlockGetter world) {
         float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();
@@ -57,9 +54,9 @@ public class ImpactPredictor {
                         double z = explosionPos.z;
 
                         for (float step = 0.3F; rayPower > 0.0F; rayPower -= 0.225F) {
-                            BlockPos blockPos = BlockPos.ofFloored(x, y, z);
+                            BlockPos blockPos = BlockPos.containing(x, y, z);
 
-                            if (world.isOutOfHeightLimit(blockPos.getY())) {
+                            if (world.isOutsideBuildHeight(blockPos.getY())) {
                                 break;
                             }
 
@@ -67,11 +64,11 @@ public class ImpactPredictor {
                             FluidState fluidState = world.getFluidState(blockPos);
 
                             // Combined blast resistance of block and fluid (e.g. waterlogging)
-                            float blastResistance = Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance());
+                            float blastResistance = Math.max(blockState.getBlock().getExplosionResistance(), fluidState.getExplosionResistance());
                             
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
-                            if (fireball instanceof WitherSkullEntity witherSkull && witherSkull.isCharged()) {
-                                if (blockState.getHardness(world, blockPos) >= 0.0F) {
+                            if (fireball instanceof WitherSkull witherSkull && witherSkull.isDangerous()) {
+                                if (blockState.getDestroySpeed(world, blockPos) >= 0.0F) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
                             }

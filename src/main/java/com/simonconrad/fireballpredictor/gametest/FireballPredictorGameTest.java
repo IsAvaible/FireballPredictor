@@ -3,17 +3,17 @@ package com.simonconrad.fireballpredictor.gametest;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.entity.projectile.FireballEntity;
-import net.minecraft.entity.projectile.WitherSkullEntity;
-import net.minecraft.test.TestContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
 
 import java.util.ArrayList;
@@ -21,40 +21,40 @@ import java.util.List;
 
 public class FireballPredictorGameTest {
 
-    private void buildWall(TestContext context, BlockState state) {
+    private void buildWall(GameTestHelper context, BlockState state) {
         for (int y = 1; y <= 5; y++) {
             for (int z = 1; z <= 5; z++) {
-                context.setBlockState(new BlockPos(2, y, z), state);
+                context.setBlock(new BlockPos(2, y, z), state);
             }
         }
     }
 
-    private void buildWall(TestContext context, Block block) {
-        buildWall(context, block.getDefaultState());
+    private void buildWall(GameTestHelper context, Block block) {
+        buildWall(context, block.defaultBlockState());
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends ExplosiveProjectileEntity> T spawnProjectile(
-            TestContext context, EntityType<T> type, double accelerationPower, boolean isCharged) {
-        T projectile = (T) context.spawnEntity(type, 1, 3, 3);
-        projectile.setPosition(context.getAbsolute(new Vec3d(1.5, 3.0, 3.5)));
-        Vec3d rotatedVelocity = context.getAbsolute(new Vec3d(0.5, 0.0, 0.0)).subtract(context.getAbsolute(Vec3d.ZERO));
-        projectile.setVelocity(rotatedVelocity);
+    private <T extends AbstractHurtingProjectile> T spawnProjectile(
+            GameTestHelper context, EntityType<T> type, double accelerationPower, boolean isCharged) {
+        T projectile = (T) context.spawn(type, 1, 3, 3);
+        projectile.setPos(context.absoluteVec(new Vec3(1.5, 3.0, 3.5)));
+        Vec3 rotatedVelocity = context.absoluteVec(new Vec3(0.5, 0.0, 0.0)).subtract(context.absoluteVec(Vec3.ZERO));
+        projectile.setDeltaMovement(rotatedVelocity);
         projectile.accelerationPower = accelerationPower;
-        if (projectile instanceof WitherSkullEntity skull) {
-            skull.setCharged(isCharged);
+        if (projectile instanceof WitherSkull skull) {
+            skull.setDangerous(isCharged);
         }
         return projectile;
     }
 
-    private List<BlockPos> getBrokenBlocks(TestContext context, Block originalBlock) {
+    private List<BlockPos> getBrokenBlocks(GameTestHelper context, Block originalBlock) {
         List<BlockPos> actualAbsoluteBroken = new ArrayList<>();
         for (int y = 1; y <= 5; y++) {
             for (int z = 1; z <= 5; z++) {
                 BlockPos relPos = new BlockPos(2, y, z);
-                BlockPos absPos = context.getAbsolutePos(relPos);
-                BlockState state = context.getWorld().getBlockState(absPos);
-                if (!state.isOf(originalBlock)) {
+                BlockPos absPos = context.absolutePos(relPos);
+                BlockState state = context.getLevel().getBlockState(absPos);
+                if (!state.is(originalBlock)) {
                     actualAbsoluteBroken.add(absPos);
                 }
             }
@@ -62,15 +62,15 @@ public class FireballPredictorGameTest {
         return actualAbsoluteBroken;
     }
 
-    private List<BlockPos> getPredictedBrokenBlocks(ExplosiveProjectileEntity projectile, TestContext context) {
-        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(projectile, context.getWorld());
-        PredictionData prediction = TrajectoryPredictor.computePrediction(projectile, trajResult, projectile.age);
+    private List<BlockPos> getPredictedBrokenBlocks(AbstractHurtingProjectile projectile, GameTestHelper context) {
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(projectile, context.getLevel());
+        PredictionData prediction = TrajectoryPredictor.computePrediction(projectile, trajResult, projectile.tickCount);
         return prediction.brokenBlocks;
     }
 
     private void assertExplosionDestruction(
-            TestContext context,
-            ExplosiveProjectileEntity projectile,
+            GameTestHelper context,
+            AbstractHurtingProjectile projectile,
             Block wallBlock,
             int minExpectedActualCount
     ) {
@@ -79,7 +79,7 @@ public class FireballPredictorGameTest {
             throw new RuntimeException("Predicted 0 broken blocks, but it should hit the wall and break blocks.");
         }
 
-        context.waitAndRun(20L, () -> {
+        context.runAfterDelay(20L, () -> {
             List<BlockPos> actualAbsoluteBroken = getBrokenBlocks(context, wallBlock);
             if (actualAbsoluteBroken.isEmpty()) {
                 throw new RuntimeException("Actual explosion did not break any blocks.");
@@ -103,13 +103,13 @@ public class FireballPredictorGameTest {
                 throw new RuntimeException("Actual broken blocks count (" + actualCount + ") is too low compared to predicted (" + predictedCount + "). Min expected: " + (int)(predictedCount * minRatio));
             }
 
-            context.complete();
+            context.succeed();
         });
     }
 
     private void assertNoDestruction(
-            TestContext context,
-            ExplosiveProjectileEntity projectile,
+            GameTestHelper context,
+            AbstractHurtingProjectile projectile,
             Block wallBlock
     ) {
         List<BlockPos> predictedAbsoluteBroken = getPredictedBrokenBlocks(projectile, context);
@@ -117,70 +117,70 @@ public class FireballPredictorGameTest {
             throw new RuntimeException("Predicted " + predictedAbsoluteBroken.size() + " broken blocks, but it should not break any.");
         }
 
-        context.waitAndRun(20L, () -> {
+        context.runAfterDelay(20L, () -> {
             List<BlockPos> actualAbsoluteBroken = getBrokenBlocks(context, wallBlock);
             if (!actualAbsoluteBroken.isEmpty()) {
                 throw new RuntimeException("Explosion actually broke " + actualAbsoluteBroken.size() + " blocks, but was expected to break 0.");
             }
-            context.complete();
+            context.succeed();
         });
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testFireballPredictionAndExplosion(TestContext context) {
+    public void testFireballPredictionAndExplosion(GameTestHelper context) {
         buildWall(context, Blocks.DIRT);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 1);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testWitherSkullPredictionAndExplosion(TestContext context) {
+    public void testWitherSkullPredictionAndExplosion(GameTestHelper context) {
         buildWall(context, Blocks.DIRT);
-        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, false);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, false);
         assertExplosionDestruction(context, skull, Blocks.DIRT, 1);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testChargedWitherSkullPredictionAndExplosion(TestContext context) {
+    public void testChargedWitherSkullPredictionAndExplosion(GameTestHelper context) {
         buildWall(context, Blocks.DIRT);
-        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, true);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
         assertExplosionDestruction(context, skull, Blocks.DIRT, 1);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testChargedWitherSkullAgainstObsidian(TestContext context) {
+    public void testChargedWitherSkullAgainstObsidian(GameTestHelper context) {
         buildWall(context, Blocks.OBSIDIAN);
-        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, true);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
         assertExplosionDestruction(context, skull, Blocks.OBSIDIAN, 1);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testNormalWitherSkullAgainstObsidian(TestContext context) {
+    public void testNormalWitherSkullAgainstObsidian(GameTestHelper context) {
         buildWall(context, Blocks.OBSIDIAN);
-        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, false);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, false);
         assertNoDestruction(context, skull, Blocks.OBSIDIAN);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testNormalFireballAgainstWaterloggedSlab(TestContext context) {
-        BlockState waterloggedSlab = Blocks.OAK_SLAB.getDefaultState().with(net.minecraft.state.property.Properties.WATERLOGGED, true);
+    public void testNormalFireballAgainstWaterloggedSlab(GameTestHelper context) {
+        BlockState waterloggedSlab = Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         assertNoDestruction(context, fireball, Blocks.OAK_SLAB);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testChargedWitherSkullAgainstWaterloggedSlab(TestContext context) {
-        BlockState waterloggedSlab = Blocks.OAK_SLAB.getDefaultState().with(net.minecraft.state.property.Properties.WATERLOGGED, true);
+    public void testChargedWitherSkullAgainstWaterloggedSlab(GameTestHelper context) {
+        BlockState waterloggedSlab = Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
-        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, true);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
         assertExplosionDestruction(context, skull, Blocks.OAK_SLAB, 1);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
-    public void testHighPowerFireballPredictionAndExplosion(TestContext context) {
+    public void testHighPowerFireballPredictionAndExplosion(GameTestHelper context) {
         buildWall(context, Blocks.DIRT);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         ((FireballEntityAccessor) fireball).setExplosionPower(3);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 10);
     }

@@ -25,6 +25,6 @@ To prevent game micro-stutters and keep frame rendering smooth when predicting m
 - **Asynchronous Raycasting**: The 1,356 explosion rays are simulated asynchronously on a background worker thread using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
 
 ## Validation Results
-- Compiles and runs successfully under Minecraft `1.21.11` using the Fabric Loader.
+- Compiles and runs successfully under Minecraft `26.2` using the Fabric Loader.
 - Replicates the block breaking patterns of vanilla explosions accurately, scaling dynamically with custom fireball sizes.
 - Exposing the `rayPowerMultiplier` in the configuration screen allows players to choose between conservative (lower multiplier) and comprehensive (higher multiplier) block predictions.

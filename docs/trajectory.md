@@ -7,7 +7,7 @@ This document describes the trajectory prediction system implemented in the mod.
 ### 1. [TrajectoryPredictor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java)
 Contains the physics simulation engine that mimics Minecraft's projectile update loops:
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
-- **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.raycast` and `RaycastContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
+- **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.clip` and `ClipContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
 - **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies standard air drag (velocity multiplied by `0.95`).
 - **Asynchronous Execution Split**: Calculates predictions in two distinct phases:
   - **Simulation Phase (Main Thread)**: Quickly runs the 200-tick flight path raycast and captures a thread-safe `BlockStateSnapshot` at the collision point.
@@ -22,6 +22,6 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 
 ## Validation Results
 
-- Compiles and runs successfully under Minecraft `1.21.11` using Fabric API and Yarn mappings.
+- Compiles and runs successfully under Minecraft `26.2` using Fabric API and official Mojang mappings.
 - The trajectory calculation aligns exactly with vanilla physics, ensuring predicted impact locations match the actual detonation points.
 - Physics equations correctly handle varying speeds and custom `accelerationPower` properties.

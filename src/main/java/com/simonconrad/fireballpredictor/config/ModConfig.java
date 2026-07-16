@@ -9,13 +9,13 @@ import dev.isxander.yacl3.config.v2.api.autogen.IntField;
 import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import java.awt.Color;
 
 public class ModConfig {
     // 1. Create the handler that manages loading, saving, and the instance
     public static final ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler.createBuilder(ModConfig.class)
-            .id(Identifier.of("fireballpredictor", "config"))
+            .id(Identifier.fromNamespaceAndPath("fireballpredictor", "config"))
             .serializer(config -> GsonConfigSerializerBuilder.create(config)
                     .setPath(FabricLoader.getInstance().getConfigDir().resolve("fireballpredictor.json"))
                     .build())

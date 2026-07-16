@@ -1,10 +1,10 @@
 package com.simonconrad.fireballpredictor.mixin;
 
-import net.minecraft.entity.projectile.FireballEntity;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(FireballEntity.class)
+@Mixin(LargeFireball.class)
 public interface FireballEntityAccessor {
     @Accessor("explosionPower")
     int getExplosionPower();

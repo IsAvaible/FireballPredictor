@@ -5,9 +5,9 @@ import com.simonconrad.fireballpredictor.network.FireballPowerPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.entity.projectile.FireballEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,12 +24,12 @@ public class FireballPredictor implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-        PayloadTypeRegistry.playS2C().register(FireballPowerPayload.ID, FireballPowerPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(FireballPowerPayload.ID, FireballPowerPayload.CODEC);
 
         EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) -> {
-            if (trackedEntity instanceof ExplosiveProjectileEntity fireball) {
+            if (trackedEntity instanceof AbstractHurtingProjectile fireball) {
                 float power = 1.0F;
-                if (fireball instanceof FireballEntity fe) {
+                if (fireball instanceof LargeFireball fe) {
                     power = (float) ((FireballEntityAccessor) fe).getExplosionPower();
                 }
                 ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), power));

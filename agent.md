@@ -4,7 +4,7 @@ This file serves as a reference for AI coding agents and human developers workin
 
 ## Project Overview
 
-`Fireball Predictor` is a Minecraft Fabric mod built on Minecraft **1.21.11** that predicts and visualizes the trajectory and explosion impact of fireballs (and wither skulls) in real-time, client-side.
+`Fireball Predictor` is a Minecraft Fabric mod built on Minecraft **26.2** that predicts and visualizes the trajectory and explosion impact of fireballs (and wither skulls) in real-time, client-side.
 
 ### Architecture Flow
 
@@ -19,7 +19,7 @@ graph TD
     I --> J[Run ImpactPredictor if impact is found]
     J --> K[Compute predicted broken blocks]
     K --> L[Highlight broken blocks & trigger ambient particles]
-    M[WorldRenderEvents.END_MAIN] --> N[Render Ribbon Trail & Shockwave Dome]
+    M[LevelRenderEvents.END_MAIN] --> N[Render Ribbon Trail & Shockwave Dome]
 ```
 
 ---
@@ -57,7 +57,7 @@ Here are the key source files and resources in the project:
 
 ## Build and Run Details
 
-* **JDK Target**: Java 21 (configured in [build.gradle](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/build.gradle) under source and target compatibility, as well as compile release options).
+* **JDK Target**: Java 25 (configured in [build.gradle](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/build.gradle) under source and target compatibility, as well as compile release options).
 * **Gradle Toolchain**: Uses Gradle 9.6.1 wrapper.
 * **Commands**:
   * Build: `.\gradlew build`

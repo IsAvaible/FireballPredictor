@@ -1,21 +1,20 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class PredictionData {
-    public final List<Vec3d> path;
-    public final List<Vec3d> velocities;
+    public final List<Vec3> path;
+    public final List<Vec3> velocities;
     public final HitResult hitResult;
     public final List<BlockPos> brokenBlocks;
-    public final Vec3d initialVelocity;
+    public final Vec3 initialVelocity;
     public final PredictionRenderData renderData;
     public final int predictionAge;
 
-    public PredictionData(List<Vec3d> path, List<Vec3d> velocities, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3d initialVelocity, PredictionRenderData renderData, int predictionAge) {
+    public PredictionData(List<Vec3> path, List<Vec3> velocities, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3 initialVelocity, PredictionRenderData renderData, int predictionAge) {
         this.path = path;
         this.velocities = velocities;
         this.hitResult = hitResult;

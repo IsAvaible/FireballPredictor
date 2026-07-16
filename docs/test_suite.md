@@ -70,8 +70,8 @@ The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/
 Because the GameTest framework randomly rotates and mirrors test structures when positioning them in the batch grid, a static absolute velocity vector like `(0.5, 0.0, 0.0)` would cause projectiles to fly in wrong directions. 
 We solve this by translating the velocity vector using the structure's rotation origin dynamically:
 ```java
-Vec3d rotatedVelocity = context.getAbsolute(new Vec3d(0.5, 0.0, 0.0))
-                               .subtract(context.getAbsolute(Vec3d.ZERO));
+Vec3 rotatedVelocity = context.getAbsolute(new Vec3(0.5, 0.0, 0.0))
+                              .subtract(context.getAbsolute(Vec3.ZERO));
 ```
 
 ### High-Drag Projectile Range Capping
