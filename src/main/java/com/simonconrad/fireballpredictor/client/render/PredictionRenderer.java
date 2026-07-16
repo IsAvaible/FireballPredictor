@@ -2,7 +2,7 @@ package com.simonconrad.fireballpredictor.client.render;
 
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
-import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.render.*;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
@@ -33,6 +33,9 @@ public class PredictionRenderer {
         }
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        if (!config.renderImpactWarning) {
+            return;
+        }
         int badgeWidth = 20;
         int badgeHeight = 20;
         int margin = 8;
@@ -76,17 +79,19 @@ public class PredictionRenderer {
 
         int elapsedTicks = Math.max(0, fireball.age - data.predictionAge);
 
+        com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+
         // Render Trajectory Ribbon
-        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderTrajectory && data.path != null && data.path.size() > 1) {
+        if (config.renderTrajectory && data.path != null && data.path.size() > 1) {
             VertexConsumer consumer = vertexConsumers.getBuffer(FIREBALL_TRAIL);
             matrices.push();
             matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
             
-            float width = 0.5f;
-            int r = 255;
-            int g = 128;
-            int b = 0;
+            float width = config.trajectoryWidth;
+            int r = config.trajectoryColor.getRed();
+            int g = config.trajectoryColor.getGreen();
+            int b = config.trajectoryColor.getBlue();
 
             for (int i = elapsedTicks; i < data.path.size() - 1; i++) {
                 Vec3d p1 = data.path.get(i);
@@ -129,22 +134,31 @@ public class PredictionRenderer {
         }
 
         // Render Shockwave Dome
-        if (com.simonconrad.fireballpredictor.config.ModConfig.instance().renderShockwaveDome && data.hitResult != null && data.renderData != null && !data.renderData.domeQuads().isEmpty()) {
+        if (config.renderShockwaveDome && data.hitResult != null && data.renderData != null && !data.renderData.domeQuads().isEmpty()) {
             Vec3d hitPos = data.hitResult.getPos();
             VertexConsumer consumer = vertexConsumers.getBuffer(SHOCKWAVE_DOME);
             
             matrices.push();
             matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
-            int r = 255;
-            int g = 128;
-            int b = 0;
+            
+            int r = config.shockwaveColor.getRed();
+            int g = config.shockwaveColor.getGreen();
+            int b = config.shockwaveColor.getBlue();
+
+            // Calculate pulsing factor over time (2-second duration cycle)
+            long time = System.currentTimeMillis();
+            double angle = (time % 2000) / 2000.0 * 2.0 * Math.PI;
+            float pulseFactor = 0.8f + 0.2f * (float) Math.sin(angle);
 
             for (PredictionRenderData.DomeQuad quad : data.renderData.domeQuads()) {
-                consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).color(r, g, b, quad.alpha1());
-                consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).color(r, g, b, quad.alpha1());
-                consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).color(r, g, b, quad.alpha2());
-                consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).color(r, g, b, quad.alpha2());
+                int alpha1 = Math.min(255, Math.max(0, (int) (quad.alpha1() * pulseFactor)));
+                int alpha2 = Math.min(255, Math.max(0, (int) (quad.alpha2() * pulseFactor)));
+                
+                consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).color(r, g, b, alpha1);
+                consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).color(r, g, b, alpha1);
+                consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).color(r, g, b, alpha2);
+                consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).color(r, g, b, alpha2);
             }
             matrices.pop();
         }

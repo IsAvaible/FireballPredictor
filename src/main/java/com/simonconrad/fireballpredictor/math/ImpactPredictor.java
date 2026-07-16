@@ -2,17 +2,15 @@ package com.simonconrad.fireballpredictor.math;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
-import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
+
+import net.minecraft.entity.projectile.WitherSkullEntity;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 public class ImpactPredictor {
@@ -48,8 +46,7 @@ public class ImpactPredictor {
                         f /= g;
 
                         // Vanilla uses random: power * (0.7F + world.random.nextFloat() * 0.6F)
-                        // We use the exact middle (1.0F) for deterministic, stable prediction.
-                        // You can adjust this to 1.3F to show the "maximum possible" destruction instead.
+                        // We use the upper bound (1.3F) to show the "maximum possible" destruction.
                         float rayPowerMultiplier = com.simonconrad.fireballpredictor.config.ModConfig.instance().rayPowerMultiplier;
                         float rayPower = power * rayPowerMultiplier;
                         
@@ -67,8 +64,15 @@ public class ImpactPredictor {
                             BlockState blockState = world.getBlockState(blockPos);
                             FluidState fluidState = world.getFluidState(blockPos);
 
-                            // Use block's base resistance directly
-                            float blastResistance = blockState.getBlock().getBlastResistance();
+                            // Combined blast resistance of block and fluid (e.g. waterlogging)
+                            float blastResistance = Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance());
+                            
+                            // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
+                            if (fireball instanceof WitherSkullEntity witherSkull && witherSkull.isCharged()) {
+                                if (blockState.getHardness(world, blockPos) >= 0.0F) {
+                                    blastResistance = Math.min(0.8F, blastResistance);
+                                }
+                            }
                             
                             if (!blockState.isAir() || !fluidState.isEmpty()) {
                                 rayPower -= (blastResistance + 0.3F) * 0.3F;
@@ -78,9 +82,9 @@ public class ImpactPredictor {
                                 affectedBlocks.add(blockPos);
                             }
 
-                            x += d * 0.3F;
-                            y += e * 0.3F;
-                            z += f * 0.3F;
+                            x += d * step;
+                            y += e * step;
+                            z += f * step;
                         }
                     }
                 }

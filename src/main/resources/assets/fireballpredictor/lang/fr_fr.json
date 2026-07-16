@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Décalage horizontal appliqué après le placement de l'ancrage. Les valeurs positives déplacent vers la droite.\nPar défaut : 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Décalage Y du Badge d'Avertissement d'Impact",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Décalage vertical appliqué après le placement de l'ancrage. Les valeurs positives déplacent vers le bas.\nPar défaut : 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Décalage vertical appliqué après le placement de l'ancrage. Les valeurs positives déplacent vers le bas.\nPar défaut : 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Rendu de l'Avertissement d'Impact",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Activer/désactiver le badge d'avertissement du HUD lorsque vous êtes sur une trajectoire de collision avec une boule de feu.\nPar défaut : Vrai",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "Couleur du Ruban de Trajectoire",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "La couleur de la traînée de ruban de la trajectoire de vol prévue.\nPar défaut : Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Largeur du Ruban de Trajectoire",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "L'épaisseur/largeur de la traînée du ruban.\nPar défaut : 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Couleur du Dôme d'Onde de Choc",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "La couleur du dôme du rayon d'explosion prévu.\nPar défaut : Orange (255, 128, 0)"
 }

@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "الإزاحة الأفقية المطبقة بعد وضع المرساة. القيم الموجبة تحرك لليمين.\nالافتراضي: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "إزاحة شارة تحذير التأثير الرأسية (Y)",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "الإزاحة الرأسية المطبقة بعد وضع المرساة. القيم الموجبة تحرك لأسفل.\nالافتراضي: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "الإزاحة الرأسية المطبقة بعد وضع المرساة. القيم الموجبة تحرك لأسفل.\nالافتراضي: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "رسم تحذير التأثير",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "تبديل شارة تحذير شاشة العرض (HUD) عندما تكون في مسار تصادم مع كرة نارية.\nالافتراضي: صحيح",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "لون شريط المسار",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "لون ذيل شريط مسار الرحلة المتوقع.\nالافتراضي: برتقالي (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "عرض شريط المسار",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "سمك/عرض ذيل الشريط.\nالافتراضي: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "لون قبة موجة الصدمة",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع.\nالافتراضي: برتقالي (255، 128، 0)"
 }

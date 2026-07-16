@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Horizontal offset applied after anchor placement. Positive values move right.\nDefault: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Impact Warning Badge Offset Y",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertical offset applied after anchor placement. Positive values move down.\nDefault: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertical offset applied after anchor placement. Positive values move down.\nDefault: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Render Impact Warning",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Toggle the HUD warning badge when on a collision course with a fireball.\nDefault: True",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "Trajectory Ribbon Color",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "The color of the predicted flight path ribbon trail.\nDefault: Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Trajectory Ribbon Width",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "The thickness/width of the ribbon trail.\nDefault: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Shockwave Dome Color",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "The color of the predicted blast radius dome.\nDefault: Orange (255, 128, 0)"
 }

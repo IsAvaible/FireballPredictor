@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Горизонтальное смещение, применяемое после размещения якоря. Положительные значения сдвигают вправо.\nЗначение по умолчанию: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Смещение индикатора по Y",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Вертикальное смещение, применяемое после размещения якоря. Положительные значения сдвигают вниз.\nЗначение по умолчанию: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Вертикальное смещение, применяемое после размещения якоря. Положительные значения сдвигают вниз.\nЗначение по умолчанию: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Отображать предупреждение об ударе",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Включает или выключает индикатор предупреждения на экране, когда вы находитесь на траектории столкновения с огненным шаром.\nЗначение по умолчанию: Включено",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "Цвет ленты траектории",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "Цвет прогнозируемой ленты траектории полета.\nЗначение по умолчанию: Оранжевый (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Ширина ленты траектории",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "Толщина/ширина ленты траектории.\nЗначение по умолчанию: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Цвет купола взрывной волны",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Цвет купола прогнозируемого радиуса взрыва.\nЗначение по умолчанию: Оранжевый (255, 128, 0)"
 }

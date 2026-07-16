@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Horizontaler Offset, der nach der Platzierung des Ankers angewendet wird. Positive Werte bewegen sich nach rechts.\nStandard: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Einschlagswarnungs-Plaketten-Offset Y",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertikaler Offset, der nach der Platzierung des Ankers angewendet wird. Positive Werte bewegen sich nach unten.\nStandard: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertikaler Offset, der nach der Platzierung des Ankers angewendet wird. Positive Werte bewegen sich nach unten.\nStandard: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Einschlagswarnung anzeigen",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Schaltet die HUD-Warnplakette um, wenn Sie sich auf Kollisionskurs mit einem Feuerball befinden.\nStandard: Wahr",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "Farbe der Trajektorie",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "Die Farbe der vorhergesagten Flugbahn.\nStandard: Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Breite der Trajektorie",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "Die Dicke/Breite der Flugbahn.\nStandard: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Farbe der Druckwellen-Kuppel",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Die Farbe der vorhergesagten Explosionsradius-Kuppel.\nStandard: Orange (255, 128, 0)"
 }

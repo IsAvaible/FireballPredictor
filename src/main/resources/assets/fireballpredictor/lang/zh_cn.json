@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "确定锚点后应用的水平偏移。正值向右移动。\n默认值：0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "碰撞警告徽章垂直偏移",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "确定锚点后应用的垂直偏移。正值向下移动。\n默认值：0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "确定锚点后应用的垂直偏移。正值向下移动。\n默认值：0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "渲染碰撞警告",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "是否开启当您与火球处于碰撞轨道时的 HUD 警告徽章。\n默认值：开启",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "轨迹丝带颜色",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "预测飞行路径丝带尾迹的颜色。\n默认值：橙色 (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "轨迹丝带宽度",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "丝带尾迹的粗细/宽度。\n默认值：0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "冲击波圆顶颜色",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "预测爆炸半径圆顶的颜色。\n默认值：橙色 (255, 128, 0)"
 }

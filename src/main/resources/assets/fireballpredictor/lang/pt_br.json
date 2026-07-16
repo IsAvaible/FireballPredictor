@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "Deslocamento horizontal aplicado após a colocação da âncora. Valores positivos movem para a direita.\nPadrão: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Deslocamento Y do Emblema de Aviso de Impacto",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Deslocamento vertical aplicado após a colocação da âncora. Valores positivos movem para baixo.\nPadrão: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Deslocamento vertical aplicado após a colocação da âncora. Valores positivos movem para baixo.\nPadrão: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Renderizar Aviso de Impacto",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Alterna o emblema de aviso do HUD quando estiver em rota de colisão com uma bola de fogo.\nPadrão: Verdadeiro",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "Cor da Fita de Trajetória",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "A cor do rastro de fita do trajeto de voo previsto.\nPadrão: Laranja (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Largura da Fita de Trajetória",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "A espessura/largura do rastro de fita.\nPadrão: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Cor da Cúpula de Onda de Choque",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "A cor da cúpula do raio de explosão previsto.\nPadrão: Laranja (255, 128, 0)"
 }

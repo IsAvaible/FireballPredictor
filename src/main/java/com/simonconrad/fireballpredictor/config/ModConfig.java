@@ -6,9 +6,11 @@ import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
 import dev.isxander.yacl3.config.v2.api.autogen.IntField;
+import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
+import java.awt.Color;
 
 public class ModConfig {
     // 1. Create the handler that manages loading, saving, and the instance
@@ -54,6 +56,26 @@ public class ModConfig {
     @AutoGen(category = "visuals")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderParticleAccents = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @ColorField
+    public Color trajectoryColor = new Color(255, 128, 0);
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @FloatField(min = 0.1f, max = 2.0f)
+    public float trajectoryWidth = 0.5f;
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @ColorField
+    public Color shockwaveColor = new Color(255, 128, 0);
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderImpactWarning = true;
 
     @SerialEntry
     @AutoGen(category = "visuals")

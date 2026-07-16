@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "অ্যাঙ্কর স্থাপনের পরে প্রয়োগ করা অনুভূমিক অফসেট। ধনাত্মক মান ডানদিকে নিয়ে যায়।\nডিফল্ট: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "প্রভাব সতর্কতা ব্যাজ অফসেট Y",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "অ্যাঙ্কর স্থাপনের পরে প্রয়োগ করা উল্লম্ব অফসেট। ধনাত্মক মান নিচে নিয়ে যায়।\nডিফল্ট: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "অ্যাঙ্কর স্থাপনের পরে প্রয়োগ করা উল্লম্ব অফসেট। ধনাত্মক মান নিচে নিয়ে যায়।\nডিফল্ট: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "প্রভাব সতর্কতা রেন্ডার করুন",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "ফায়ারবলের সাথে সংঘর্ষের পথে থাকলে HUD সতর্কতা ব্যাজ টগল করুন।\nডিফল্ট: সত্য",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "গতিপথ ফিতার রঙ",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "অনুমানিত উড়ান পথের ফিতার রঙ।\nডিফল্ট: কমলা (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "গতিপথ ফিতার প্রস্থ",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "ফিতার পথটির পুরুত্ব/প্রস্থ।\nডিফল্ট: ০.৫",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "শকওয়েভ ডোম রঙ",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "অনুমানিত বিস্ফোরণ ব্যাসার্ধের ডোমের রঙ।\nডিফল্ট: কমলা (255, 128, 0)"
 }

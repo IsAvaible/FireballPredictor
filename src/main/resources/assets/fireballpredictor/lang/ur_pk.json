@@ -33,5 +33,13 @@
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetX.desc": "اینکر کی جگہ کے بعد افقی آفسیٹ لاگو ہوتا ہے۔ مثبت قدریں دائیں طرف منتقل ہوتی ہیں۔\nڈیفالٹ: 0",
 
   "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "اثر کی وارننگ بیج آفسیٹ Y",
-  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "اینکر کی جگہ کے بعد عمودی آفسیٹ لاگو ہوتا ہے۔ مثبت قدریں نیچے منتقل ہوتی ہیں۔\nڈیفالٹ: 0"
+  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "اینکر کی جگہ کے بعد عمودی آفسیٹ لاگو ہوتا ہے۔ مثبت قدریں نیچے منتقل ہوتی ہیں۔\nڈیفالٹ: 0",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning": "اثر کی وارننگ رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "جب فائر بال کے ساتھ ٹکراؤ کا خطرہ ہو تو HUD وارننگ بیج کو ٹگل کریں۔\nڈیفالٹ: سچ",
+  "yacl3.config.fireballpredictor:config.trajectoryColor": "راستے کی پٹی کا رنگ",
+  "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "پیش گوئی شدہ پرواز کے راستے کی پٹی کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "راستے کی پٹی کی چوڑائی",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "پٹی کے نشان کی موٹائی/چوڑائی۔\nڈیفالٹ: 0.5",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "شاک ویو ڈوم کا رنگ",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)"
 }

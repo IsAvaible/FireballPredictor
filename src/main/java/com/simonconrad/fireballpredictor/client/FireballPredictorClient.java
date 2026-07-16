@@ -24,8 +24,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class FireballPredictorClient implements ClientModInitializer {
-
-    private static final int PREDICTION_REFRESH_INTERVAL_TICKS = 1;
     private static FireballPredictorClient INSTANCE;
 
     private final Map<ExplosiveProjectileEntity, TrackedPrediction> activePredictions = new HashMap<>();
@@ -239,6 +237,7 @@ public class FireballPredictorClient implements ClientModInitializer {
     private void handleEntityRemoved(Entity entity) {
         if (entity instanceof ExplosiveProjectileEntity fireball) {
             activePredictions.remove(fireball);
+            ClientPowerCache.POWER_CACHE.remove(fireball.getId());
         }
     }
 
