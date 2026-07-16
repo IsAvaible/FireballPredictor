@@ -44,10 +44,14 @@ Here are the key source files and resources in the project:
 ### 4. Networking & Mixins
 * [FireballPowerPayload.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/network/FireballPowerPayload.java): Packet format for syncing fireball explosion power.
 * [ClientPowerCache.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java): Caches tracked entity powers client-side.
+* [ClientPowerLookup.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java): Server-safe client cache access routing.
 * [FireballEntityAccessor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityAccessor.java): Mixin accessor to extract `explosionPower` from fireball instances.
 
 ### 5. Client Rendering
 * [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome.
+
+### 6. Automated Testing (GameTest)
+* [FireballPredictorGameTest.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test cases checking predicted trajectories and block-destruction counts against real in-game detonations.
 
 ---
 
@@ -59,3 +63,4 @@ Here are the key source files and resources in the project:
   * Build: `.\gradlew build`
   * Run Client: `.\gradlew runClient`
   * Run Server: `.\gradlew runServer`
+  * Run GameTests: `.\gradlew runGameTest`

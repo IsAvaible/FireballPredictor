@@ -23,6 +23,9 @@
     ],
     "modmenu": [
       "com.simonconrad.fireballpredictor.client.compat.ModMenuIntegration"
+    ],
+    "fabric-gametest": [
+      "com.simonconrad.fireballpredictor.gametest.FireballPredictorGameTest"
     ]
   },
   "mixins": [

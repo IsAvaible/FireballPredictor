@@ -17,16 +17,17 @@ import java.util.Set;
 public class ImpactPredictor {
 
     public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
-        if (com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
-            return com.simonconrad.fireballpredictor.client.network.ClientPowerCache.POWER_CACHE.get(fireball.getId());
+        if (!fireball.getEntityWorld().isClient()) {
+            if (fireball instanceof net.minecraft.entity.projectile.FireballEntity f) {
+                return ((com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor) f).getExplosionPower();
+            }
+            return 1.0F;
         }
 
-        if (fireball instanceof net.minecraft.entity.projectile.FireballEntity) {
-            return com.simonconrad.fireballpredictor.config.ModConfig.instance().clientFallbackFireballPower;
-        }
-
-        return 1.0F;
+        return com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
     }
+
+
 
     public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
         float power = resolveExplosionPower(fireball);

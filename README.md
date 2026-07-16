@@ -33,6 +33,9 @@ This mod requires **Java 21** and uses the Gradle toolchain.
 
 # Run the server development environment
 ./gradlew runServer
+
+# Run the automated GameTest suite
+./gradlew runGameTest
 ```
 
 Consult the [/docs](docs) directory for more technical details.

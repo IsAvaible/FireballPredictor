@@ -35,6 +35,14 @@ dependencies {
 	modImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "fireballpredictor_testmod"
+    }
+}
+
+
 processResources {
 	inputs.property "version", project.version
 
