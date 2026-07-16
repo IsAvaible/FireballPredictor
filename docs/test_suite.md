@@ -79,6 +79,18 @@ Vanilla charged wither skulls have a high drag constant of `0.73F` (compared to 
 
 ---
 
+## Test Implementation Architecture
+
+To ensure the test suite is maintainable and adheres to DRY principles, it is structured around several modular helper methods:
+* **`buildWall`**: Overloaded helper to set up a 5x5 target wall of a given `Block` or `BlockState` at relative `x = 2`.
+* **`spawnProjectile`**: Spawns any type of `ExplosiveProjectileEntity` (like `FireballEntity` or `WitherSkullEntity`) at a standardized starting relative position `(1.5, 3.0, 3.5)` with rotated velocity `(0.5, 0.0, 0.0)`.
+* **`getBrokenBlocks`**: Scans the target wall area and collects all positions where the block type has changed.
+* **`getPredictedBrokenBlocks`**: Simulates the trajectory of a projectile client-side to generate predicted broken block positions.
+* **`assertExplosionDestruction`**: A parameterized assertion helper that verifies trajectory predictions match actual world impact for destructive test cases.
+* **`assertNoDestruction`**: An assertion helper verifying that no blocks are predicted to break or actually broken (e.g. for non-destructive interactions).
+
+---
+
 ## Running the Tests
 
 To run the GameTest suite headlessly, execute the following Gradle task in the project root:
