@@ -8,4 +8,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface FireballEntityAccessor {
     @Accessor("explosionPower")
     int getExplosionPower();
+
+    @Accessor("explosionPower")
+    void setExplosionPower(int explosionPower);
 }

@@ -29,8 +29,38 @@ The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/
 * **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with an initial relative velocity of `(0.5, 0.0, 0.0)` and zero acceleration.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Verifies the mod's specialized math for charged wither skulls, specifically:
-  * Capping block blast resistance at `4.0` in the prediction.
+  * Capping block blast resistance at `4.0` (wiki value, equivalent to `0.8F` in internal code) in the prediction.
   * Handling the high drag (`0.73F` per tick) behavior unique to charged skulls.
+
+### 4. Charged Wither Skull against Obsidian (`testChargedWitherSkullAgainstObsidian`)
+* **Entity**: `WitherSkullEntity` (charged/blue)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.OBSIDIAN` at relative `x = 2`.
+* **Details**: Confirms that charged wither skulls successfully predict and execute block destruction against high blast-resistance blocks like obsidian by capping resistance at `0.8F`.
+
+### 5. Normal Wither Skull against Obsidian (`testNormalWitherSkullAgainstObsidian`)
+* **Entity**: `WitherSkullEntity` (non-charged/black)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.OBSIDIAN` at relative `x = 2`.
+* **Details**: Validates that normal wither skulls do *not* break obsidian blocks (predicts 0 broken blocks, actual 0 broken), confirming that the blast resistance capping is correctly restricted to charged skulls.
+
+### 6. Normal Fireball against Waterlogged Slabs (`testNormalFireballAgainstWaterloggedSlab`)
+* **Entity**: `FireballEntity` (power 1.0)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)` and acceleration `0.05`.
+* **Environment**: A target wall of waterlogged `Blocks.OAK_SLAB` at relative `x = 2`.
+* **Details**: Asserts that a normal fireball correctly predicts 0 broken blocks and breaks 0 blocks, since waterlogged blocks inherit the fluid water's high blast resistance (100.0).
+
+### 7. Charged Wither Skull against Waterlogged Slabs (`testChargedWitherSkullAgainstWaterloggedSlab`)
+* **Entity**: `WitherSkullEntity` (charged/blue)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of waterlogged `Blocks.OAK_SLAB` at relative `x = 2`.
+* **Details**: Verifies that a charged wither skull correctly predicts and destroys waterlogged slabs, since the capping logic reduces the overall block/fluid blast resistance to `0.8F`.
+
+### 8. High-Power Fireball Prediction (`testHighPowerFireballPredictionAndExplosion`)
+* **Entity**: `FireballEntity` (configured with explosion power 3)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
+* **Details**: Uses the new `setExplosionPower` accessor to simulate a fireball with custom high explosion power (power = 3) and verifies that the mod correctly scales both the predicted block destruction and actual crater size.
 
 ---
 
@@ -60,10 +90,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 4 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (4 tests)...
-[Server thread/INFO] (Minecraft) [++++]
-[Server thread/INFO] (Minecraft) ========= 4 GAME TESTS COMPLETE IN 1.096 s ======================
-[Server thread/INFO] (Minecraft) All 4 required tests passed :)
+[Server thread/INFO] (Minecraft) 9 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (9 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++]
+[Server thread/INFO] (Minecraft) ========= 9 GAME TESTS COMPLETE IN 1.258 s ======================
+[Server thread/INFO] (Minecraft) All 9 required tests passed :)
 BUILD SUCCESSFUL
 ```
