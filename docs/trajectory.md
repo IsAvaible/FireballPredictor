@@ -8,7 +8,13 @@ This document describes the trajectory prediction system implemented in the mod.
 Contains the physics simulation engine that mimics Minecraft's projectile update loops:
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
 - **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.raycast` and `RaycastContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
-- **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies standard air drag (velocity multiplied by `0.95`).
+- **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies entity-specific drag:
+  - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95`).
+  - **Charged Wither Skulls**: High drag (`0.73`).
+  - **Wind Charges (`AbstractWindChargeEntity`)**: No drag (`1.0`).
+- **Entity Filtering & Config Toggles**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types:
+  - `trackWitherSkulls`: Toggle wither skull tracking (default `true`).
+  - `trackWindCharges`: Toggle wind charge tracking (default `true`).
 - **Asynchronous Execution Split**: Calculates predictions in two distinct phases:
   - **Simulation Phase (Main Thread)**: Quickly runs the 200-tick flight path raycast and captures a thread-safe `BlockStateSnapshot` at the collision point.
   - **Prediction Phase (Background Thread)**: Submits calculations for the detailed broken blocks list (`ImpactPredictor.predictBrokenBlocks`) and rendering dome mesh generation to a background worker thread.

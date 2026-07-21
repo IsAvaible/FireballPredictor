@@ -7,12 +7,12 @@ This document describes the client-side visual effects (VFX) used to represent p
 ### 1. Trajectory Ribbon Trail
 - **Render Buffer**: Uses [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) drawing to a standard translucent buffer (`RenderLayers.lightning()`).
 - **Billboard Geometry**: Builds a 3D procedural billboarded ribbon by mapping coordinates along the predicted path. The ribbon's width is dynamically calculated based on the camera look vector to maintain visual thickness.
-- **Color and Alpha Gradients**: Colored orange (`255, 128, 0`). The edges are set to an alpha of `0` to create a soft, blurred glow. The center alpha fades from `200` at the start to `60` at the end to seamlessly merge with the impact shockwave dome.
+- **Color and Alpha Gradients**: Colored orange (`255, 128, 0`) by default, or customizable per entity type (such as `windChargeTrajectoryColor`, which defaults to white `255, 255, 255`). The edges are set to an alpha of `0` to create a soft, blurred glow. The center alpha fades from `200` at the start to `60` at the end to seamlessly merge with the impact shockwave dome.
 
 ### 2. Shockwave Dome
 - **Render Buffer**: Also uses `RenderLayers.lightning()` within [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java).
 - **Geometric Dome**: Generated via a 3D sphere mesh algorithm using 16 latitude and 16 longitude bands. To optimize performance, the dome mesh is pre-computed and cached in `PredictionRenderData` during the tick prediction phase, rather than rebuilt every frame.
-- **Blending**: Matches the orange trajectory color (`255, 128, 0`) with a low, semi-transparent maximum alpha of `60` at the equator, fading out towards the poles. This prevents visual clutter while clearly delineating the damage radius.
+- **Blending**: Matches the entity's trajectory color (orange `255, 128, 0` for fireballs/skulls, or `windChargeShockwaveColor` white `255, 255, 255` for wind charges) with a low, semi-transparent maximum alpha of `60` at the equator, fading out towards the poles. This prevents visual clutter while clearly delineating the damage radius.
 
 ### 3. Dynamic Block Highlights (Cracking & Blinking)
 - **Vanilla Breaking Overlay**: Instead of custom OpenGL blocks, the mod uses Minecraft's native breaking progress overlay via `client.world.setBlockBreakingInfo`.
@@ -24,14 +24,20 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Heat Visuals**: Randomly spawns client-side `FLAME`, `LAVA`, and `CAMPFIRE_COSY_SMOKE` particles on top of the predicted breakable blocks.
 - **Density**: Simulates heat build-up prior to impact. The spawning is throttle-controlled in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java) to maintain high performance.
 
+### 5. HUD Impact Warning Badge
+- **Collision Warning**: When the local player is directly in the path of an incoming projectile, [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) renders an anchorable HUD warning badge.
+- **Entity Icons & Colors**: For fireballs/skulls, renders a fire charge item icon and standard progress bar. For wind charges, renders the `Items.WIND_CHARGE` item icon and a `#cfd6f7` progress bar.
+
 ## Rendering System Integration
 
 - **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `WorldRenderEvents.END_MAIN` in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
-- **YACL Config Integration**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle these features:
+- **YACL Config Integration**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features:
   - `renderTrajectory`: Enables/disables the ribbon path.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
   - `renderBlockHighlights`: Enables/disables the cracking animation overlay.
   - `renderParticleAccents`: Enables/disables the ambient particles.
+  - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
+  - `windChargeTrajectoryColor` & `windChargeShockwaveColor`: Custom color configuration for wind charges (defaults to white).
 - **ModMenu Screen**: Configured in [ModMenuIntegration.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/compat/ModMenuIntegration.java), allowing real-time toggle of visual effects in-game.
 
 ## Verification & Environment Compatibility

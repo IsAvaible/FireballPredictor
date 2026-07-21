@@ -30,6 +30,11 @@ public class ImpactPredictor {
 
 
     public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
+        if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
+            // Wind Charges do not break blocks, so we return an empty list.
+            return List.of();
+        }
+
         float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();

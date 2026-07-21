@@ -38,6 +38,11 @@ public class ModConfig {
     public boolean trackWitherSkulls = true;
 
     @SerialEntry
+    @AutoGen(category = "general")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean trackWindCharges = true;
+
+    @SerialEntry
     @AutoGen(category = "visuals")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderTrajectory = true;
@@ -64,6 +69,11 @@ public class ModConfig {
 
     @SerialEntry
     @AutoGen(category = "visuals")
+    @ColorField
+    public Color windChargeTrajectoryColor = new Color(255, 255, 255);
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
     @FloatField(min = 0.1f, max = 2.0f)
     public float trajectoryWidth = 0.5f;
 
@@ -71,6 +81,11 @@ public class ModConfig {
     @AutoGen(category = "visuals")
     @ColorField
     public Color shockwaveColor = new Color(255, 128, 0);
+
+    @SerialEntry
+    @AutoGen(category = "visuals")
+    @ColorField
+    public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals")

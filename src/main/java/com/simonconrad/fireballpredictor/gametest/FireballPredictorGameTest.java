@@ -184,4 +184,11 @@ public class FireballPredictorGameTest {
         ((FireballEntityAccessor) fireball).setExplosionPower(3);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 10);
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testWindChargePredictionAndExplosion(TestContext context) {
+        buildWall(context, Blocks.DIRT);
+        net.minecraft.entity.projectile.WindChargeEntity windCharge = spawnProjectile(context, EntityType.WIND_CHARGE, 0.0, false);
+        assertNoDestruction(context, windCharge, Blocks.DIRT);
+    }
 }

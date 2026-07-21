@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "विदर खोपड़ी ट्रैक करें",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "टॉगल करें कि क्या विदर स्केलेटन खोपड़ियों को भी मॉड द्वारा ट्रैक किया जाना चाहिए।\nडिफ़ॉल्ट: सही",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "विंड चार्ज ट्रैक करें",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "टॉगल करें कि क्या विंड चार्ज को भी मॉड द्वारा ट्रैक किया जाना चाहिए।\nडिफ़ॉल्ट: सही",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "दृश्य विकल्प",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "फ़ायरबॉल के साथ टक्कर की स्थिति में होने पर HUD चेतावनी बैज को टॉगल करें।\nडिफ़ॉल्ट: सही",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "प्रक्षेपवक्र रिबन रंग",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "अनुमानित उड़ान पथ रिबन निशान का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "विंड चार्ज प्रक्षेपवक्र रंग",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "विंड चार्ज के अनुमानित उड़ान पथ रिबन का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "प्रक्षेपवक्र रिबन चौड़ाई",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "रिबन निशान की मोटाई/चौड़ाई।\nडिफ़ॉल्ट: 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "शॉकवेव डोम रंग",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "विंड चार्ज डोम रंग",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "विंड चार्ज के अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)"
 }

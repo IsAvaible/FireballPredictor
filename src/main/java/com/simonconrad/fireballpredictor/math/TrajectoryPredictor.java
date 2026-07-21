@@ -45,6 +45,13 @@ public class TrajectoryPredictor {
         
         HitResult finalHit = null;
         
+        double drag = 0.95;
+        if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
+            drag = 1.0;
+        } else if (fireball instanceof net.minecraft.entity.projectile.WitherSkullEntity skull && skull.isCharged()) {
+            drag = 0.73;
+        }
+        
         for (int i = 0; i < maxTicks; i++) {
             Vec3d nextPos = currentPos.add(velocity);
             
@@ -88,8 +95,8 @@ public class TrajectoryPredictor {
             currentPos = nextPos;
             path.add(currentPos);
             
-            // Add acceleration to velocity and apply drag (usually 0.95)
-            velocity = velocity.add(acceleration).multiply(0.95);
+            // Add acceleration to velocity and apply drag
+            velocity = velocity.add(acceleration).multiply(drag);
             velocities.add(velocity);
         }
         

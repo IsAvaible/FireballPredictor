@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Rastrear Crânios de Wither",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Alterna se os crânios de esqueleto wither também devem ser rastreados pelo mod.\nPadrão: Verdadeiro",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "Rastrear Cargas de Vento",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "Alterna se as cargas de vento também devem ser rastreadas pelo mod.\nPadrão: Verdadeiro",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "Opções Visuais",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Alterna o emblema de aviso do HUD quando estiver em rota de colisão com uma bola de fogo.\nPadrão: Verdadeiro",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "Cor da Fita de Trajetória",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "A cor do rastro de fita do trajeto de voo previsto.\nPadrão: Laranja (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "Cor da Trajetória da Carga de Vento",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "A cor do rastro de fita do trajeto de voo previsto para cargas de vento.\nPadrão: Branco (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "Largura da Fita de Trajetória",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "A espessura/largura do rastro de fita.\nPadrão: 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "Cor da Cúpula de Onda de Choque",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "A cor da cúpula do raio de explosão previsto.\nPadrão: Laranja (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "A cor da cúpula do raio de explosão previsto.\nPadrão: Laranja (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Cor da Cúpula da Carga de Vento",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "A cor da cúpula do raio de explosão previsto para cargas de vento.\nPadrão: Branco (255, 255, 255)"
 }

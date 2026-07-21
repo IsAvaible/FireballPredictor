@@ -22,8 +22,9 @@ public class PredictionRenderer {
     private static final RenderLayer FIREBALL_TRAIL = net.minecraft.client.render.RenderLayers.lightning();
     private static final RenderLayer SHOCKWAVE_DOME = net.minecraft.client.render.RenderLayers.lightning();
     private static final ItemStack WARNING_ICON = new ItemStack(Items.FIRE_CHARGE);
+    private static final ItemStack WIND_CHARGE_WARNING_ICON = new ItemStack(Items.WIND_CHARGE);
 
-    public static void renderImpactWarningBadge(DrawContext context, MinecraftClient client, boolean visible, float progress) {
+    public static void renderImpactWarningBadge(DrawContext context, MinecraftClient client, boolean visible, float progress, boolean isWindCharge) {
         if (!visible || client.player == null) {
             return;
         }
@@ -58,7 +59,8 @@ public class PredictionRenderer {
 
         context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.ofVanilla("textures/gui/sprites/hud/effect_background.png"), x, y, 0.0f, 0.0f, size, size, 20, 20);
 
-        context.drawItem(WARNING_ICON, x + 2, y + 2);
+        ItemStack icon = isWindCharge ? WIND_CHARGE_WARNING_ICON : WARNING_ICON;
+        context.drawItem(icon, x + 2, y + 2);
 
         int barX = x + 2;
         int barY = y + size - 2;
@@ -66,9 +68,15 @@ public class PredictionRenderer {
         int barHeight = 1;
         int filledWidth = Math.max(1, Math.round(MathHelper.clamp(progress, 0.0f, 1.0f) * barWidth));
 
-        context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
-        context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
-        context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        if (isWindCharge) {
+            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1C2230);
+            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFCFD6F7);
+            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        } else {
+            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
+            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
+            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        }
     }
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {
@@ -80,6 +88,10 @@ public class PredictionRenderer {
         int elapsedTicks = Math.max(0, fireball.age - data.predictionAge);
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
+
+        java.awt.Color trajectoryColor = isWindCharge ? config.windChargeTrajectoryColor : config.trajectoryColor;
+        java.awt.Color shockwaveColor = isWindCharge ? config.windChargeShockwaveColor : config.shockwaveColor;
 
         // Render Trajectory Ribbon
         if (config.renderTrajectory && data.path != null && data.path.size() > 1) {
@@ -89,9 +101,9 @@ public class PredictionRenderer {
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
             
             float width = config.trajectoryWidth;
-            int r = config.trajectoryColor.getRed();
-            int g = config.trajectoryColor.getGreen();
-            int b = config.trajectoryColor.getBlue();
+            int r = trajectoryColor.getRed();
+            int g = trajectoryColor.getGreen();
+            int b = trajectoryColor.getBlue();
 
             for (int i = elapsedTicks; i < data.path.size() - 1; i++) {
                 Vec3d p1 = data.path.get(i);
@@ -142,9 +154,9 @@ public class PredictionRenderer {
             matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
             Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
             
-            int r = config.shockwaveColor.getRed();
-            int g = config.shockwaveColor.getGreen();
-            int b = config.shockwaveColor.getBlue();
+            int r = shockwaveColor.getRed();
+            int g = shockwaveColor.getGreen();
+            int b = shockwaveColor.getBlue();
 
             // Calculate pulsing factor over time (2-second duration cycle)
             long time = System.currentTimeMillis();

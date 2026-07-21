@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Wither-Skelettschädel verfolgen",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Umschalten, ob Wither-Skelettschädel ebenfalls vom Mod verfolgt werden sollen.\nStandard: Wahr",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "Windladungen verfolgen",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "Umschalten, ob Windladungen ebenfalls vom Mod verfolgt werden sollen.\nStandard: Wahr",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "Visuelle Optionen",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Schaltet die HUD-Warnplakette um, wenn Sie sich auf Kollisionskurs mit einem Feuerball befinden.\nStandard: Wahr",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "Farbe der Trajektorie",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "Die Farbe der vorhergesagten Flugbahn.\nStandard: Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "Trajektorienfarbe für Windladungen",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "Die Farbe der vorhergesagten Flugbahn für Windladungen.\nStandard: Weiß (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "Breite der Trajektorie",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "Die Dicke/Breite der Flugbahn.\nStandard: 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "Farbe der Druckwellen-Kuppel",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Die Farbe der vorhergesagten Explosionsradius-Kuppel.\nStandard: Orange (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Die Farbe der vorhergesagten Explosionsradius-Kuppel.\nStandard: Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Kuppelfarbe für Windladungen",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "Die Farbe der vorhergesagten Druckwellen-Kuppel für Windladungen.\nStandard: Weiß (255, 255, 255)"
 }
