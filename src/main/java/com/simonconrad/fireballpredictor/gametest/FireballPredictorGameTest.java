@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
+import com.simonconrad.fireballpredictor.FireballEntityAccessor;
 
 import java.util.ArrayList;
 import java.util.List;

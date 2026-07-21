@@ -4,7 +4,7 @@
   "package": "com.simonconrad.fireballpredictor.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "FireballEntityAccessor"
+    "LargeFireballMixin"
   ],
   "client": [
     "ClientWorldEntityTracker",

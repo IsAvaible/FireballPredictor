@@ -16,7 +16,7 @@ public class ImpactPredictor {
     public static float resolveExplosionPower(AbstractHurtingProjectile fireball) {
         if (!fireball.level().isClientSide()) {
             if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball f) {
-                return ((com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor) f).getExplosionPower();
+                return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();
             }
             return 1.0F;
         }
