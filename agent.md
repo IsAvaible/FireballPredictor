@@ -10,11 +10,11 @@ This file serves as a reference for AI coding agents and human developers workin
 
 ```mermaid
 graph TD
-    A[ExplosiveProjectileEntity Spawn] --> B[Server tracking event]
+    A[ExplosiveProjectileEntity Spawn / Modify / NBT Load] --> B[Server Event / Mixin Hook]
     B --> C[Retrieve explosion power via FireballEntityAccessor]
     C --> D[Send FireballPowerPayload to client]
     E[Client receives payload] --> F[Store in ClientPowerCache]
-    G[ClientTickEvents.END_CLIENT_TICK] --> H[Run TrajectoryPredictor]
+    G[ClientTickEvents.END_CLIENT_TICK / State Change] --> H[Run TrajectoryPredictor]
     H --> I[Generate Flight Path]
     I --> J[Run ImpactPredictor if impact is found]
     J --> K[Compute predicted broken blocks]
@@ -42,10 +42,11 @@ Here are the key source files and resources in the project:
 * [PredictionData.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/math/PredictionData.java): Data class encapsulating path, hit result, broken blocks, and initial velocity.
 
 ### 4. Networking & Mixins
-* [FireballPowerPayload.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/network/FireballPowerPayload.java): Packet format for syncing fireball explosion power.
+* [FireballPowerPayload.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/network/FireballPowerPayload.java): Packet format for syncing fireball explosion power.
 * [ClientPowerCache.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java): Caches tracked entity powers client-side.
 * [ClientPowerLookup.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java): Server-safe client cache access routing.
-* [FireballEntityAccessor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityAccessor.java): Mixin accessor to extract and dynamically set (for testing) `explosionPower` on fireball instances.
+* [FireballEntityAccessor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/FireballEntityAccessor.java): Interface to extract and dynamically set `explosionPower` on fireball instances.
+* [FireballEntityMixin.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityMixin.java): Mixin implementing `FireballEntityAccessor` to dynamically sync power modifications/NBT loads to tracking clients.
 
 ### 5. Client Rendering
 * [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome.

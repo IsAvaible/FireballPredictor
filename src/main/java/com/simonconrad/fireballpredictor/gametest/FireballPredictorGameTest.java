@@ -14,7 +14,7 @@ import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
-import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
+import com.simonconrad.fireballpredictor.FireballEntityAccessor;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -94,6 +94,8 @@ public class FireballPredictorClient implements ClientModInitializer {
 
                 if (trackedPrediction.shouldRefresh(fireball, client.world) && !trackedPrediction.isCalculating) {
                     trackedPrediction.isCalculating = true;
+                    float currentPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
+                    boolean currentDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
                     TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, client.world);
                     int predictionAge = fireball.age;
                     
@@ -103,6 +105,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                             client.execute(() -> {
                                 if (INSTANCE != null && INSTANCE.activePredictions.get(fireball) == trackedPrediction) {
                                     trackedPrediction.predictionData = data;
+                                    trackedPrediction.calculatedPower = currentPower;
+                                    trackedPrediction.calculatedDangerous = currentDangerous;
                                     trackedPrediction.isCalculating = false;
                                 }
                             });
@@ -256,6 +260,8 @@ public class FireballPredictorClient implements ClientModInitializer {
             }
             TrackedPrediction trackedPrediction = new TrackedPrediction();
             trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
+            trackedPrediction.calculatedPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
+            trackedPrediction.calculatedDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
             activePredictions.put(fireball, trackedPrediction);
         }
     }
@@ -290,8 +296,22 @@ public class FireballPredictorClient implements ClientModInitializer {
     private static final class TrackedPrediction {
         private PredictionData predictionData;
         private boolean isCalculating = false;
+        private float calculatedPower = -1.0f;
+        private boolean calculatedDangerous = false;
 
         private boolean shouldRefresh(ExplosiveProjectileEntity fireball, ClientWorld world) {
+            float currentPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
+            if (currentPower != calculatedPower) {
+                return true;
+            }
+
+            if (fireball instanceof WitherSkullEntity witherSkull) {
+                boolean currentDangerous = witherSkull.isCharged();
+                if (currentDangerous != calculatedDangerous) {
+                    return true;
+                }
+            }
+
             if (predictionData == null || predictionData.path == null || predictionData.velocities == null) {
                 return true;
             }

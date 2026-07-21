@@ -1,6 +1,5 @@
 package com.simonconrad.fireballpredictor;
 
-import com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor;
 import com.simonconrad.fireballpredictor.network.FireballPowerPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;

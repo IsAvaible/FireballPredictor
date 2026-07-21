@@ -19,7 +19,7 @@ public class ImpactPredictor {
     public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
         if (!fireball.getEntityWorld().isClient()) {
             if (fireball instanceof net.minecraft.entity.projectile.FireballEntity f) {
-                return ((com.simonconrad.fireballpredictor.mixin.FireballEntityAccessor) f).getExplosionPower();
+                return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();
             }
             return 1.0F;
         }

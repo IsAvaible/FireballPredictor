@@ -18,6 +18,7 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 - **Daemon Thread Executor**: Manages a background single-thread executor `"FireballPredictor-Worker"`.
 - **Deduplicated Updates**: Tracks an `isCalculating` flag for each active `ExplosiveProjectileEntity` to prevent queueing redundant simulation tasks if a task is already running.
 - **Main Thread Safe Sync**: Once background calculations complete, applies the resulting `PredictionData` back to the main thread via the client's thread-safe executor (`client.execute()`).
+- **Dynamic Recalculation Cache Invalidation**: Tracks the projectile properties (such as the cached explosion power and `isCharged()` states for wither skulls) used in the last successful prediction calculation. If a mismatch is detected, it schedules an immediate recalculation.
 - Cleans up tracking data when fireballs are destroyed or unloaded.
 
 ## Validation Results
