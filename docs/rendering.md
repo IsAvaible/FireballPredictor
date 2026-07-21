@@ -5,12 +5,12 @@ This document describes the client-side visual effects (VFX) used to represent p
 ## Implemented Visual Effects
 
 ### 1. Trajectory Ribbon Trail
-- **Render Buffer**: Uses [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) drawing to a standard translucent buffer (`RenderLayers.lightning()`).
+- **Render Setup**: Passes rendering state via [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) to a custom feature renderer [PredictionFeatureRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java), drawing to the translucent `FIREBALL_TRAIL` render type (configured with the `RenderPipelines.LIGHTNING` pipeline).
 - **Billboard Geometry**: Builds a 3D procedural billboarded ribbon by mapping coordinates along the predicted path. The ribbon's width is dynamically calculated based on the camera look vector to maintain visual thickness.
 - **Color and Alpha Gradients**: Colored orange (`255, 128, 0`). The edges are set to an alpha of `0` to create a soft, blurred glow. The center alpha fades from `200` at the start to `60` at the end to seamlessly merge with the impact shockwave dome.
 
 ### 2. Shockwave Dome
-- **Render Buffer**: Also uses `RenderLayers.lightning()` within [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java).
+- **Render Setup**: Also uses [PredictionFeatureRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java) to draw to the `SHOCKWAVE_DOME` render type, which is configured with a custom `PREDICTION_PIPELINE` translucent pipeline registry.
 - **Geometric Dome**: Generated via a 3D sphere mesh algorithm using 16 latitude and 16 longitude bands. To optimize performance, the dome mesh is pre-computed and cached in `PredictionRenderData` during the tick prediction phase, rather than rebuilt every frame.
 - **Blending**: Matches the orange trajectory color (`255, 128, 0`) with a low, semi-transparent maximum alpha of `60` at the equator, fading out towards the poles. This prevents visual clutter while clearly delineating the damage radius.
 
@@ -26,7 +26,9 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Rendering System Integration
 
-- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
+- **Event & Submission Phase**: In `LevelRenderEvents.END_MAIN` (registered in [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)), `PredictionRenderer.render()` is called. Rather than direct immediate rendering, it constructs a `PredictionSubmit` record (containing trajectory path, camera look vectors, colors, and copied JOML `Matrix4f` pose matrices) and submits it to the `translucentModels` queue in `SubmitNodeCollection`.
+- **Execution & Dispatch Phase**: The Minecraft 26.2 rendering engine sorts and batches submits. The custom [PredictionFeatureRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java) handles `PredictionSubmit` and writes the quad vertices to the trail and dome buffers.
+- **Renderer Registration**: Registered via [FeatureRenderDispatcherMixin.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FeatureRenderDispatcherMixin.java), which injects into the `FeatureRenderDispatcher` constructor to put `PredictionFeatureRenderer.TYPE` into the dispatcher's `featureRenderers` map.
 - **YACL Config Integration**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle these features:
   - `renderTrajectory`: Enables/disables the ribbon path.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
@@ -36,5 +38,5 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Verification & Environment Compatibility
 - **Renderer Performance**: Completely client-side; has zero impact on server ticks.
-- **Compat Notes**: Using standard `RenderLayers.lightning()` (which is fully supported by optimization and shader mods like Sodium and Iris) and vanilla breaking progress prevents compatibility issues with modern rendering environments.
+- **Compat Notes**: Using modern translucent rendering setups and vanilla breaking progress prevents compatibility issues with modern rendering environments and shaders (Sodium/Iris).
 - **Java Requirements**: Source and target code compile under Java 25, conforming to modern Fabric Loader standards.

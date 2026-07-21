@@ -19,7 +19,9 @@ graph TD
     I --> J[Run ImpactPredictor if impact is found]
     J --> K[Compute predicted broken blocks]
     K --> L[Highlight broken blocks & trigger ambient particles]
-    M[LevelRenderEvents.END_MAIN] --> N[Render Ribbon Trail & Shockwave Dome]
+    M[LevelRenderEvents.END_MAIN] --> N[Queue rendering data via PredictionRenderer]
+    N --> O[FeatureRenderDispatcher calls PredictionFeatureRenderer]
+    O --> P[Render Ribbon Trail & Shockwave Dome]
 ```
 
 ---
@@ -46,9 +48,11 @@ Here are the key source files and resources in the project:
 * [ClientPowerCache.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java): Caches tracked entity powers client-side.
 * [ClientPowerLookup.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java): Server-safe client cache access routing.
 * [FireballEntityAccessor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityAccessor.java): Mixin accessor to extract and dynamically set (for testing) `explosionPower` on fireball instances.
+* [FeatureRenderDispatcherMixin.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/mixin/FeatureRenderDispatcherMixin.java): Mixin to register the custom feature renderer with Minecraft's `FeatureRenderDispatcher`.
 
 ### 5. Client Rendering
-* [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome.
+* [PredictionRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Captures view parameters/matrices and submits them to the translucent render queue.
+* [PredictionFeatureRenderer.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java): Draws the translucent trajectory ribbon and shockwave dome quads during the feature rendering dispatch phase.
 
 ### 6. Automated Testing (GameTest)
 * [FireballPredictorGameTest.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test cases checking predicted trajectories and block-destruction counts against real in-game detonations. Validates normal fireballs, normal wither skulls, charged wither skulls (testing drag capping and blast resistance capping on obsidian/waterlogged blocks), and high-power fireballs.

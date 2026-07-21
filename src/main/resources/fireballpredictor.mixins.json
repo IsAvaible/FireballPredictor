@@ -7,7 +7,8 @@
     "FireballEntityAccessor"
   ],
   "client": [
-    "ClientWorldEntityTracker"
+    "ClientWorldEntityTracker",
+    "FeatureRenderDispatcherMixin"
   ],
   "injectors": {
     "defaultRequire": 1
