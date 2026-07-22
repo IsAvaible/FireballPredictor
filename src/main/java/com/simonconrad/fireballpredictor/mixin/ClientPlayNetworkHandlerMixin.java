@@ -23,6 +23,7 @@ public class ClientPlayNetworkHandlerMixin {
 
         Vec3d pos = packet.center();
         float radius = packet.radius();
+        int blockCount = packet.blockCount();
 
         // if (client.player != null) {
         //     client.player.sendMessage(
@@ -33,6 +34,8 @@ public class ClientPlayNetworkHandlerMixin {
         //     );
         // }
         
-        ExplosionInferenceHandler.onExplosion(pos, radius);
+        ExplosionInferenceHandler.onExplosion(pos, radius, blockCount, null);
     }
 }
+
+

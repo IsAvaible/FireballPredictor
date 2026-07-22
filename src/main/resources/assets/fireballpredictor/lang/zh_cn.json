@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "常规选项",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "后备火球威力",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "如果服务器未提供火球威力，则使用此后备值。\n默认值：1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "全局后备火球威力",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "如果所有其他推断均失败，则应用于所有服务器的全局后备火球威力。\n默认值：1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "服务器后备火球威力 (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "如果所有其他推断均失败，则用于 %s 的后备火球威力。",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "爆炸射线威力倍增器",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "爆炸射线威力计算的倍增器。\n在 0.7 到 1.3 之间调整以可视化最大/最小潜在伤害。\n默认值：1.3",

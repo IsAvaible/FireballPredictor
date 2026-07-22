@@ -231,4 +231,52 @@ public class FireballPredictorGameTest {
         ((FireballEntityAccessor) fireball2).setExplosionPower(3);
         assertExplosionDestruction(context, fireball2, Blocks.DIRT, 10);
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testZeroRadiusAffectedBlockEstimationAndHierarchy(TestContext context) {
+        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerLookup.resetInferredPower();
+
+        Vec3d explosionPos = new Vec3d(10.0, 64.0, 10.0);
+        FireballEntity fireball = new FireballEntity(EntityType.FIREBALL, context.getWorld());
+        fireball.setPosition(explosionPos);
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
+
+        // 1. Simulate Explosion packet with radius = 0 and affected blocks extending 3.9 blocks away
+        // explosionPos = (10.0, 64.0, 10.0), BlockPos center = (13.9, 64.0, 10.0) -> block origin = (13, 63, 9)
+        // Vec3d.ofCenter(BlockPos(13, 63, 9)) = (13.5, 63.5, 9.5) -> dist = sqrt((3.5)^2 + (-0.5)^2 + (-0.5)^2) = 3.5707 -> 3.5707 / 1.3 = 2.7467
+        // To get exact center distance 3.9: BlockPos(13, 63, 9) with explosionPos (9.6, 63.5, 9.5) -> dist = 13.5 - 9.6 = 3.9 -> 3.9 / 1.3 = 3.0f
+        Vec3d testExplosionPos = new Vec3d(9.6, 63.5, 9.5);
+        BlockPos testBlockPos = new BlockPos(13, 63, 9);
+        FireballInferenceTracker.registerFireballLocation(fireball, testExplosionPos);
+
+        List<BlockPos> affected = List.of(testBlockPos);
+        ExplosionInferenceHandler.onExplosion(testExplosionPos, 0.0f, affected);
+
+        Float blockEst = ClientPowerLookup.getInferredBlockEstimation();
+        if (blockEst == null || Math.abs(blockEst - 3.0f) > 0.01f) {
+            throw new RuntimeException("Expected inferred block estimation ~3.0f, but got: " + blockEst);
+        }
+
+
+        // 2. Test session max retention: smaller explosion (dMax = 1.3 -> 1.0f) should not decrease retained estimation (3.0f)
+        List<BlockPos> smallerAffected = List.of(
+                BlockPos.ofFloored(11.3, 64.0, 10.0)
+        );
+        ExplosionInferenceHandler.onExplosion(explosionPos, 0.0f, smallerAffected);
+        if (Math.abs(ClientPowerLookup.getInferredBlockEstimation() - 3.0f) > 0.01f) {
+            throw new RuntimeException("Session max retention failed! Expected 3.0f, got: " + ClientPowerLookup.getInferredBlockEstimation());
+        }
+
+        // 3. Test Precedence: Radius Inference (Tier 2) overrides Block Estimation (Tier 4)
+        ExplosionInferenceHandler.onExplosion(explosionPos, 2.5f, null);
+        float resolvedPower = ClientPowerLookup.getPower(fireball);
+        if (resolvedPower != 2.5f) {
+            throw new RuntimeException("Radius inference (Tier 2) should override block estimation! Expected 2.5f, got: " + resolvedPower);
+        }
+
+        fireball.discard();
+        context.complete();
+    }
 }
+

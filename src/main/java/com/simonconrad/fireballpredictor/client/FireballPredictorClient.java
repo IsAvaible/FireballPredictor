@@ -1,6 +1,7 @@
 package com.simonconrad.fireballpredictor.client;
 
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
 import com.simonconrad.fireballpredictor.math.PredictionData;
@@ -9,6 +10,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
@@ -60,6 +62,23 @@ public class FireballPredictorClient implements ClientModInitializer {
     public void onInitializeClient() {
         ModConfig.load();
         ClientPowerCache.registerReceivers();
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ClientPowerLookup.resetInferredPower();
+            ClientPowerCache.POWER_CACHE.clear();
+            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
+            activePredictions.clear();
+            currentlyHighlightedBlocks.clear();
+            impactWarningVisible = false;
+            impactWarningProgress = 0.0f;
+            impactWarningIsWindCharge = false;
+            trackedWorld = null;
+        });
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            ClientPowerLookup.resetInferredPower();
+            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
@@ -148,7 +167,7 @@ public class FireballPredictorClient implements ClientModInitializer {
 
                 if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
                     int ticksToImpact = Math.max(0, data.path.size() - 1 - elapsedTicks);
-                    float power = ClientPowerCache.POWER_CACHE.getOrDefault(fireball.getId(), fireball instanceof net.minecraft.entity.projectile.FireballEntity ? ModConfig.instance().clientFallbackFireballPower : 1.0f);
+                    float power = ClientPowerLookup.getPower(fireball);
                     double dangerRadius = power * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 

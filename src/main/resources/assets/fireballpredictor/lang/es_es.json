@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "Opciones Generales",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Poder de Bola de Fuego de Reserva",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "El poder a usar para las bolas de fuego si el servidor no lo proporciona.\nPredeterminado: 1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "Poder Global de Bola de Fuego de Reserva",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "El poder global de bola de fuego de reserva para todos los servidores si fallan todas las demás inferencias.\nPredeterminado: 1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "Poder de Bola de Fuego de Reserva del Servidor (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "El poder de bola de fuego de reserva para %s si fallan todas las demás inferencias.",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Multiplicador de Poder de Rayo",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplicador para el cálculo del poder del rayo de explosión.\nAjustar entre 0.7 y 1.3 para visualizar el potencial de daño máximo/mínimo.\nPredeterminado: 1.3",

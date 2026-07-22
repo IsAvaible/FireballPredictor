@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "Options Générales",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "Puissance de Boule de Feu de Secours",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "La puissance à utiliser pour les boules de feu si le serveur ne la fournit pas.\nPar défaut : 1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "Puissance Globale de Boule de Feu de Secours",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "La puissance globale de boule de feu de secours pour tous les serveurs si toutes les autres inférences échouent.\nPar défaut : 1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "Puissance de Boule de Feu de Secours du Serveur (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "La puissance de boule de feu de secours pour %s si toutes les autres inférences échouent.",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "Multiplicateur de Puissance de Rayon",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "Multiplicateur pour le calcul de la puissance du rayon d'explosion.\nAjustez entre 0.7 et 1.3 pour visualiser le potentiel de dégâts max/min.\nPar défaut : 1.3",

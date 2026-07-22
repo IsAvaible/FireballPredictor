@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "सामान्य विकल्प",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "फ़ॉलबैक फ़ायरबॉल शक्ति",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "यदि सर्वर इसे प्रदान नहीं करता है तो फ़ायरबॉल के लिए उपयोग की जाने वाली शक्ति।\nडिफ़ॉल्ट: 1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "ग्लोबल फ़ॉलबैक फ़ायरबॉल शक्ति",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "यदि अन्य सभी अनुमान विफल हो जाते हैं तो सभी सर्वरों के लिए ग्लोबल फ़ॉलबैक फ़ायरबॉल शक्ति।\nडिफ़ॉल्ट: 1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "सर्वर फ़ॉलबैक फ़ायरबॉल शक्ति (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "यदि अन्य सभी अनुमान विफल हो जाते हैं तो %s के लिए फ़ॉलबैक फ़ायरबॉल शक्ति।",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "रे पावर मल्टीप्लायर",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "विस्फोट किरण शक्ति गणना के लिए गुणक।\nअधिकतम/न्यूनतम संभावित क्षति को देखने के लिए 0.7 और 1.3 के बीच समायोजित करें।\nडिफ़ॉल्ट: 1.3",
