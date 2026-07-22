@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "追踪凋灵骷髅头颅",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "是否开启对凋灵骷髅头颅的追踪。\n默认值：开启",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "追踪风弹",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "是否开启对风弹的追踪。\n默认值：开启",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "视觉选项",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "是否开启当您与火球处于碰撞轨道时的 HUD 警告徽章。\n默认值：开启",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "轨迹丝带颜色",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "预测飞行路径丝带尾迹的颜色。\n默认值：橙色 (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "风弹轨迹颜色",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "预测风弹飞行路径丝带尾迹的颜色。\n默认值：白色 (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "轨迹丝带宽度",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "丝带尾迹的粗细/宽度。\n默认值：0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "冲击波圆顶颜色",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "预测爆炸半径圆顶的颜色。\n默认值：橙色 (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "预测爆炸半径圆顶的颜色。\n默认值：橙色 (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "风弹圆顶颜色",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "预测风弹爆炸半径圆顶的颜色。\n默认值：白色 (255, 255, 255)"
 }

@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "Suivre les Crânes de Wither",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "Activer/désactiver si les crânes de squelette wither doivent également être suivis par le mod.\nPar défaut : Vrai",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "Suivre les Charges de Vent",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "Activer/désactiver si les charges de vent doivent également être suivies par le mod.\nPar défaut : Vrai",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "Options Visuelles",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Activer/désactiver le badge d'avertissement du HUD lorsque vous êtes sur une trajectoire de collision avec une boule de feu.\nPar défaut : Vrai",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "Couleur du Ruban de Trajectoire",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "La couleur de la traînée de ruban de la trajectoire de vol prévue.\nPar défaut : Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "Couleur de Trajectoire de la Charge de Vent",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "La couleur de la traînée de ruban de la trajectoire prévue pour les charges de vent.\nPar défaut : Blanc (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "Largeur du Ruban de Trajectoire",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "L'épaisseur/largeur de la traînée du ruban.\nPar défaut : 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "Couleur du Dôme d'Onde de Choc",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "La couleur du dôme du rayon d'explosion prévu.\nPar défaut : Orange (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "La couleur du dôme du rayon d'explosion prévu.\nPar défaut : Orange (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Couleur du Dôme de la Charge de Vent",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "La couleur du dôme du rayon d'explosion prévu pour les charges de vent.\nPar défaut : Blanc (255, 255, 255)"
 }

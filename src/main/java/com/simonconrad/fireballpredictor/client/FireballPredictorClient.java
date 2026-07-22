@@ -38,6 +38,7 @@ public class FireballPredictorClient implements ClientModInitializer {
     private java.util.Map<net.minecraft.core.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
     private boolean impactWarningVisible;
     private float impactWarningProgress;
+    private boolean impactWarningIsWindCharge;
     private ClientLevel trackedWorld;
 
     public FireballPredictorClient() {
@@ -68,6 +69,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 ClientPowerCache.POWER_CACHE.clear();
                 impactWarningVisible = false;
                 impactWarningProgress = 0.0f;
+                impactWarningIsWindCharge = false;
                 trackedWorld = null;
                 return;
             }
@@ -78,12 +80,15 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             long worldTime = client.level.getGameTime();
 
-            // Clean up dead fireballs or disabled wither skulls
+            // Clean up dead fireballs or disabled wither skulls / wind charges
             Iterator<Map.Entry<AbstractHurtingProjectile, TrackedPrediction>> it = activePredictions.entrySet().iterator();
             while (it.hasNext()) {
                 AbstractHurtingProjectile fireball = it.next().getKey();
                 boolean isWitherSkull = fireball instanceof WitherSkull;
-                if (!fireball.isAlive() || (isWitherSkull && !ModConfig.instance().trackWitherSkulls)) {
+                boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+                if (!fireball.isAlive() || 
+                    (isWitherSkull && !ModConfig.instance().trackWitherSkulls) ||
+                    (isWindCharge && !ModConfig.instance().trackWindCharges)) {
                     ClientPowerCache.POWER_CACHE.remove(fireball.getId());
                     it.remove();
                 }
@@ -124,6 +129,7 @@ public class FireballPredictorClient implements ClientModInitializer {
             java.util.Map<net.minecraft.core.BlockPos, Integer> newHighlightedBlocks = new java.util.HashMap<>();
             boolean impactWarningDetected = false;
             float mostRelevantWarningProgress = 0.0f;
+            boolean warningIsWindCharge = false;
 
             LocalPlayer player = client.player;
             Vec3 playerPosition = player != null ? new Vec3(player.getX(), player.getY(), player.getZ()) : Vec3.ZERO;
@@ -148,7 +154,10 @@ public class FireballPredictorClient implements ClientModInitializer {
                     if (isDangerousPath(playerPosition, playerVelocity, data.path, elapsedTicks, dangerRadiusSq)) {
                         impactWarningDetected = true;
                         float travelProgress = getTravelProgress(fireball.tickCount, ticksToImpact);
-                        mostRelevantWarningProgress = Math.max(mostRelevantWarningProgress, travelProgress);
+                        if (travelProgress >= mostRelevantWarningProgress) {
+                            mostRelevantWarningProgress = travelProgress;
+                            warningIsWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+                        }
                     }
                 }
                 
@@ -196,8 +205,10 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             if (impactWarningDetected) {
                 impactWarningProgress = mostRelevantWarningProgress;
+                impactWarningIsWindCharge = warningIsWindCharge;
             } else {
                 impactWarningProgress = 0.0f;
+                impactWarningIsWindCharge = false;
             }
 
             impactWarningVisible = impactWarningDetected;
@@ -225,7 +236,7 @@ public class FireballPredictorClient implements ClientModInitializer {
             VanillaHudElements.CHAT,
             Identifier.fromNamespaceAndPath("fireballpredictor", "impact_warning"),
             (graphics, tickCounter) -> {
-                PredictionRenderer.renderImpactWarningBadge(graphics, Minecraft.getInstance(), impactWarningVisible, impactWarningProgress);
+                PredictionRenderer.renderImpactWarningBadge(graphics, Minecraft.getInstance(), impactWarningVisible, impactWarningProgress, impactWarningIsWindCharge);
             }
         );
 
@@ -248,6 +259,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedWorld = world;
         activePredictions.clear();
         currentlyHighlightedBlocks.clear();
+        impactWarningVisible = false;
+        impactWarningProgress = 0.0f;
+        impactWarningIsWindCharge = false;
 
         for (Entity entity : world.entitiesForRendering()) {
             handleEntityAdded(entity);
@@ -261,6 +275,9 @@ public class FireballPredictorClient implements ClientModInitializer {
 
         if (entity instanceof AbstractHurtingProjectile fireball) {
             if (fireball instanceof WitherSkull && !ModConfig.instance().trackWitherSkulls) {
+                return;
+            }
+            if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge && !ModConfig.instance().trackWindCharges) {
                 return;
             }
             TrackedPrediction trackedPrediction = new TrackedPrediction();

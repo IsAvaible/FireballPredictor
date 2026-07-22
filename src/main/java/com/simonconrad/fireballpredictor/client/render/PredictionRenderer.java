@@ -34,8 +34,9 @@ public class PredictionRenderer {
     );
     
     private static final ItemStack WARNING_ICON = new ItemStack(Items.FIRE_CHARGE);
+    private static final ItemStack WIND_CHARGE_WARNING_ICON = new ItemStack(Items.WIND_CHARGE);
 
-    public static void renderImpactWarningBadge(GuiGraphicsExtractor context, Minecraft client, boolean visible, float progress) {
+    public static void renderImpactWarningBadge(GuiGraphicsExtractor context, Minecraft client, boolean visible, float progress, boolean isWindCharge) {
         if (!visible || client.player == null) {
             return;
         }
@@ -70,7 +71,8 @@ public class PredictionRenderer {
 
         context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.withDefaultNamespace("hud/effect_background"), x, y, size, size);
 
-        context.item(WARNING_ICON, x + 2, y + 2);
+        ItemStack icon = isWindCharge ? WIND_CHARGE_WARNING_ICON : WARNING_ICON;
+        context.item(icon, x + 2, y + 2);
 
         int barX = x + 2;
         int barY = y + size - 2;
@@ -78,9 +80,15 @@ public class PredictionRenderer {
         int barHeight = 1;
         int filledWidth = Math.max(1, Math.round(Mth.clamp(progress, 0.0f, 1.0f) * barWidth));
 
-        context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
-        context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
-        context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        if (isWindCharge) {
+            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1C2230);
+            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFCFD6F7);
+            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        } else {
+            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
+            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
+            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+        }
     }
 
     public static void render(PoseStack matrices, SubmitNodeCollector submitNodeCollector, Camera camera, ClientLevel world, PredictionData data, AbstractHurtingProjectile fireball) {
@@ -97,6 +105,10 @@ public class PredictionRenderer {
         int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge);
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+
+        java.awt.Color trajectoryColor = isWindCharge ? config.windChargeTrajectoryColor : config.trajectoryColor;
+        java.awt.Color shockwaveColor = isWindCharge ? config.windChargeShockwaveColor : config.shockwaveColor;
 
         TrailRenderState trailState = null;
         if (config.renderTrajectory && data.path != null && data.path.size() > 1) {
@@ -109,9 +121,9 @@ public class PredictionRenderer {
                 data.path,
                 elapsedTicks,
                 config.trajectoryWidth,
-                config.trajectoryColor.getRed(),
-                config.trajectoryColor.getGreen(),
-                config.trajectoryColor.getBlue(),
+                trajectoryColor.getRed(),
+                trajectoryColor.getGreen(),
+                trajectoryColor.getBlue(),
                 camLook,
                 poseMatrix
             );
@@ -133,9 +145,9 @@ public class PredictionRenderer {
             domeState = new DomeRenderState(
                 hitPos,
                 data.renderData.domeQuads(),
-                config.shockwaveColor.getRed(),
-                config.shockwaveColor.getGreen(),
-                config.shockwaveColor.getBlue(),
+                shockwaveColor.getRed(),
+                shockwaveColor.getGreen(),
+                shockwaveColor.getBlue(),
                 pulseFactor,
                 poseMatrix
             );

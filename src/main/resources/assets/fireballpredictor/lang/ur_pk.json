@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "ودر اسکلز کو ٹریک کریں",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "ٹگل کریں کہ آیا ودر سکیلیٹن کھوپڑیوں کو بھی موڈ کے ذریعے ٹریک کیا جانا چاہیے۔\nڈیفالٹ: سچ",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "ونڈ چارجز کو ٹریک کریں",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "ٹگل کریں کہ آیا ونڈ چارجز کو بھی موڈ کے ذریعے ٹریک کیا جانا چاہیے۔\nڈیفالٹ: سچ",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "بصری اختیارات",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "جب فائر بال کے ساتھ ٹکراؤ کا خطرہ ہو تو HUD وارننگ بیج کو ٹگل کریں۔\nڈیفالٹ: سچ",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "راستے کی پٹی کا رنگ",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "پیش گوئی شدہ پرواز کے راستے کی پٹی کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "ونڈ چارج کے راستے کا رنگ",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "ونڈ چارجز کے پرواز کے راستے کی پٹی کا رنگ۔\nڈیفالٹ: سفید (255، 255، 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "راستے کی پٹی کی چوڑائی",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "پٹی کے نشان کی موٹائی/چوڑائی۔\nڈیفالٹ: 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "شاک ویو ڈوم کا رنگ",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "ونڈ چارج کے ڈوم کا رنگ",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "ونڈ چارجز کے دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: سفید (255، 255، 255)"
 }

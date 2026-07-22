@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "উইদার স্কাল ট্র্যাক করুন",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "উইদার স্কেলেটন স্কালও মড দ্বারা ট্র্যাক করা হবে কিনা তা টগল করুন।\nডিফল্ট: সত্য",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "উইন্ড চার্জ ট্র্যাক করুন",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "উইন্ড চার্জও মড দ্বারা ট্র্যাক করা হবে কিনা তা টগল করুন।\nডিফল্ট: সত্য",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "ভিজ্যুয়াল অপশন",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "ফায়ারবলের সাথে সংঘর্ষের পথে থাকলে HUD সতর্কতা ব্যাজ টগল করুন।\nডিফল্ট: সত্য",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "গতিপথ ফিতার রঙ",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "অনুমানিত উড়ান পথের ফিতার রঙ।\nডিফল্ট: কমলা (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "উইন্ড চার্জ গতিপথের রঙ",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "উইন্ড চার্জের অনুমানিত উড়ান পথের ফিতার রঙ।\nডিফল্ট: সাদা (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "গতিপথ ফিতার প্রস্থ",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "ফিতার পথটির পুরুত্ব/প্রস্থ।\nডিফল্ট: ০.৫",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "শকওয়েভ ডোম রঙ",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "অনুমানিত বিস্ফোরণ ব্যাসার্ধের ডোমের রঙ।\nডিফল্ট: কমলা (255, 128, 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "অনুমানিত বিস্ফোরণ ব্যাসার্ধের ডোমের রঙ।\nডিফল্ট: কমলা (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "উইন্ড চার্জ ডোম রঙ",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "উইন্ড চার্জের অনুমানিত বিস্ফোরণ ব্যাসার্ধের ডোমের রঙ।\nডিফল্ট: সাদা (255, 255, 255)"
 }

@@ -62,6 +62,12 @@ The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Uses the new `setExplosionPower` accessor to simulate a fireball with custom high explosion power (power = 3) and verifies that the mod correctly scales both the predicted block destruction and actual crater size.
 
+### 9. Wind Charge Prediction (`testWindChargePredictionAndExplosion`)
+* **Entity**: `WindChargeEntity`
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with an initial relative velocity of `(0.5, 0.0, 0.0)` and zero acceleration.
+* **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
+* **Details**: Asserts that Wind Charges calculate drag of `1.0` (no drag), predict 0 broken blocks upon impact, and break 0 actual blocks in the world upon detonation (`assertNoDestruction`).
+
 ---
 
 ## Key Technical Solutions
@@ -83,7 +89,7 @@ Vanilla charged wither skulls have a high drag constant of `0.73F` (compared to 
 
 To ensure the test suite is maintainable and adheres to DRY principles, it is structured around several modular helper methods:
 * **`buildWall`**: Overloaded helper to set up a 5x5 target wall of a given `Block` or `BlockState` at relative `x = 2`.
-* **`spawnProjectile`**: Spawns any type of `ExplosiveProjectileEntity` (like `FireballEntity` or `WitherSkullEntity`) at a standardized starting relative position `(1.5, 3.0, 3.5)` with rotated velocity `(0.5, 0.0, 0.0)`.
+* **`spawnProjectile`**: Spawns any type of `ExplosiveProjectileEntity` (like `FireballEntity`, `WitherSkullEntity`, or `WindChargeEntity`) at a standardized starting relative position `(1.5, 3.0, 3.5)` with rotated velocity `(0.5, 0.0, 0.0)`.
 * **`getBrokenBlocks`**: Scans the target wall area and collects all positions where the block type has changed.
 * **`getPredictedBrokenBlocks`**: Simulates the trajectory of a projectile client-side to generate predicted broken block positions.
 * **`assertExplosionDestruction`**: A parameterized assertion helper that verifies trajectory predictions match actual world impact for destructive test cases.
@@ -102,10 +108,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 9 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (9 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++]
-[Server thread/INFO] (Minecraft) ========= 9 GAME TESTS COMPLETE IN 1.258 s ======================
-[Server thread/INFO] (Minecraft) All 9 required tests passed :)
+[Server thread/INFO] (Minecraft) 10 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (10 tests)...
+[Server thread/INFO] (Minecraft) [++++++++++]
+[Server thread/INFO] (Minecraft) ========= 10 GAME TESTS COMPLETE IN 1.661 s ======================
+[Server thread/INFO] (Minecraft) All 10 required tests passed :)
 BUILD SUCCESSFUL
 ```

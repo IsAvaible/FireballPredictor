@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -42,6 +43,13 @@ public class TrajectoryPredictor {
         velocities.add(velocity);
         
         HitResult finalHit = null;
+        
+        double drag = 0.95;
+        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
+            drag = 1.0;
+        } else if (fireball instanceof WitherSkull skull && skull.isDangerous()) {
+            drag = 0.73;
+        }
         
         for (int i = 0; i < maxTicks; i++) {
             Vec3 nextPos = currentPos.add(velocity);
@@ -86,8 +94,8 @@ public class TrajectoryPredictor {
             currentPos = nextPos;
             path.add(currentPos);
             
-            // Add acceleration to velocity and apply drag (usually 0.95)
-            velocity = velocity.add(acceleration).scale(0.95);
+            // Add acceleration to velocity and apply drag
+            velocity = velocity.add(acceleration).scale(drag);
             velocities.add(velocity);
         }
         

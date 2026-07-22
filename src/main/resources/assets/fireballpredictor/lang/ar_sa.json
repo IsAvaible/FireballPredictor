@@ -11,6 +11,8 @@
   
   "yacl3.config.fireballpredictor:config.trackWitherSkulls": "تتبع جماجم الويذر",
   "yacl3.config.fireballpredictor:config.trackWitherSkulls.desc": "تبديل ما إذا كان ينبغي تتبع جماجم الهيكل العظمي للويذر بواسطة المعدل أيضًا.\nالافتراضي: صحيح",
+  "yacl3.config.fireballpredictor:config.trackWindCharges": "تتبع شحنات الرياح",
+  "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "تبديل ما إذا كان ينبغي تتبع شحنات الرياح بواسطة المعدل أيضًا.\nالافتراضي: صحيح",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "الخيارات المرئية",
   
@@ -38,8 +40,12 @@
   "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "تبديل شارة تحذير شاشة العرض (HUD) عندما تكون في مسار تصادم مع كرة نارية.\nالافتراضي: صحيح",
   "yacl3.config.fireballpredictor:config.trajectoryColor": "لون شريط المسار",
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "لون ذيل شريط مسار الرحلة المتوقع.\nالافتراضي: برتقالي (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "لون مسار شحنة الرياح",
+  "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "لون ذيل شريط مسار الرحلة المتوقع لشحنات الرياح.\nالافتراضي: أبيض (255، 255، 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "عرض شريط المسار",
   "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "سمك/عرض ذيل الشريط.\nالافتراضي: 0.5",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "لون قبة موجة الصدمة",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع.\nالافتراضي: برتقالي (255، 128، 0)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع.\nالافتراضي: برتقالي (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "لون قبة شحنة الرياح",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع لشحنات الرياح.\nالافتراضي: أبيض (255، 255، 255)"
 }
