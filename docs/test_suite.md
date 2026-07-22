@@ -68,6 +68,12 @@ The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Asserts that Wind Charges calculate drag of `1.0` (no drag), predict 0 broken blocks upon impact, and break 0 actual blocks in the world upon detonation (`assertNoDestruction`).
 
+### 10. Inferred Explosion Power Fallback (`testInferredExplosionPowerFallback`)
+* **Entity**: `FireballEntity` (unsynced entity ID)
+* **Starting State**: Clears `ClientPowerCache` and resets `inferredFireballPower`. Spawns a fireball with default properties.
+* **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
+* **Details**: Simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
+
 ---
 
 ## Key Technical Solutions
@@ -108,10 +114,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 10 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (10 tests)...
-[Server thread/INFO] (Minecraft) [++++++++++]
-[Server thread/INFO] (Minecraft) ========= 10 GAME TESTS COMPLETE IN 1.661 s ======================
-[Server thread/INFO] (Minecraft) All 10 required tests passed :)
+[Server thread/INFO] (Minecraft) 11 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (11 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++]
+[Server thread/INFO] (Minecraft) ========= 11 GAME TESTS COMPLETE IN 1.502 s ======================
+[Server thread/INFO] (Minecraft) All 11 required tests passed :)
 BUILD SUCCESSFUL
 ```
