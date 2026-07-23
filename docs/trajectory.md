@@ -4,7 +4,7 @@ This document describes the trajectory prediction system implemented in the mod.
 
 ## Implementation Details
 
-### 1. [TrajectoryPredictor.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java)
+### 1. [TrajectoryPredictor.java](../src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java)
 Contains the physics simulation engine that mimics Minecraft's projectile update loops:
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
 - **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.raycast` and `RaycastContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
@@ -12,14 +12,14 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
   - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95`).
   - **Charged Wither Skulls**: High drag (`0.73`).
   - **Wind Charges (`AbstractWindChargeEntity`)**: No drag (`1.0`).
-- **Entity Filtering & Config Toggles**: In [ModConfig.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types:
+- **Entity Filtering & Config Toggles**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types:
   - `trackWitherSkulls`: Toggle wither skull tracking (default `true`).
   - `trackWindCharges`: Toggle wind charge tracking (default `true`).
 - **Asynchronous Execution Split**: Calculates predictions in two distinct phases:
   - **Simulation Phase (Main Thread)**: Quickly runs the 200-tick flight path raycast and captures a thread-safe `BlockStateSnapshot` at the collision point.
   - **Prediction Phase (Background Thread)**: Submits calculations for the detailed broken blocks list (`ImpactPredictor.predictBrokenBlocks`) and rendering dome mesh generation to a background worker thread.
 
-### 2. [FireballPredictorClient.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)
+### 2. [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)
 - Listens to `ClientTickEvents.END_CLIENT_TICK`.
 - **Daemon Thread Executor**: Manages a background single-thread executor `"FireballPredictor-Worker"`.
 - **Deduplicated Updates**: Tracks an `isCalculating` flag for each active `ExplosiveProjectileEntity` to prevent queueing redundant simulation tasks if a task is already running.

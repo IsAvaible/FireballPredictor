@@ -1,6 +1,7 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
-    id 'maven-publish'
+	alias(libs.plugins.loom)
+	alias(libs.plugins.mod.publish)
+	id 'maven-publish'
 }
 
 version = project.mod_version
@@ -22,16 +23,11 @@ repositories {
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// YACL
-	implementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
-	implementation "maven.modrinth:modmenu:${project.modmenu_version}"
+	minecraft libs.minecraft
+	implementation libs.fabric.loader
+	implementation libs.fabric.api
+	implementation libs.yacl
+	implementation libs.modmenu
 }
 
 fabricApi {
@@ -40,7 +36,6 @@ fabricApi {
         modId = "fireballpredictor_testmod"
     }
 }
-
 
 processResources {
 	inputs.property "version", project.version
@@ -70,6 +65,62 @@ jar {
 	}
 }
 
+def getLatestChangelog() {
+	def changelogFile = file("CHANGELOG.md")
+	if (!changelogFile.exists()) return "See release notes for details."
+	def text = changelogFile.text
+	def matcher = (text =~ /(?s)##\s*\[?${project.mod_version}\]?.*?\n(.*?)(?=\n##\s*\[?\d|\z)/)
+	return matcher.find() ? matcher.group(1).trim() : "Release notes for version ${project.mod_version}"
+}
+
+publishMods {
+	file = tasks.jar.archiveFile
+	changelog = providers.environmentVariable("CHANGELOG").orElse(provider { getLatestChangelog() })
+	type = STABLE
+	modLoaders.add("fabric")
+
+	displayName = "FireballPredictor ${project.mod_version} (MC ${project.minecraft_version})"
+
+	modrinth {
+		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+		projectId = "fireball-predictor"
+		minecraftVersions.add(project.minecraft_version)
+
+		requires {
+			slug = "fabric-api"
+		}
+		requires {
+			slug = "yacl"
+		}
+		optional {
+			slug = "modmenu"
+		}
+	}
+
+	curseforge {
+		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+		projectId = "1613094"
+		minecraftVersions.add(project.minecraft_version)
+
+		requires {
+			slug = "fabric-api"
+		}
+		requires {
+			slug = "yet-another-config-lib"
+		}
+		optional {
+			slug = "modmenu"
+		}
+	}
+
+	github {
+		accessToken = providers.environmentVariable("GITHUB_TOKEN")
+		repository = providers.environmentVariable("GITHUB_REPOSITORY").orElse("user/FireballPredictor")
+		commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
+		tagName = "v${project.mod_version}"
+	}
+}
+
 // configure the maven publication
 publishing {
 	publications {
@@ -82,4 +133,3 @@ publishing {
 		// Add repositories to publish to here.
 	}
 }
-
