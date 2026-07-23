@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1
+
+### Server Radius Sanity & Fallbacks
+- **Fake Packet Protection:** Added block-destruction sanity checks to reject inflated explosion packet radii sent by servers like GommeHD, ensuring fireball power isn't calculated incorrectly.
+- **Config Reset (Auto / None):** Setting a server's fallback power to `0.00` in the config UI now displays as `0.00 (Auto / None)` and clears the override so dynamic detection can take back over.
+- **Priority Fix:** Server-specific power fallback presets now reliably take priority over packet radius inference.
+
+### Infrastructure
+- Added automated release publishing to Modrinth, CurseForge, and GitHub.
+
 ## 1.3.0
 
 ### Wind Charge Support

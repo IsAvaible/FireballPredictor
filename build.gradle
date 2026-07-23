@@ -83,7 +83,7 @@ publishMods {
 
 	modrinth {
 		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-		projectId = "fireball-predictor"
+		projectId = "LpgQ68pt" // fireball-predictor
 		minecraftVersions.add(project.minecraft_version)
 
 		requires {
@@ -101,6 +101,8 @@ publishMods {
 		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
 		projectId = "1613094"
 		minecraftVersions.add(project.minecraft_version)
+		clientRequired = true
+		serverRequired = true
 
 		requires {
 			slug = "fabric-api"
