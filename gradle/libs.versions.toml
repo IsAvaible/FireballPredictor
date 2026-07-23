@@ -1,0 +1,21 @@
+[versions]
+minecraft = "1.21.11"
+yarn = "1.21.11+build.6"
+fabric-loader = "0.19.3"
+fabric-api = "0.141.4+1.21.11"
+yacl = "3.8.2+1.21.11-fabric"
+modmenu = "17.0.0"
+loom = "1.17-SNAPSHOT"
+mod-publish = "0.8.0"
+
+[libraries]
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+yarn = { module = "net.fabricmc:yarn", version.ref = "yarn" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+yacl = { module = "dev.isxander:yet-another-config-lib", version.ref = "yacl" }
+modmenu = { module = "maven.modrinth:modmenu", version.ref = "modmenu" }
+
+[plugins]
+loom = { id = "fabric-loom", version.ref = "loom" }
+mod-publish = { id = "me.modmuss50.mod-publish-plugin", version.ref = "mod-publish" }

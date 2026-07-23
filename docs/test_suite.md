@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/Documents/Programming/MinecraftModding/FireballPredictor/src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of three scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of three scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`

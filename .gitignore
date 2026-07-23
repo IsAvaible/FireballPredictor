@@ -3,6 +3,13 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Environment secrets
+.env
+
+# Stray generated/decompiled source artifacts
+net/
+bin/
+
 # Logs
 logs/
 *.log
@@ -17,7 +24,6 @@ run/
 *.iws
 *.ipr
 out/
-bin/
 
 # OS
 .DS_Store

@@ -39,3 +39,17 @@ This mod requires **Java 21** and uses the Gradle toolchain.
 ```
 
 Consult the [/docs](docs) directory for more technical details.
+
+## Publishing a New Release
+
+To publish a new version to **Modrinth**, **CurseForge**, and **GitHub Releases**:
+
+1. Update `mod_version` in [gradle.properties](gradle.properties) and add the version release notes under [CHANGELOG.md](CHANGELOG.md).
+2. Commit and push a release tag matching `v*`:
+   ```bash
+   git commit -am "Prepare release v1.3.0"
+   git tag v1.3.0
+   git push origin v1.3.0
+   ```
+The GitHub Actions workflow will automatically build the mod and publish the binary and changelog to Modrinth, CurseForge, and GitHub Releases.
+
