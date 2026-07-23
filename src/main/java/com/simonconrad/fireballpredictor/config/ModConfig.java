@@ -37,12 +37,18 @@ public class ModConfig {
         return serverFallbackPowers.get(serverIp.toLowerCase(java.util.Locale.ROOT));
     }
 
-    public void setServerFallbackPower(String serverIp, float power) {
+    public void setServerFallbackPower(String serverIp, Float power) {
         if (serverIp == null || serverIp.isEmpty()) {
             return;
         }
-        serverFallbackPowers.put(serverIp.toLowerCase(java.util.Locale.ROOT), power);
+        String key = serverIp.toLowerCase(java.util.Locale.ROOT);
+        if (power == null || power <= 0.0f) {
+            serverFallbackPowers.remove(key);
+        } else {
+            serverFallbackPowers.put(key, power);
+        }
     }
+
 
 
     @SerialEntry
@@ -145,14 +151,17 @@ public class ModConfig {
                     net.minecraft.text.Text.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
             ))
             .binding(
-                    config.globalFallbackFireballPower,
-                    () -> config.serverFallbackPowers.getOrDefault(ip, config.globalFallbackFireballPower),
-                    val -> config.serverFallbackPowers.put(ip, val)
+                    0.0f,
+                    () -> config.serverFallbackPowers.getOrDefault(ip, 0.0f),
+                    val -> config.setServerFallbackPower(ip, val)
             )
             .controller(opt -> dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder.create(opt)
                     .min(0.0f)
                     .max(100.0f)
-                    .formatValue(v -> net.minecraft.text.Text.literal(String.format("%.2f", v))))
+                    .formatValue(v -> v <= 0.0f
+                            ? net.minecraft.text.Text.literal("0.00 (Auto / None)")
+                            : net.minecraft.text.Text.literal(String.format("%.2f", v))))
+
             .build();
 
         dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
