@@ -278,5 +278,41 @@ public class FireballPredictorGameTest {
         fireball.discard();
         context.complete();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testInflatedPacketRadiusSanityCheckAndServerPresetPriority(TestContext context) {
+        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerLookup.resetInferredPower();
+
+        Vec3d explosionPos = new Vec3d(10.0, 64.0, 10.0);
+        FireballEntity fireball = new FireballEntity(EntityType.FIREBALL, context.getWorld());
+        fireball.setPosition(explosionPos);
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
+
+        // 1. Simulate GommeHD packet: radius = 4.0, but blockCount = 2 (estimates power ~1.44f)
+        ExplosionInferenceHandler.onExplosion(explosionPos, 4.0f, 2, null);
+
+        // Verify that 4.0f was rejected as inflated packet radius
+        Float inferredRadius = ClientPowerLookup.getInferredPacketRadius();
+        if (inferredRadius != null) {
+            throw new RuntimeException("Expected inflated packet radius 4.0f to be rejected, but it was accepted: " + inferredRadius);
+        }
+
+        Float blockEst = ClientPowerLookup.getInferredBlockEstimation();
+        if (blockEst == null || Math.abs(blockEst - 1.44f) > 0.1f) {
+            throw new RuntimeException("Expected block estimation from 2 blocks ~1.44f, got: " + blockEst);
+        }
+
+        // 2. Simulate legitimate radius 4.0 with large block count (40 blocks estimates power ~3.91f)
+        ExplosionInferenceHandler.onExplosion(explosionPos, 4.0f, 40, null);
+        Float validRadius = ClientPowerLookup.getInferredPacketRadius();
+        if (validRadius == null || validRadius != 4.0f) {
+            throw new RuntimeException("Expected valid packet radius 4.0f to be accepted, got: " + validRadius);
+        }
+
+        fireball.discard();
+        context.complete();
+    }
 }
+
 

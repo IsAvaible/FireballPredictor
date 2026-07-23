@@ -2,6 +2,8 @@ package com.simonconrad.fireballpredictor.client.network;
 
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 
 public class ClientPowerLookup {
     private static volatile Float inferredPacketRadius = null;
@@ -14,18 +16,18 @@ public class ClientPowerLookup {
         }
 
         if (FireballInferenceTracker.isFireball(fireball)) {
-            // Tier 2: Dynamic Packet Radius Inference (explicit packet radius > 0)
-            if (inferredPacketRadius != null && inferredPacketRadius > 0.0f) {
-                return inferredPacketRadius;
-            }
-
-            // Tier 3: Server-Specific Config Preset
+            // Tier 2: Server-Specific Config Preset
             String currentServerIp = getCurrentServerIp();
             if (currentServerIp != null) {
                 Float serverPreset = ModConfig.instance().getServerFallbackPower(currentServerIp);
                 if (serverPreset != null && serverPreset > 0.0f) {
                     return serverPreset;
                 }
+            }
+
+            // Tier 3: Dynamic Packet Radius Inference (explicit packet radius > 0)
+            if (inferredPacketRadius != null && inferredPacketRadius > 0.0f) {
+                return inferredPacketRadius;
             }
 
             // Tier 4: Dynamic Affected Block Estimation (radius <= 0 & affected blocks > 0)
@@ -76,6 +78,13 @@ public class ClientPowerLookup {
     }
 
     public static String getCurrentServerIp() {
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            return getClientServerIp();
+        }
+        return null;
+    }
+
+    private static String getClientServerIp() {
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
         if (client != null && client.getCurrentServerEntry() != null) {
             return client.getCurrentServerEntry().address;
@@ -83,4 +92,3 @@ public class ClientPowerLookup {
         return null;
     }
 }
-
