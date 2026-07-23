@@ -81,7 +81,7 @@ publishMods {
 
 	modrinth {
 		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-		projectId = "fireball-predictor"
+		projectId = "LpgQ68pt" // fireball-predictor
 		minecraftVersions.add(project.minecraft_version)
 
 		requires {
@@ -99,12 +99,14 @@ publishMods {
 		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
 		projectId = "1613094"
 		minecraftVersions.add(project.minecraft_version)
+		clientRequired = true
+		serverRequired = true
 
 		requires {
 			slug = "fabric-api"
 		}
 		requires {
-			slug = "yet-another-config-lib"
+			slug = "yacl"
 		}
 		optional {
 			slug = "modmenu"
@@ -115,9 +117,10 @@ publishMods {
 		accessToken = providers.environmentVariable("GITHUB_TOKEN")
 		repository = providers.environmentVariable("GITHUB_REPOSITORY").orElse("user/FireballPredictor")
 		commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
-		tagName = "v${project.mod_version}"
+		tagName = providers.environmentVariable("GITHUB_REF_NAME").orElse("v${project.mod_version}+${project.minecraft_version}")
 	}
 }
+
 
 // configure the maven publication
 publishing {
