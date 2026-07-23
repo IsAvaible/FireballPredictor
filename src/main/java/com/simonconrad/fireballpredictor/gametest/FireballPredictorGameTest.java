@@ -311,4 +311,32 @@ public class FireballPredictorGameTest {
         fireball.discard();
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testServerFallbackPowerSetAndUnset(GameTestHelper context) {
+        com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        String testServer = "test.hypixel.net";
+
+        // 1. Set server fallback power
+        config.setServerFallbackPower(testServer, 2.5f);
+        Float power = config.getServerFallbackPower(testServer);
+        if (power == null || Math.abs(power - 2.5f) > 0.001f) {
+            throw new RuntimeException("Expected server fallback power to be 2.5f, but got: " + power);
+        }
+
+        // 2. Set to 0.0f (should un-set / remove from map, returning null)
+        config.setServerFallbackPower(testServer, 0.0f);
+        if (config.getServerFallbackPower(testServer) != null) {
+            throw new RuntimeException("Expected server fallback power to be null after setting 0.0f, but got: " + config.getServerFallbackPower(testServer));
+        }
+
+        // 3. Set to 3.0f then pass null (should un-set / remove from map, returning null)
+        config.setServerFallbackPower(testServer, 3.0f);
+        config.setServerFallbackPower(testServer, (Float) null);
+        if (config.getServerFallbackPower(testServer) != null) {
+            throw new RuntimeException("Expected server fallback power to be null after passing null Float, but got: " + config.getServerFallbackPower(testServer));
+        }
+
+        context.succeed();
+    }
 }
