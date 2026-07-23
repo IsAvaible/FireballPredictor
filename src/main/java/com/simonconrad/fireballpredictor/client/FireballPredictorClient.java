@@ -67,6 +67,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 activePredictions.clear();
                 currentlyHighlightedBlocks.clear();
                 ClientPowerCache.POWER_CACHE.clear();
+                com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
+                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
                 impactWarningVisible = false;
                 impactWarningProgress = 0.0f;
                 impactWarningIsWindCharge = false;
@@ -259,6 +261,8 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedWorld = world;
         activePredictions.clear();
         currentlyHighlightedBlocks.clear();
+        com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
+        com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
         impactWarningVisible = false;
         impactWarningProgress = 0.0f;
         impactWarningIsWindCharge = false;
@@ -285,11 +289,17 @@ public class FireballPredictorClient implements ClientModInitializer {
             trackedPrediction.calculatedPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
             trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
             activePredictions.put(fireball, trackedPrediction);
+
+            if (trackedPrediction.predictionData != null) {
+                Vec3 hitPos = trackedPrediction.predictionData.hitResult != null ? trackedPrediction.predictionData.hitResult.getLocation() : null;
+                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
+            }
         }
     }
 
     private void handleEntityRemoved(Entity entity) {
         if (entity instanceof AbstractHurtingProjectile fireball) {
+            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.unregisterFireballLocation(fireball);
             activePredictions.remove(fireball);
             ClientPowerCache.POWER_CACHE.remove(fireball.getId());
         }

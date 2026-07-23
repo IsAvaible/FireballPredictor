@@ -15,6 +15,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import com.simonconrad.fireballpredictor.FireballEntityAccessor;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
+import com.simonconrad.fireballpredictor.client.network.ExplosionInferenceHandler;
+import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -190,5 +194,41 @@ public class FireballPredictorGameTest {
         buildWall(context, Blocks.DIRT);
         net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
         assertNoDestruction(context, windCharge, Blocks.DIRT);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testInferredExplosionPowerFallback(GameTestHelper context) {
+        buildWall(context, Blocks.DIRT);
+        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerLookup.resetInferredPower();
+
+        // Spawn fireball 1 and simulate its trajectory
+        LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getLevel());
+        PredictionData pred = TrajectoryPredictor.computePrediction(fireball1, traj, fireball1.tickCount);
+        Vec3 hitPos = pred.hitResult != null ? pred.hitResult.getLocation() : fireball1.position();
+
+        // Register fireball location (lastPos and hitPos) in inference cache
+        FireballInferenceTracker.registerFireballLocation(fireball1, hitPos);
+
+        // Execute the actual explosion inference handler at the hit position with power 3.0
+        ExplosionInferenceHandler.onExplosion(hitPos, 3.0f);
+        fireball1.discard();
+
+        // Assert that ExplosionInferenceHandler successfully inferred power 3.0f
+        Float inferred = ClientPowerLookup.getInferredFireballPower();
+        if (inferred == null || inferred != 3.0f) {
+            throw new RuntimeException("ExplosionInferenceHandler failed to infer power! Expected 3.0f, but got: " + inferred);
+        }
+
+        // Spawn second unsynced fireball and verify ClientPowerLookup falls back to inferred 3.0f
+        LargeFireball fireball2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        float resolvedPower = ClientPowerLookup.getPower(fireball2);
+        if (resolvedPower != 3.0f) {
+            throw new RuntimeException("Expected resolved power for unsynced fireball to be inferred 3.0f, but got: " + resolvedPower);
+        }
+
+        ((FireballEntityAccessor) fireball2).setExplosionPower(3);
+        assertExplosionDestruction(context, fireball2, Blocks.DIRT, 10);
     }
 }

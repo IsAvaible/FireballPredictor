@@ -8,7 +8,8 @@
   ],
   "client": [
     "ClientWorldEntityTracker",
-    "FeatureRenderDispatcherMixin"
+    "FeatureRenderDispatcherMixin",
+    "ClientPacketListenerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

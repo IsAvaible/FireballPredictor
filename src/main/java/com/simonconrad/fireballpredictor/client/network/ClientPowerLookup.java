@@ -5,15 +5,32 @@ import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingPr
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 
 public class ClientPowerLookup {
+    private static volatile Float inferredFireballPower = null;
+
     public static float getPower(AbstractHurtingProjectile fireball) {
         if (ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
             return ClientPowerCache.POWER_CACHE.get(fireball.getId());
         }
 
-        if (fireball instanceof LargeFireball) {
+        if (FireballInferenceTracker.isFireball(fireball)) {
+            if (inferredFireballPower != null && inferredFireballPower > 0.0f) {
+                return inferredFireballPower;
+            }
             return ModConfig.instance().clientFallbackFireballPower;
         }
 
         return 1.0F;
+    }
+
+    public static void setInferredFireballPower(float power) {
+        inferredFireballPower = power;
+    }
+
+    public static Float getInferredFireballPower() {
+        return inferredFireballPower;
+    }
+
+    public static void resetInferredPower() {
+        inferredFireballPower = null;
     }
 }
