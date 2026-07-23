@@ -1,6 +1,7 @@
 package com.simonconrad.fireballpredictor.client;
 
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
 import com.simonconrad.fireballpredictor.math.PredictionData;
@@ -149,7 +150,7 @@ public class FireballPredictorClient implements ClientModInitializer {
 
                 if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
                     int ticksToImpact = Math.max(0, data.path.size() - 1 - elapsedTicks);
-                    float power = ClientPowerCache.POWER_CACHE.getOrDefault(fireball.getId(), fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball ? ModConfig.instance().clientFallbackFireballPower : 1.0f);
+                    float power = ClientPowerLookup.getPower(fireball);
                     double dangerRadius = power * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 

@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "خيارات عامة",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "قوة كرة النار الاحتياطية",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "القوة المستخدمة لكرات النار إذا لم يوفرها الخادم.\nالافتراضي: 1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "قوة كرة النار الاحتياطية العالمية",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "قوة كرة النار الاحتياطية العالمية لجميع الخوادم إذا فشلت جميع الاستنتاجات الأخرى.\nالافتراضي: 1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "قوة كرة النار الاحتياطية للخادم (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "قوة كرة النار الاحتياطية لـ %s إذا فشلت جميع الاستنتاجات الأخرى.",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "مضاعف قوة الشعاع",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "مضاعف لحساب قوة شعاع الانفجار.\nاضبط بين 0.7 و 1.3 لتصور أقصى/أدنى ضرر محتمل.\nالافتراضي: 1.3",

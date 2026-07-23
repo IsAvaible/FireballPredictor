@@ -74,6 +74,15 @@ The suite is defined in [FireballPredictorGameTest.java](file:///c:/Users/simon/
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
 
+### 11. Zero-Radius Affected Block Estimation and Hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`)
+* **Entity**: `LargeFireball`
+* **Starting State**: Clears `ClientPowerCache` and resets inferred power state. Registers a fireball location in `FireballInferenceTracker`.
+* **Environment**: Headless mock position simulation.
+* **Details**: 
+  1. Simulates zero-radius `ClientboundExplodePacket` (`radius = 0.0f`) with affected block list extending 3.9 blocks away. Verifies power estimation via $d_{\max} / 1.3$ yields $\sim 3.0\text{f}$.
+  2. Verifies session max power retention ($P_{\text{session}}$ does not decrease when subsequent smaller explosions occur).
+  3. Verifies fallback hierarchy precedence: Tier 2 explicit packet radius inference (`2.5f`) overrides Tier 4 block estimation (`3.0f`).
+
 ---
 
 ## Key Technical Solutions

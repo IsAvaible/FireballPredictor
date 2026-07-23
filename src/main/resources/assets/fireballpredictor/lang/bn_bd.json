@@ -3,8 +3,10 @@
   
   "yacl3.config.fireballpredictor:config.category.general": "সাধারণ অপশন",
   
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower": "ফলব্যাক ফায়ারবল পাওয়ার",
-  "yacl3.config.fireballpredictor:config.clientFallbackFireballPower.desc": "সার্ভার প্রদান না করলে ফায়ারবলের জন্য ব্যবহার করার ক্ষমতা।\nডিফল্ট: 1.0",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower": "গ্লোবাল ফলব্যাক ফায়ারবল পাওয়ার",
+  "yacl3.config.fireballpredictor:config.globalFallbackFireballPower.desc": "অন্যান্য সমস্ত অনুমান ব্যর্থ হলে সমস্ত সার্ভারের জন্য গ্লোবাল ফলব্যাক ফায়ারবল পাওয়ার।\nডিফল্ট: 1.0",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower": "সার্ভার ফলব্যাক ফায়ারবল পাওয়ার (%s)",
+  "yacl.config.fireballpredictor:serverFallbackFireballPower.desc": "অন্যান্য সমস্ত অনুমান ব্যর্থ হলে %s এর জন্য ফলব্যাক ফায়ারবল পাওয়ার।",
   
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier": "রে পাওয়ার মাল্টিপ্লায়ার",
   "yacl3.config.fireballpredictor:config.rayPowerMultiplier.desc": "বিস্ফোরণ রশ্মি ক্ষমতা গণনার জন্য গুণক।\nসর্বোচ্চ/সর্বনিম্ন সম্ভাব্য ক্ষতি কল্পনা করতে ০.৭ এবং ১.৩ এর মধ্যে সামঞ্জস্য করুন।\nডিফল্ট: 1.3",

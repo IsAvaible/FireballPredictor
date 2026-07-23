@@ -25,7 +25,24 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "general")
     @FloatField(min = 0.0f, max = 100.0f)
-    public float clientFallbackFireballPower = 1.0F;
+    public float globalFallbackFireballPower = 1.0F;
+
+    @SerialEntry
+    public java.util.Map<String, Float> serverFallbackPowers = new java.util.HashMap<>();
+
+    public Float getServerFallbackPower(String serverIp) {
+        if (serverIp == null || serverIp.isEmpty()) {
+            return null;
+        }
+        return serverFallbackPowers.get(serverIp.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public void setServerFallbackPower(String serverIp, float power) {
+        if (serverIp == null || serverIp.isEmpty()) {
+            return;
+        }
+        serverFallbackPowers.put(serverIp.toLowerCase(java.util.Locale.ROOT), power);
+    }
 
     @SerialEntry
     @AutoGen(category = "general")
@@ -108,6 +125,64 @@ public class ModConfig {
     public int impactWarningBadgeOffsetY = 0;
 
     // 3. Helper methods to match your existing client initialization calls
+    public static net.minecraft.client.gui.screens.Screen createScreen(net.minecraft.client.gui.screens.Screen parentScreen) {
+        dev.isxander.yacl3.api.YetAnotherConfigLib baseGui = HANDLER.generateGui();
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        String serverIp = (client != null && client.getCurrentServer() != null)
+                ? client.getCurrentServer().ip
+                : null;
+
+        if (serverIp == null || serverIp.trim().isEmpty()) {
+            return baseGui.generateScreen(parentScreen);
+        }
+
+        final String ip = serverIp.trim().toLowerCase(java.util.Locale.ROOT);
+        ModConfig config = instance();
+
+        dev.isxander.yacl3.api.Option<Float> serverOption = dev.isxander.yacl3.api.Option.<Float>createBuilder()
+            .name(net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower", ip))
+            .description(dev.isxander.yacl3.api.OptionDescription.of(
+                    net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
+            ))
+            .binding(
+                    config.globalFallbackFireballPower,
+                    () -> config.serverFallbackPowers.getOrDefault(ip, config.globalFallbackFireballPower),
+                    val -> config.serverFallbackPowers.put(ip, val)
+            )
+            .controller(opt -> dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder.create(opt)
+                    .min(0.0f)
+                    .max(100.0f)
+                    .formatValue(v -> net.minecraft.network.chat.Component.literal(String.format("%.2f", v))))
+            .build();
+
+        dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
+                .title(baseGui.title())
+                .save(ModConfig::save);
+
+        for (dev.isxander.yacl3.api.ConfigCategory category : baseGui.categories()) {
+            dev.isxander.yacl3.api.ConfigCategory.Builder categoryBuilder = dev.isxander.yacl3.api.ConfigCategory.createBuilder()
+                    .name(category.name());
+
+            if (category.tooltip() != null) {
+                categoryBuilder.tooltip(category.tooltip());
+            }
+
+            for (dev.isxander.yacl3.api.OptionGroup group : category.groups()) {
+                categoryBuilder.group(group);
+            }
+
+            if (category.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translatable) {
+                if (translatable.getKey().endsWith("general")) {
+                    categoryBuilder.option(serverOption);
+                }
+            }
+
+            builder.category(categoryBuilder.build());
+        }
+
+        return builder.build().generateScreen(parentScreen);
+    }
+
     public static void load() {
         HANDLER.load();
     }
@@ -120,3 +195,4 @@ public class ModConfig {
         return HANDLER.instance();
     }
 }
+
