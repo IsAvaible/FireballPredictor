@@ -24,9 +24,8 @@ public class ExplosionInferenceHandler {
             return;
         }
 
-        if (radius > 0.0f) {
-            ClientPowerLookup.setInferredPacketRadius(radius);
-        } else if (affectedBlocks != null && !affectedBlocks.isEmpty()) {
+        Float estimatedBlockPower = null;
+        if (affectedBlocks != null && !affectedBlocks.isEmpty()) {
             double maxDistSq = 0.0;
             for (BlockPos pos : affectedBlocks) {
                 Vec3 blockCenter = Vec3.atCenterOf(pos);
@@ -37,12 +36,21 @@ public class ExplosionInferenceHandler {
             }
             double dMax = Math.sqrt(maxDistSq);
             // Ray power attenuation scaling factor is ~1.3 in open air
-            float estimatedPower = (float) (dMax / 1.3);
-            ClientPowerLookup.updateInferredBlockEstimation(estimatedPower);
+            estimatedBlockPower = (float) (dMax / 1.3);
         } else if (blockCount > 0) {
             // Approx power estimate from cubic volume of destroyed block count
-            float estimatedPower = (float) Math.max(1.0, Math.cbrt(blockCount * 1.5));
-            ClientPowerLookup.updateInferredBlockEstimation(estimatedPower);
+            estimatedBlockPower = (float) Math.max(1.0, Math.cbrt(blockCount * 1.5));
+        }
+
+        if (radius > 0.0f) {
+            // Sanity check: If packet radius claims a large power (e.g. 4.0) but actual block destruction indicates much smaller power, treat packet radius as inflated.
+            if (estimatedBlockPower != null && estimatedBlockPower < radius * 0.75f) {
+                ClientPowerLookup.updateInferredBlockEstimation(estimatedBlockPower);
+            } else {
+                ClientPowerLookup.setInferredPacketRadius(radius);
+            }
+        } else if (estimatedBlockPower != null) {
+            ClientPowerLookup.updateInferredBlockEstimation(estimatedBlockPower);
         }
     }
 }

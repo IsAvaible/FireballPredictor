@@ -4,6 +4,9 @@ import com.simonconrad.fireballpredictor.config.ModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
+
 public class ClientPowerLookup {
     private static volatile Float inferredPacketRadius = null;
     private static volatile Float inferredBlockEstimation = null;
@@ -14,16 +17,16 @@ public class ClientPowerLookup {
         }
 
         if (FireballInferenceTracker.isFireball(fireball)) {
-            if (inferredPacketRadius != null && inferredPacketRadius > 0.0f) {
-                return inferredPacketRadius;
-            }
-
             String currentServerIp = getCurrentServerIp();
             if (currentServerIp != null) {
                 Float serverPreset = ModConfig.instance().getServerFallbackPower(currentServerIp);
                 if (serverPreset != null && serverPreset > 0.0f) {
                     return serverPreset;
                 }
+            }
+
+            if (inferredPacketRadius != null && inferredPacketRadius > 0.0f) {
+                return inferredPacketRadius;
             }
 
             if (inferredBlockEstimation != null && inferredBlockEstimation > 0.0f) {
@@ -71,6 +74,13 @@ public class ClientPowerLookup {
     }
 
     public static String getCurrentServerIp() {
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            return getClientServerIp();
+        }
+        return null;
+    }
+
+    private static String getClientServerIp() {
         Minecraft client = Minecraft.getInstance();
         if (client != null && client.getCurrentServer() != null) {
             return client.getCurrentServer().ip;
