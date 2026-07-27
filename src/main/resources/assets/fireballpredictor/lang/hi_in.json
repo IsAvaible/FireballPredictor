@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "टॉगल करें कि क्या विंड चार्ज को भी मॉड द्वारा ट्रैक किया जाना चाहिए।\nडिफ़ॉल्ट: सही",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "दृश्य विकल्प",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "रेंडर तत्व",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "प्रक्षेपवक्र रिबन",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "शॉकवेव डोम",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "प्रभाव चेतावनी बैज",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "प्रक्षेपवक्र रेंडर करें",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "फ़ायरबॉल के पीछे खींचे गए ज्वलंत रिबन निशान को टॉगल करें।\nडिफ़ॉल्ट: सही",
@@ -44,10 +48,19 @@
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "अनुमानित उड़ान पथ रिबन निशान का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "विंड चार्ज प्रक्षेपवक्र रंग",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "विंड चार्ज के अनुमानित उड़ान पथ रिबन का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth": "प्रक्षेपवक्र रिबन चौड़ाई",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "रिबन निशान की मोटाई/चौड़ाई।\nडिफ़ॉल्ट: 0.5",
-  "yacl3.config.fireballpredictor:config.shockwaveColor": "शॉकवेव डोम रंग",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "विंड चार्ज डोम रंग",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "विंड चार्ज के अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)"
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "ट्रैजेक्टरी रिबन की चौड़ाई",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "उड़ान पथ की मोटाई/चौड़ाई।\nडिफ़ॉल्ट: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "ट्रैजेक्टरी रिबन शैली",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "उड़ान पथ की दृश्य शैली चुनें (ठोस, बिंदीदार, या केवल कोर)।\nडिफ़ॉल्ट: ठोस",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "ठोस",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "बिंदीदार",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "केवल कोर",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "कोर चमक रेंडर करें",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "रिबन के भीतर एक ऊर्जावान आंतरिक कोर परत रेंडर करें।\nडिफ़ॉल्ट: सत्य",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "रिबन मोशन पल्स सक्षम करें",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "रिबन के साथ एक सुचारू समय-आधारित पल्स एनिमेट करें।\nडिफ़ॉल्ट: सत्य",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "शॉकवेव डोम का रंग",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "अनुमानित विस्फोट त्रिज्या डोम का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "विंड चार्ज शॉकवेव डोम का रंग",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "विंड चार्ज के लिए शॉकवेव डोम का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)"
 }

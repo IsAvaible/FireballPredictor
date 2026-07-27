@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "是否开启对风弹的追踪。\n默认值：开启",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "视觉选项",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "渲染元素",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "轨迹丝带",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "冲击波圆顶",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "碰撞警告徽章",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "渲染轨迹",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "是否开启在火球后方绘制的火焰丝带尾迹。\n默认值：开启",
@@ -44,10 +48,19 @@
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "预测飞行路径丝带尾迹的颜色。\n默认值：橙色 (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "风弹轨迹颜色",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "预测风弹飞行路径丝带尾迹的颜色。\n默认值：白色 (255, 255, 255)",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth": "轨迹丝带宽度",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "丝带尾迹的粗细/宽度。\n默认值：0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "弹道缎带宽度",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "缎带轨迹的厚度/宽度。\n默认值：0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "弹道缎带样式",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "选择预测弹道路径的视觉样式（实线、虚线或仅核心）。\n默认值：实线",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "实线",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "虚线",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "仅核心",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "渲染核心光晕",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "在弹道外壳内部渲染充满能量的内芯层。\n默认值：True",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "启用缎带动态脉冲",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "沿着缎道路径播放随时间平滑变化的透明度脉冲动画。\n默认值：True",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "冲击波圆顶颜色",
   "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "预测爆炸半径圆顶的颜色。\n默认值：橙色 (255, 128, 0)",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "风弹圆顶颜色",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "预测风弹爆炸半径圆顶的颜色。\n默认值：白色 (255, 255, 255)"
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "风珠冲击波圆顶颜色",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "风珠预测爆炸半径圆顶的颜色。\n默认值：白色 (255, 255, 255)"
 }

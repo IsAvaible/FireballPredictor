@@ -98,6 +98,10 @@ public class FireballPredictorClient implements ClientModInitializer {
                 resetWorldState(client.world);
             }
 
+            if (client.isPaused()) {
+                return;
+            }
+
             long worldTime = client.world.getTime();
 
             // Clean up dead fireballs or disabled wither skulls / wind charges
