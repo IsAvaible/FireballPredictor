@@ -48,8 +48,8 @@ To publish a new version to **Modrinth**, **CurseForge**, and **GitHub Releases*
 2. Commit and push a release tag matching `v*`:
    ```bash
    git commit -am "Prepare release v1.3.0"
-   git tag v1.3.0
-   git push origin v1.3.0
+   git tag v1.3.0+1.21.11
+   git push origin v1.3.0+1.21.11
    ```
 The GitHub Actions workflow will automatically build the mod and publish the binary and changelog to Modrinth, CurseForge, and GitHub Releases.
 
