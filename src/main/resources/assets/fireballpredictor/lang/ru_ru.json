@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "Переключает, должен ли мод также отслеживать ветровые заряды.\nЗначение по умолчанию: Включено",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "Визуальные настройки",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "Элементы отображения",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "Лента траектории",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "Купол взрывной волны",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "Индикатор предупреждения",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "Отображать траекторию",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Включает или выключает огненный след в виде ленты за огненным шаром.\nЗначение по умолчанию: Включено",
@@ -45,9 +49,18 @@
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "Цвет траектории ветрового заряда",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "Цвет прогнозируемой ленты траектории полета для ветровых зарядов.\nЗначение по умолчанию: Белый (255, 255, 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "Ширина ленты траектории",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "Толщина/ширина ленты траектории.\nЗначение по умолчанию: 0.5",
-  "yacl3.config.fireballpredictor:config.shockwaveColor": "Цвет купола взрывной волны",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Цвет купола прогнозируемого радиуса взрыва.\nЗначение по умолчанию: Оранжевый (255, 128, 0)",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Цвет купола ветрового заряда",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "Цвет купола прогнозируемого радиуса взрыва для ветровых зарядов.\nЗначение по умолчанию: Белый (255, 255, 255)"
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "Толщина/ширина ленты траектории.\nПо умолчанию: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "Стиль ленты траектории",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "Выберите визуальный стиль траектории (Сплошная, Пунктирная или Только ядро).\nПо умолчанию: Сплошная",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "Сплошная",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "Пунктирная",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "Только ядро",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "Отображать свечение ядра",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "Отображает внутренний энергетический слой ядра внутри ленты.\nПо умолчанию: Истина",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "Включить пульсацию движения ленты",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "Анимирует плавную пульсацию прозрачности вдоль ленты.\nПо умолчанию: Истина",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Цвет купола ударной волны",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Цвет купола прогнозируемого радиуса взрыва.\nПо умолчанию: Оранжевый (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Цвет купола для ветрового заряда",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "Цвет купола ударной волны для ветровых зарядов.\nПо умолчанию: Белый (255, 255, 255)"
 }

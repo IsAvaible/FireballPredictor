@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "ٹگل کریں کہ آیا ونڈ چارجز کو بھی موڈ کے ذریعے ٹریک کیا جانا چاہیے۔\nڈیفالٹ: سچ",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "بصری اختیارات",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "رینڈر کے عناصر",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "راستے کی پٹی",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "شاک ویو ڈوم",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "اثر کی وارننگ بیج",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "راستہ رینڈر کریں",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "فائر بال کے پیچھے کھینچی گئی آگ کی پٹی کے نشان کو ٹگل کریں۔\nڈیفالٹ: سچ",
@@ -44,10 +48,19 @@
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "پیش گوئی شدہ پرواز کے راستے کی پٹی کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "ونڈ چارج کے راستے کا رنگ",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "ونڈ چارجز کے پرواز کے راستے کی پٹی کا رنگ۔\nڈیفالٹ: سفید (255، 255، 255)",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth": "راستے کی پٹی کی چوڑائی",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "پٹی کے نشان کی موٹائی/چوڑائی۔\nڈیفالٹ: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "ٹریکٹری ربن کی چوڑائی",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "پرواز کے راستے کی موٹائی/چوڑائی۔\nڈیفالٹ: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "ٹریکٹری ربن کا انداز",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "راستے کا بصری انداز منتخب کریں (ٹھوس، ڈیشڈ، یا صرف کور)۔\nڈیفالٹ: ٹھوس",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "ٹھوس",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "ڈیشڈ",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "صرف کور",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "کور گلو رینڈر کریں",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "ربن کے اندر ایک فعال اندرونی کور کی تہہ رینڈر کریں۔\nڈیفالٹ: سچ",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "ربن موشن پلس فعال کریں",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "ربن کے ساتھ ساتھ ایک ہموار وقت پر مبنی پلس کو متحرک کریں۔\nڈیفالٹ: سچ",
   "yacl3.config.fireballpredictor:config.shockwaveColor": "شاک ویو ڈوم کا رنگ",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: نارنجی (255، 128، 0)",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "ونڈ چارج کے ڈوم کا رنگ",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "ونڈ چارجز کے دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: سفید (255، 255، 255)"
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے رداس کے ڈوم کا رنگ۔\nڈیفالٹ: نارنجی (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "وینڈ چارج شاک ویو ڈوم کا رنگ",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "وینڈ چارج کے لیے شاک ویو ڈوم کا رنگ۔\nڈیفالٹ: سفید (255, 255, 255)"
 }

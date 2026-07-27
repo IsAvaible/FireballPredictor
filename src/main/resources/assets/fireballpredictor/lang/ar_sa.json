@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "تبديل ما إذا كان ينبغي تتبع شحنات الرياح بواسطة المعدل أيضًا.\nالافتراضي: صحيح",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "الخيارات المرئية",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "عناصر الرسم",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "شريط المسار",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "قبة موجة الصدمة",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "شارة تحذير التأثير",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "رسم المسار",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "تبديل ذيل الشريط الناري المرسوم خلف كرة النار.\nالافتراضي: صحيح",
@@ -45,9 +49,18 @@
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "لون مسار شحنة الرياح",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "لون ذيل شريط مسار الرحلة المتوقع لشحنات الرياح.\nالافتراضي: أبيض (255، 255، 255)",
   "yacl3.config.fireballpredictor:config.trajectoryWidth": "عرض شريط المسار",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "سمك/عرض ذيل الشريط.\nالافتراضي: 0.5",
-  "yacl3.config.fireballpredictor:config.shockwaveColor": "لون قبة موجة الصدمة",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع.\nالافتراضي: برتقالي (255، 128، 0)",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "سمك/عرض شريط المسار.\nالافتراضي: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "نمط شريط المسار",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "اختر نمط الرؤية لمسار المقذوف (صلب، متقطع، أو النواة فقط).\nالافتراضي: صلب",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "صلب",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "متقطع",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "النواة فقط",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "عرض توهج النواة",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "عرض طبقة نواة داخلية طاقية داخل الغلاف.\nالافتراضي: صحيح",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "تمكين نبض حركة الشريط",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "تحريك نبض شفافية سلس على طول الشريط.\nالافتراضي: صحيح",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "لون قبة الصدمة",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع.\nالافتراضي: برتقالي (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "لون قبة شحنة الرياح",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "لون قبة نصف قطر الانفجار المتوقع لشحنات الرياح.\nالافتراضي: أبيض (255، 255، 255)"
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "لون قبة الصدمة لشحنات الرياح.\nالافتراضي: أبيض (255, 255, 255)"
 }

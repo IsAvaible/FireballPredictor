@@ -177,7 +177,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < ((period * 3) / 4);
                     int currentStage = isVisible ? baseStage : -1;
                     
-                    if (ModConfig.instance().renderParticleAccents && client.level.getRandom().nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.level.getRandom().nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
                         int particleCount = 1 + client.level.getRandom().nextInt(3);
                         for (int i = 0; i < particleCount; i++) {
                             net.minecraft.core.BlockPos randomPos = data.brokenBlocks.get(client.level.getRandom().nextInt(data.brokenBlocks.size()));

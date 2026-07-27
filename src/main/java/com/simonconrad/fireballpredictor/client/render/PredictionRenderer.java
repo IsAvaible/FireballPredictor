@@ -117,6 +117,8 @@ public class PredictionRenderer {
             Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
             matrices.popPose();
 
+            double animTime = (world != null ? world.getGameTime() : 0L) + net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+
             trailState = new TrailRenderState(
                 data.path,
                 elapsedTicks,
@@ -125,7 +127,11 @@ public class PredictionRenderer {
                 trajectoryColor.getGreen(),
                 trajectoryColor.getBlue(),
                 camLook,
-                poseMatrix
+                poseMatrix,
+                config.trajectoryStyle,
+                config.renderCoreGlow,
+                config.enableRibbonPulse,
+                animTime
             );
         }
 

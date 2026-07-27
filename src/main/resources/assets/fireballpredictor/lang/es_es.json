@@ -17,6 +17,10 @@
   "yacl3.config.fireballpredictor:config.trackWindCharges.desc": "Alternar si las cargas de viento también deben ser rastreadas por el mod.\nPredeterminado: Verdadero",
   
   "yacl3.config.fireballpredictor:config.category.visuals": "Opciones Visuales",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.elements": "Elementos de Renderizado",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.trajectory": "Cinta de Trayectoria",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.shockwave": "Cúpula de Onda de Choque",
+  "yacl3.config.fireballpredictor:config.category.visuals.group.impact_warning": "Insignia de Advertencia de Impacto",
   
   "yacl3.config.fireballpredictor:config.renderTrajectory": "Renderizar Trayectoria",
   "yacl3.config.fireballpredictor:config.renderTrajectory.desc": "Alternar la estela de cinta ardiente dibujada detrás de la bola de fuego.\nPredeterminado: Verdadero",
@@ -44,10 +48,19 @@
   "yacl3.config.fireballpredictor:config.trajectoryColor.desc": "El color de la estela de la trayectoria de vuelo prevista.\nPredeterminado: Naranja (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor": "Color de Trayectoria de Carga de Viento",
   "yacl3.config.fireballpredictor:config.windChargeTrajectoryColor.desc": "El color de la estela de la trayectoria de vuelo prevista para las cargas de viento.\nPredeterminado: Blanco (255, 255, 255)",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Ancho de la Cinta de Trayectoria",
-  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "El grosor/ancho de la estela de la trayectoria.\nPredeterminado: 0.5",
-  "yacl3.config.fireballpredictor:config.shockwaveColor": "Color de la Cúpula de Onda de Choque",
-  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "El color de la cúpula del radio de explosión previsto.\nPredeterminado: Naranja (255, 128, 0)",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Color de Cúpula de Carga de Viento",
-  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "El color de la cúpula del radio de explosión previsto para las cargas de viento.\nPredeterminado: Blanco (255, 255, 255)"
+  "yacl3.config.fireballpredictor:config.trajectoryWidth": "Ancho de la cinta de trayectoria",
+  "yacl3.config.fireballpredictor:config.trajectoryWidth.desc": "El grosor/ancho de la cinta de trayectoria.\nPredeterminado: 0.5",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle": "Estilo de la cinta de trayectoria",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.desc": "Elige el estilo visual de la ruta (Sólido, Discontinuo o Solo núcleo).\nPredeterminado: Sólido",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.solid": "Sólido",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.dashed": "Discontinuo",
+  "yacl3.config.fireballpredictor:config.trajectoryStyle.core_only": "Solo núcleo",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow": "Renderizar brillo del núcleo",
+  "yacl3.config.fireballpredictor:config.renderCoreGlow.desc": "Renderiza una capa de núcleo interno energético dentro de la cubierta.\nPredeterminado: Verdadero",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse": "Activar pulso de movimiento de la cinta",
+  "yacl3.config.fireballpredictor:config.enableRibbonPulse.desc": "Anima un pulso suave basado en el tiempo a lo largo de la cinta.\nPredeterminado: Verdadero",
+  "yacl3.config.fireballpredictor:config.shockwaveColor": "Color de la cúpula de onda de choque",
+  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "El color de la cúpula de radio de explosión prevista.\nPredeterminado: Naranja (255, 128, 0)",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Color de la cúpula para cargas de viento",
+  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "El color de la cúpula de onda de choque para cargas de viento.\nPredeterminado: Blanco (255, 255, 255)"
 }

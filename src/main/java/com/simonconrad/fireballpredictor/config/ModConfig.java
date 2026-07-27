@@ -65,67 +65,82 @@ public class ModConfig {
     public boolean trackWindCharges = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderTrajectory = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderShockwaveDome = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderBlockHighlights = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderParticleAccents = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "trajectory")
     @ColorField
     public Color trajectoryColor = new Color(255, 128, 0);
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "trajectory")
     @ColorField
     public Color windChargeTrajectoryColor = new Color(255, 255, 255);
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "trajectory")
     @FloatField(min = 0.1f, max = 2.0f)
     public float trajectoryWidth = 0.5f;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "trajectory")
+    @Dropdown(values = {"solid", "dashed", "core_only"})
+    public String trajectoryStyle = "solid";
+
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "trajectory")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean renderCoreGlow = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "trajectory")
+    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    public boolean enableRibbonPulse = true;
+
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "shockwave")
     @ColorField
     public Color shockwaveColor = new Color(255, 128, 0);
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "shockwave")
     @ColorField
     public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "impact_warning")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderImpactWarning = true;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "impact_warning")
     @Dropdown(values = {"topleft", "topcenter", "topright", "bottomleft", "bottomcenter", "bottomright"})
     public String impactWarningBadgeAnchor = "topleft";
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "impact_warning")
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetX = 0;
 
     @SerialEntry
-    @AutoGen(category = "visuals")
+    @AutoGen(category = "visuals", group = "impact_warning")
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetY = 0;
 
