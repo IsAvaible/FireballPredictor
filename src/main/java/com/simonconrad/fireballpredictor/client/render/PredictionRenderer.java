@@ -2,6 +2,8 @@ package com.simonconrad.fireballpredictor.client.render;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
+import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -54,16 +56,16 @@ public class PredictionRenderer {
         int margin = 8;
         int windowWidth = client.getWindow().getGuiScaledWidth();
         int windowHeight = client.getWindow().getGuiScaledHeight();
-        String anchor = config.impactWarningBadgeAnchor == null ? "topleft" : config.impactWarningBadgeAnchor.trim().toLowerCase(java.util.Locale.ROOT);
+        ImpactWarningBadgeAnchor anchor = config.impactWarningBadgeAnchor == null ? ImpactWarningBadgeAnchor.TOP_LEFT : config.impactWarningBadgeAnchor;
 
         int x = switch (anchor) {
-            case "topright", "bottomright" -> windowWidth - badgeWidth - margin;
-            case "topcenter", "bottomcenter" -> (windowWidth - badgeWidth) / 2;
+            case TOP_RIGHT, BOTTOM_RIGHT -> windowWidth - badgeWidth - margin;
+            case TOP_CENTER, BOTTOM_CENTER -> (windowWidth - badgeWidth) / 2;
             default -> margin;
         } + config.impactWarningBadgeOffsetX;
 
         int y = switch (anchor) {
-            case "bottomleft", "bottomcenter", "bottomright" -> windowHeight - badgeHeight - margin;
+            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> windowHeight - badgeHeight - margin;
             default -> margin;
         } + config.impactWarningBadgeOffsetY;
 
@@ -118,6 +120,7 @@ public class PredictionRenderer {
             matrices.popPose();
 
             double animTime = (world != null ? world.getGameTime() : 0L) + net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+            TrajectoryStyle style = config.trajectoryStyle == null ? TrajectoryStyle.SOLID : config.trajectoryStyle;
 
             trailState = new TrailRenderState(
                 data.path,
@@ -128,7 +131,7 @@ public class PredictionRenderer {
                 trajectoryColor.getBlue(),
                 camLook,
                 poseMatrix,
-                config.trajectoryStyle,
+                style,
                 config.renderCoreGlow,
                 config.enableRibbonPulse,
                 animTime

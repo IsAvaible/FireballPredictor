@@ -1,9 +1,9 @@
 package com.simonconrad.fireballpredictor.config;
 
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
-import dev.isxander.yacl3.config.v2.api.autogen.Dropdown;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
+import dev.isxander.yacl3.config.v2.api.autogen.EnumCycler;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
 import dev.isxander.yacl3.config.v2.api.autogen.IntField;
 import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
@@ -101,8 +101,8 @@ public class ModConfig {
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
-    @Dropdown(values = {"solid", "dashed", "core_only"})
-    public String trajectoryStyle = "solid";
+    @EnumCycler
+    public TrajectoryStyle trajectoryStyle = TrajectoryStyle.SOLID;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
@@ -131,8 +131,8 @@ public class ModConfig {
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
-    @Dropdown(values = {"topleft", "topcenter", "topright", "bottomleft", "bottomcenter", "bottomright"})
-    public String impactWarningBadgeAnchor = "topleft";
+    @EnumCycler
+    public ImpactWarningBadgeAnchor impactWarningBadgeAnchor = ImpactWarningBadgeAnchor.TOP_LEFT;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")

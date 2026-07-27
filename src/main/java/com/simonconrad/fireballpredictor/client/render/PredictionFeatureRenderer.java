@@ -1,6 +1,7 @@
 package com.simonconrad.fireballpredictor.client.render;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 import net.minecraft.client.renderer.feature.FeatureRendererType;
 import net.minecraft.client.renderer.feature.FeatureFrameContext;
@@ -49,9 +50,9 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         int totalPathSteps = path.size() - 1;
         float startBlendSteps = 1.0f;
 
-        String style = state.style() == null ? "solid" : state.style().trim().toLowerCase(java.util.Locale.ROOT);
-        boolean isDashed = "dashed".equals(style);
-        boolean isCoreOnly = "core_only".equals(style);
+        TrajectoryStyle style = state.style() == null ? TrajectoryStyle.SOLID : state.style();
+        boolean isDashed = style == TrajectoryStyle.DASHED;
+        boolean isCoreOnly = style == TrajectoryStyle.CORE_ONLY;
         boolean drawCore = state.renderCoreGlow() || isCoreOnly;
         boolean drawShroud = !isCoreOnly;
 
@@ -200,7 +201,7 @@ record TrailRenderState(
     int b,
     Vec3 camLook,
     Matrix4f pose,
-    String style,
+    TrajectoryStyle style,
     boolean renderCoreGlow,
     boolean enableRibbonPulse,
     double animTime
