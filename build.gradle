@@ -43,6 +43,8 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
 	}
+
+	exclude "**/icon-512px.png"
 }
 
 tasks.withType(JavaCompile).configureEach {

@@ -12,7 +12,7 @@
     "sources": "https://github.com/IsAvaible/FireballPredictor"
   },
   "license": "GNU LGPLv3",
-  "icon": "assets/fireballpredictor/icon-512px.png",
+  "icon": "assets/fireballpredictor/icon-256px.png",
   "environment": "*",
   "entrypoints": {
     "main": [
