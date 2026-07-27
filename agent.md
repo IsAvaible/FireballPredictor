@@ -72,7 +72,8 @@ Here are the key source files and resources in the project:
 * **Gradle Toolchain**: Uses Gradle 9.6.1 wrapper.
 * **Commands**:
   * Build: `.\gradlew build`
-  * Run Client: `.\gradlew runClient`
+  * Run Client (Vanilla): `.\gradlew runClient`
+  * Run Client (Sodium + Iris + Shaders): `.\gradlew runClient -Pshaders` or `.\gradlew runClientWithShaders`
   * Run Server: `.\gradlew runServer`
   * Run GameTests: `.\gradlew runGameTest`
   * Publish Release: `.\gradlew publishMods` (Requires `MODRINTH_TOKEN` & `CURSEFORGE_TOKEN` environment variables)
