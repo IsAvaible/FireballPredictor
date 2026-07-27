@@ -1,6 +1,5 @@
 package com.simonconrad.fireballpredictor.client.render;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
@@ -10,8 +9,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
@@ -21,20 +20,28 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 public class PredictionRenderer {
-      private static final RenderPipeline PREDICTION_PIPELINE = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("fireballpredictor", "pipeline/prediction_translucent"))
-            .build()
+
+    /**
+     * Trail and dome deliberately share ONE RenderType, so they share one buffer and the order in which
+     * PredictionFeatureRenderer emits them is the order they are blended in (dome first, trail on top).
+     *
+     * The pipeline behind it ({@link PredictionPipelines#PREDICTION}) is mod-owned and registered
+     * with Iris in {@code IrisCompat}, which is what makes it survive a shader pack. See
+     * {@link PredictionPipelines} for the full explanation of the pipeline state.
+     */
+    static final RenderType PREDICTION_GEOMETRY = RenderType.create(
+        "fireballpredictor:prediction",
+        RenderSetup.builder(PredictionPipelines.PREDICTION).createRenderSetup()
     );
 
-    static final RenderType FIREBALL_TRAIL = RenderType.create(
-        "fireball_trail",
-        RenderSetup.builder(RenderPipelines.LIGHTNING).createRenderSetup()
-    );
-    static final RenderType SHOCKWAVE_DOME = RenderType.create(
-        "shockwave_dome",
-        RenderSetup.builder(PREDICTION_PIPELINE).createRenderSetup()
-    );
-    
+    /**
+     * Alpha ceilings. With alpha blending (instead of an additive blend) the same numeric alpha looks a
+     * lot more solid, and the dome is drawn twice per pixel (no back-face culling), so the effective
+     * coverage is 1-(1-a)^2. Capping keeps the cracking overlay of covered blocks readable.
+     */
+    static final int MAX_TRAIL_ALPHA = 190;
+    static final int MAX_DOME_ALPHA = 110;
+
     private static final ItemStack WARNING_ICON = new ItemStack(Items.FIRE_CHARGE);
     private static final ItemStack WIND_CHARGE_WARNING_ICON = new ItemStack(Items.WIND_CHARGE);
 
@@ -42,7 +49,6 @@ public class PredictionRenderer {
         if (!visible || client.player == null) {
             return;
         }
-
         if (client.level == null) {
             return;
         }
@@ -51,11 +57,13 @@ public class PredictionRenderer {
         if (!config.renderImpactWarning) {
             return;
         }
+
         int badgeWidth = 20;
         int badgeHeight = 20;
         int margin = 8;
         int windowWidth = client.getWindow().getGuiScaledWidth();
         int windowHeight = client.getWindow().getGuiScaledHeight();
+
         ImpactWarningBadgeAnchor anchor = config.impactWarningBadgeAnchor == null ? ImpactWarningBadgeAnchor.TOP_LEFT : config.impactWarningBadgeAnchor;
 
         int x = switch (anchor) {
@@ -70,7 +78,6 @@ public class PredictionRenderer {
         } + config.impactWarningBadgeOffsetY;
 
         int size = 20;
-
         context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.withDefaultNamespace("hud/effect_background"), x, y, size, size);
 
         ItemStack icon = isWindCharge ? WIND_CHARGE_WARNING_ICON : WARNING_ICON;
@@ -93,24 +100,28 @@ public class PredictionRenderer {
         }
     }
 
+
     public static void render(PoseStack matrices, SubmitNodeCollector submitNodeCollector, Camera camera, ClientLevel world, PredictionData data, AbstractHurtingProjectile fireball) {
         if (!(submitNodeCollector instanceof SubmitNodeStorage storage)) {
             return;
         }
+
         SubmitNodeCollection collection = storage.order(0);
 
+        Minecraft client = Minecraft.getInstance();
         Vec3 cameraPos = camera.position();
         float yaw = camera.yRot();
         float pitch = camera.xRot();
         Vec3 camLook = Vec3.directionFromRotation(pitch, yaw);
-
         int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge);
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
-        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 
+        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
         java.awt.Color trajectoryColor = isWindCharge ? config.windChargeTrajectoryColor : config.trajectoryColor;
         java.awt.Color shockwaveColor = isWindCharge ? config.windChargeShockwaveColor : config.shockwaveColor;
+
+        float fade = 1.0f;
 
         TrailRenderState trailState = null;
         if (config.renderTrajectory && data.path != null && data.path.size() > 1) {
@@ -119,7 +130,7 @@ public class PredictionRenderer {
             Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
             matrices.popPose();
 
-            double animTime = (world != null ? world.getGameTime() : 0L) + net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+            double animTime = (world != null ? world.getGameTime() : 0L) + client.getDeltaTracker().getGameTimeDeltaPartialTick(true);
             TrajectoryStyle style = config.trajectoryStyle == null ? TrajectoryStyle.SOLID : config.trajectoryStyle;
 
             trailState = new TrailRenderState(
@@ -134,14 +145,15 @@ public class PredictionRenderer {
                 style,
                 config.renderCoreGlow,
                 config.enableRibbonPulse,
-                animTime
+                animTime,
+                fade
             );
         }
 
         DomeRenderState domeState = null;
         if (config.renderShockwaveDome && data.hitResult != null && data.renderData != null && !data.renderData.domeQuads().isEmpty()) {
             Vec3 hitPos = data.hitResult.getLocation();
-            
+
             matrices.pushPose();
             matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
             Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
@@ -158,7 +170,8 @@ public class PredictionRenderer {
                 shockwaveColor.getGreen(),
                 shockwaveColor.getBlue(),
                 pulseFactor,
-                poseMatrix
+                poseMatrix,
+                fade
             );
         }
 

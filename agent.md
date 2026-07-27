@@ -53,14 +53,17 @@ Here are the key source files and resources in the project:
 * [FireballEntityAccessor.java](src/main/java/com/simonconrad/fireballpredictor/FireballEntityAccessor.java): Interface to extract and dynamically set `explosionPower` on fireball instances.
 * [LargeFireballMixin.java](src/main/java/com/simonconrad/fireballpredictor/mixin/LargeFireballMixin.java): Mixin implementing `FireballEntityAccessor` to dynamically sync power modifications/NBT loads to tracking clients.
 
-### 5. Client Rendering
-* [PredictionRenderer.java](src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome with entity-specific colors, as well as the HUD impact warning badge (using `Items.WIND_CHARGE` icon and `#cfd6f7` progress bar for wind charges).
+### 5. Client Rendering & Compatibility
+* [PredictionPipelines.java](src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionPipelines.java): Registers the mod-owned `PREDICTION` `RenderPipeline` (built from `DEBUG_FILLED_SNIPPET` with `POSITION_COLOR` format, `TRANSLUCENT` blend, `GREATER_THAN_OR_EQUAL` depth test, `depthWrite = false`, and `withCull(false)`).
+* [IrisCompat.java](src/main/java/com/simonconrad/fireballpredictor/client/compat/IrisCompat.java): Soft-loaded Iris compatibility layer that registers `PredictionPipelines.PREDICTION` with `ShaderKey.LIGHTNING` via reflection (falling back to public `IrisProgram.BASIC`) so shader packs render the overlay fullbright without dark shading, jagged alpha discards, or depth conflict with block break overlays.
+* [PredictionRenderer.java](src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome using `PredictionPipelines.PREDICTION` with entity-specific colors, incorporating `breakingFade(...)` (0.45 alpha scale while actively mining), as well as the HUD impact warning badge (using `Items.WIND_CHARGE` icon and `#cfd6f7` progress bar for wind charges).
 
 ### 6. Automated Testing (GameTest)
 * [FireballPredictorGameTest.java](src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test suite checking predicted trajectories and block-destruction counts against real in-game detonations across 11 test scenarios. Validates normal fireballs, normal/charged wither skulls, obsidian/waterlogged slab interactions, high-power fireballs, wind charges, and zero-radius explosion power estimation & hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`).
 
 ### 7. Build & Publishing Infrastructure
 * [libs.versions.toml](gradle/libs.versions.toml): Central Gradle version catalog for Minecraft `26.2`, Loom, Fabric API, YACL, ModMenu, and publishing plugins.
+* [build.gradle](build.gradle): Configured with `modCompileOnly "maven.modrinth:iris:<version>"` from Terraformers Maven for compile-only Iris API integration.
 * [CHANGELOG.md](CHANGELOG.md): Keep a Changelog document parsed automatically by `build.gradle` (`getLatestChangelog()`) to extract version release notes.
 * [publish.yml](.github/workflows/publish.yml): GitHub Actions release pipeline triggered on version tags (`v*`) to build and publish to Modrinth, CurseForge, and GitHub Releases.
 * [build.yml](.github/workflows/build.yml): Continuous Integration workflow verifying PRs and branch pushes with Gradle action caching.
@@ -101,4 +104,5 @@ When searching for mapped Minecraft classes, methods, or package paths across ve
 
 3. **Decompiled Workspace Sources (`genSources`)**:
    Run `./gradlew genSources` once to generate full decompiled `.java` source JARs (`minecraft-merged-26.2-sources.jar`). This enables direct text and symbol searches across full source files rather than raw `.class` entry names or trial-and-error compilation.
+
 

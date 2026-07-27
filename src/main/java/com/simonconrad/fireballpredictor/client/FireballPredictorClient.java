@@ -1,8 +1,10 @@
 package com.simonconrad.fireballpredictor.client;
 
+import com.simonconrad.fireballpredictor.client.compat.IrisCompat;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
@@ -61,6 +63,8 @@ public class FireballPredictorClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ModConfig.load();
+        PredictionPipelines.class.getName();
+        IrisCompat.init(); 
         ClientPowerCache.registerReceivers();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

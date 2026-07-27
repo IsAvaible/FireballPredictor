@@ -21,6 +21,7 @@ repositories {
 		name = "Modrinth"
 		url = "https://api.modrinth.com/maven"
 	}
+	maven { url = "https://maven.terraformersmc.com/releases" }
 }
 
 boolean enableShaders = project.hasProperty("shaders") || project.hasProperty("withShaders") || gradle.startParameter.taskNames.any { it.contains("WithShaders") }
@@ -31,6 +32,7 @@ dependencies {
 	implementation libs.fabric.api
 	implementation libs.yacl
 	implementation libs.modmenu
+	compileOnly "maven.modrinth:iris:1.11.2+26.2-fabric"
 
 	if (enableShaders) {
         localRuntime libs.sodium
