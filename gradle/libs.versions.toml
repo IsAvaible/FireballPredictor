@@ -4,8 +4,13 @@ fabric-loader = "0.19.3"
 fabric-api = "0.154.2+26.2"
 yacl = "3.9.5+26.2-fabric"
 modmenu = "20.0.1"
+sodium = "mc26.2-0.9.1-fabric"
+iris = "1.11.2+26.2-fabric"
+jcpp = "1.4.14"
+glslTransformer = "3.0.0-pre3"
 loom = "1.17-SNAPSHOT"
 mod-publish = "0.8.0"
+complementary-reimagined = "r5.8.1"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
@@ -13,6 +18,10 @@ fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-l
 fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
 yacl = { module = "dev.isxander:yet-another-config-lib", version.ref = "yacl" }
 modmenu = { module = "maven.modrinth:modmenu", version.ref = "modmenu" }
+sodium = { module = "maven.modrinth:sodium", version.ref = "sodium" }
+iris = { module = "maven.modrinth:iris", version.ref = "iris" }
+jcpp = { module = "org.anarres:jcpp", version.ref = "jcpp" }
+glslTransformer = { module = "io.github.douira:glsl-transformer", version.ref = "glslTransformer" }
 
 [plugins]
 loom = { id = "net.fabricmc.fabric-loom", version.ref = "loom" }

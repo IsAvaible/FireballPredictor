@@ -43,4 +43,8 @@ This document describes the client-side visual effects (VFX) used to represent p
 ## Verification & Environment Compatibility
 - **Renderer Performance**: Completely client-side; has zero impact on server ticks.
 - **Compat Notes**: Using standard `RenderLayers.lightning()` (which is fully supported by optimization and shader mods like Sodium and Iris) and vanilla breaking progress prevents compatibility issues with modern rendering environments.
+- **Testing Rendering with Shaders**:
+  - Run **Vanilla**: `.\gradlew runClient`
+  - Run with **Sodium + Iris + Shader**: `.\gradlew runClient -Pshaders` or `.\gradlew runClientWithShaders`
+  - Automatically downloads and pre-selects the **Complementary Reimagined** shader pack in `run/config/iris.properties` for testing rendering pipeline compatibility under performance mods.
 - **Java Requirements**: Source and target code compile under Java 21, conforming to modern Fabric Loader standards.
