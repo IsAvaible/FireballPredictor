@@ -1,5 +1,7 @@
 package com.simonconrad.fireballpredictor.client.render;
 
+import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
+import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 
@@ -42,16 +44,16 @@ public class PredictionRenderer {
         int margin = 8;
         int windowWidth = client.getWindow().getScaledWidth();
         int windowHeight = client.getWindow().getScaledHeight();
-        String anchor = config.impactWarningBadgeAnchor == null ? "topleft" : config.impactWarningBadgeAnchor.trim().toLowerCase(java.util.Locale.ROOT);
+        ImpactWarningBadgeAnchor anchor = config.impactWarningBadgeAnchor == null ? ImpactWarningBadgeAnchor.TOP_LEFT : config.impactWarningBadgeAnchor;
 
         int x = switch (anchor) {
-            case "topright", "bottomright" -> windowWidth - badgeWidth - margin;
-            case "topcenter", "bottomcenter" -> (windowWidth - badgeWidth) / 2;
+            case TOP_RIGHT, BOTTOM_RIGHT -> windowWidth - badgeWidth - margin;
+            case TOP_CENTER, BOTTOM_CENTER -> (windowWidth - badgeWidth) / 2;
             default -> margin;
         } + config.impactWarningBadgeOffsetX;
 
         int y = switch (anchor) {
-            case "bottomleft", "bottomcenter", "bottomright" -> windowHeight - badgeHeight - margin;
+            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> windowHeight - badgeHeight - margin;
             default -> margin;
         } + config.impactWarningBadgeOffsetY;
 
@@ -118,9 +120,9 @@ public class PredictionRenderer {
             float startBlendSteps = 1.0f; // Quick 1-tick transition (~1/3 of previous 3-tick duration)
 
             // Parse visual style & render toggles once outside the loop
-            String style = config.trajectoryStyle == null ? "solid" : config.trajectoryStyle.trim().toLowerCase(java.util.Locale.ROOT);
-            boolean isDashed = "dashed".equals(style);
-            boolean isCoreOnly = "core_only".equals(style);
+            TrajectoryStyle style = config.trajectoryStyle == null ? TrajectoryStyle.SOLID : config.trajectoryStyle;
+            boolean isDashed = style == TrajectoryStyle.DASHED;
+            boolean isCoreOnly = style == TrajectoryStyle.CORE_ONLY;
             boolean drawCore = config.renderCoreGlow || isCoreOnly;
             boolean drawShroud = !isCoreOnly;
 
