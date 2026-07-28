@@ -12,7 +12,7 @@ In Fabric/Loom development environments, third-party libraries like YACL3 are st
 ```powershell
 Get-ChildItem -Path $env:USERPROFILE\.gradle\caches -Recurse -Filter '*yacl*.jar'
 ```
-*Key Jar File*: `yacl-3.8.2+1.21.11-fabric.jar` (or version specified in `gradle/libs.versions.toml`).
+*Key Jar File*: `yacl-3.9.5+26.2-fabric.jar` (or version specified in `gradle/libs.versions.toml`).
 
 ---
 

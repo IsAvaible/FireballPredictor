@@ -1,6 +1,6 @@
 # Fireball Predictor
 
-A client-side Fabric mod for Minecraft 1.21.11 that visualizes the trajectory and impact of fireballs and wither skulls in real-time.
+A client-side Fabric mod for Minecraft 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
 
 ![Screenshot](docs/assets/Screenshot.png)
 
@@ -12,17 +12,19 @@ By syncing explosion power from the server to the client, the mod deterministica
 
 ## Features
 
-- **Trajectory Ribbon:** A translucent trail showing the projectile's calculated flight path, accounting for drag and gravity.
+- **Trajectory Ribbon:** A translucent trail showing the projectile's calculated flight path, accounting for drag and acceleration.
 - **Shockwave Dome:** Visualizes the predicted explosion radius at the exact point of impact.
 - **Block Highlights:** Highlights the specific blocks that will be destroyed by the explosion.
-- **Configurable:** Tweak visual settings and behavior through an in-game YetAnotherConfigLib (YACL) menu.
+- **Impact Warning Badge:** On-screen HUD warning badge with a countdown timer when in the path of incoming projectiles.
+- **Multiple Projectiles:** Supports fireballs, non-charged and charged wither skulls, and wind charges.
+- **Configurable:** Tweak visual settings, colors, and behavior through an in-game YetAnotherConfigLib (YACL) menu.
 
 ## Fair Play
 Some servers might classify this mod as Extra-Sensory Perception (ESP), which is a bannable offense on competitive networks. Always play fair and only use this mod on servers where it is explicitly allowed.
 
 ## Setup & Build Instructions
 
-This mod requires **Java 21** and uses the Gradle toolchain.
+This mod requires **Java 25** and uses the Gradle toolchain.
 
 ```bash
 # Build the mod
