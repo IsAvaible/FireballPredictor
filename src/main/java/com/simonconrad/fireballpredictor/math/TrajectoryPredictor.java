@@ -129,10 +129,10 @@ public class TrajectoryPredictor {
             return PredictionRenderData.EMPTY;
         }
 
-        List<PredictionRenderData.DomeQuad> domeQuads = new ArrayList<>(16 * 16);
+        List<PredictionRenderData.DomeQuad> domeQuads = new ArrayList<>(24 * 24 + 128);
         float radius = explosionPower * 2.0f;
-        int latitudeBands = 16;
-        int longitudeBands = 16;
+        int latitudeBands = 20;
+        int longitudeBands = 24;
 
         for (int lat = 0; lat < latitudeBands; lat++) {
             float theta1 = (float) (lat * Math.PI / latitudeBands);
@@ -143,8 +143,13 @@ public class TrajectoryPredictor {
             float sinTheta2 = (float) Math.sin(theta2);
             float cosTheta2 = (float) Math.cos(theta2);
 
-            int alpha1 = (int) (60 * (1.0f - Math.abs((float) lat / latitudeBands - 0.5f) * 2));
-            int alpha2 = (int) (60 * (1.0f - Math.abs((float) (lat + 1) / latitudeBands - 0.5f) * 2));
+            float h1 = (float) lat / latitudeBands;
+            float h2 = (float) (lat + 1) / latitudeBands;
+            // sin(pi*h): 0 at ground & apex, 1 at the equator -> bright rim, soft poles.
+            float profile1 = 0.0f + 0.70f * (float) Math.sin(Math.PI * h1);
+            float profile2 = 0.0f + 0.70f * (float) Math.sin(Math.PI * h2);
+            int alpha1 = (int) (82 * profile1);
+            int alpha2 = (int) (82 * profile2);
 
             for (int lon = 0; lon < longitudeBands; lon++) {
                 float phi1 = (float) (lon * 2 * Math.PI / longitudeBands);
