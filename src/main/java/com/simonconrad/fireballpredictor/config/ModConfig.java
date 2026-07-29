@@ -1,15 +1,18 @@
 package com.simonconrad.fireballpredictor.config;
 
+import com.simonconrad.fireballpredictor.client.gui.preview.ConfigPreviewRenderer;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
+import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
+import dev.isxander.yacl3.config.v2.api.autogen.CustomImage;
 import dev.isxander.yacl3.config.v2.api.autogen.EnumCycler;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
 import dev.isxander.yacl3.config.v2.api.autogen.IntField;
-import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
+
 import java.awt.Color;
 
 public class ModConfig {
@@ -56,26 +59,31 @@ public class ModConfig {
 
     @SerialEntry
     @AutoGen(category = "general")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackWitherFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean trackWitherSkulls = true;
 
     @SerialEntry
     @AutoGen(category = "general")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackWindFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean trackWindCharges = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderTrajectory = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderShockwaveDome = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderBlockHighlights = true;
 
@@ -86,61 +94,73 @@ public class ModConfig {
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @ColorField
     public Color trajectoryColor = new Color(255, 128, 0);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryWindFactory.class)
     @ColorField
     public Color windChargeTrajectoryColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @FloatField(min = 0.1f, max = 2.0f)
     public float trajectoryWidth = 0.5f;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @EnumCycler
     public TrajectoryStyle trajectoryStyle = TrajectoryStyle.SOLID;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderCoreGlow = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean enableRibbonPulse = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "shockwave")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     @ColorField
     public Color shockwaveColor = new Color(255, 128, 0);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "shockwave")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveWindFactory.class)
     @ColorField
     public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
     public boolean renderImpactWarning = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     @EnumCycler
     public ImpactWarningBadgeAnchor impactWarningBadgeAnchor = ImpactWarningBadgeAnchor.TOP_LEFT;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetX = 0;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetY = 0;
 

@@ -13,15 +13,15 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Visual Styles**: Configurable via `trajectoryStyle` (`SOLID`, `DASHED` HUD indicator style, or `CORE_ONLY` high-contrast minimalist line).
 
 ### 2. Shockwave Dome
-- **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads are emitted first in `PredictionFeatureRenderer` so the ribbon trail blends cleanly on top.
+- **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads are emitted first so the ribbon blends on top.
 - **Procedural Dome Quads**: Renders a procedural hemisphere built from smooth quadrilateral latitude/longitude strips.
 - **Pulse Animation**: Pulsates gracefully using a time-based sine wave algorithm to draw player attention.
 
-### 3. Block Break Highlights & Crumbling Safeguards
+### 3. Block Break Highlights & Mining Safeguards
 - **Vanilla Cracking Overlay**: Sends virtual `destroyBlockProgress` network packets directly to the client render engine.
 - **Phase Mapping**: Maps predicted explosion damage cleanly to block destruction stages `0` through `9`.
 - **Flashing Pre-Impact Alert**: Oscillates cracking severity as the fireball gets closer to impact.
-- **Depth Buffer & Crumbling Compatibility**: `RenderSetup` for the overlay is constructed without `affectsCrumbling()` and uses `depthWrite = false` to prevent depth buffer conflicts with block breaking overlays (`CRUMBLING`), ensuring block mining crack animations remain clear.
+- **Depth & Overlay Safeguards**: Translucent prediction rendering uses `depthWrite = false` in `PredictionPipelines.PREDICTION` to prevent depth buffer conflicts with block breaking overlays (`CRUMBLING`), ensuring vanilla cracking overlays remain completely legible without obscuring block mining progress.
 
 ### 4. Ambient Particle Accents
 - **Heat Visuals**: Randomly spawns client-side `FLAME`, `LAVA`, and `CAMPFIRE_COSY_SMOKE` particles on top of the predicted breakable blocks.
@@ -35,18 +35,15 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Mod Configuration
 
-- **Event Registration**: Render submits are registered via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java) and passed through Minecraft's `FeatureRenderDispatcher` via `PredictionFeatureRenderer` ([FeatureRenderDispatcherMixin.java](../src/main/java/com/simonconrad/fireballpredictor/mixin/FeatureRenderDispatcherMixin.java)). This ensures translucent elements sort and blend correctly against other world objects.
+- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `WorldRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
 - **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features:
   - `renderTrajectory`: Enables/disables the ribbon path.
-  - `trajectoryStyle`: Selects visual style (`SOLID`, `DASHED`, `CORE_ONLY`).
+  - `trajectoryStyle`: Selects visual style (`solid`, `dashed`, `core_only`).
   - `renderCoreGlow`: Enables/disables the inner energy core pass.
   - `enableRibbonPulse`: Enables/disables the time-based alpha motion pulsing.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
   - `renderBlockHighlights`: Enables/disables the cracking animation overlay.
   - `renderParticleAccents`: Enables/disables the ambient particles.
-  - `renderImpactWarning`: Enables/disables the HUD collision warning badge.
-  - `impactWarningBadgeAnchor`: Selects screen alignment (`TOP_LEFT`, `TOP_CENTER`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_CENTER`, `BOTTOM_RIGHT`).
-  - `impactWarningBadgeOffsetX` & `impactWarningBadgeOffsetY`: Fine-tunes HUD badge position pixel offsets.
   - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
   - `windChargeTrajectoryColor` & `windChargeShockwaveColor`: Custom color configuration for wind charges (defaults to white).
 
@@ -67,4 +64,18 @@ Shader packs managed by Iris modify the render pipeline lookup mechanism. Custom
 - **No Shadow Casting**: Shadow passes remain unassigned so HUD-like trajectory ribbons and blast domes do not cast world shadows.
 - **Soft-Loading & Safety**: Guarded by `FabricLoader.getInstance().isModLoaded("iris")` to prevent class-loading exceptions when Iris is not installed.
 
+---
 
+## Config Screen Live Previews
+
+YACL3 description side-panel previews are implemented by [[ConfigPreviewRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ConfigPreviewRenderer.java)] implementing `dev.isxander.yacl3.gui.image.ImageRenderer`.
+
+Options under the **Visuals** category annotate `@CustomImage(factory = …)` so the description panel shows a live schematic while you edit:
+
+| Mode | Factory | Reflects pending values of |
+| --- | --- | --- |
+| Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
+| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor` |
+| HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
+
+Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAccess`, so colour pickers, cyclers, and sliders update the schematic immediately without saving.
