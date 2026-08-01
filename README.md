@@ -17,7 +17,8 @@ By syncing explosion power from the server to the client, the mod deterministica
 - **Block Highlights:** Highlights the specific blocks that will be destroyed by the explosion.
 - **Impact Warning Badge:** On-screen HUD warning badge with a countdown timer when in the path of incoming projectiles.
 - **Multiple Projectiles:** Supports fireballs, non-charged and charged wither skulls, and wind charges.
-- **Configurable:** Tweak visual settings, colors, and behavior through an in-game YetAnotherConfigLib (YACL) menu.
+- **Smart Owner Tracking:** Infers which mob, player, dispenser, or command spawned each projectile and lets you filter highlights per source.
+- **Configurable:** Tweak visual settings, colors, owner filters, and behavior through an in-game YetAnotherConfigLib (YACL) menu.
 
 ## Fair Play
 Some servers might classify this mod as Extra-Sensory Perception (ESP), which is a bannable offense on competitive networks. Always play fair and only use this mod on servers where it is explicitly allowed.

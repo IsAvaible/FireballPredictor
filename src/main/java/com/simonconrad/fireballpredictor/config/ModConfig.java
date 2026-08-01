@@ -9,11 +9,14 @@ import dev.isxander.yacl3.config.v2.api.autogen.CustomImage;
 import dev.isxander.yacl3.config.v2.api.autogen.EnumCycler;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
 import dev.isxander.yacl3.config.v2.api.autogen.IntField;
+import dev.isxander.yacl3.config.v2.api.autogen.MasterTickBox;
+import dev.isxander.yacl3.config.v2.api.autogen.TickBox;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
 
 import java.awt.Color;
+import java.util.Set;
 
 public class ModConfig {
     // 1. Create the handler that manages loading, saving, and the instance
@@ -24,9 +27,17 @@ public class ModConfig {
                     .build())
             .build();
 
+    private static final Set<String> COLLAPSED_GROUP_KEYS = Set.of(
+        "tracking_mobs",
+        "tracking_other"
+    );
+
     // 2. Define your config values using annotations
+
+    // ---- General / power ----------------------------------------------------
+
     @SerialEntry
-    @AutoGen(category = "general")
+    @AutoGen(category = "general", group = "power")
     @FloatField(min = 0.0f, max = 100.0f)
     public float globalFallbackFireballPower = 1.0F;
 
@@ -53,43 +64,137 @@ public class ModConfig {
     }
 
     @SerialEntry
-    @AutoGen(category = "general")
+    @AutoGen(category = "general", group = "power")
     @FloatField(min = 0.7f, max = 1.3f)
     public float rayPowerMultiplier = 1.3F;
 
+    // ---- Owner & Projectile Tracking ----------------------------------------
+
+    /**
+     * Master toggle for projectile tracking. Disables all projectile type & owner filters when off.
+     */
     @SerialEntry
-    @AutoGen(category = "general")
+    @AutoGen(category = "general", group = "tracking")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackMasterFactory.class)
+    @MasterTickBox({
+            "trackFireballs",
+            "trackWitherSkulls",
+            "trackWindCharges",
+            "trackMobProjectiles",
+            "trackOtherOwnerProjectiles"
+    })
+    public boolean trackProjectiles = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackFireballFactory.class)
+    @TickBox
+    public boolean trackFireballs = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking")
     @CustomImage(factory = ConfigPreviewRenderer.TrackWitherFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean trackWitherSkulls = true;
 
     @SerialEntry
-    @AutoGen(category = "general")
+    @AutoGen(category = "general", group = "tracking")
     @CustomImage(factory = ConfigPreviewRenderer.TrackWindFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean trackWindCharges = true;
+
+    /**
+     * Master for hostile-mob-sourced projectiles. Children are the per-mob filters.
+     */
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackMobMasterFactory.class)
+    @MasterTickBox({
+            "trackBlazeFireballs",
+            "trackGhastFireballs",
+            "trackEnderDragonFireballs",
+            "trackWitherMob"
+    })
+    public boolean trackMobProjectiles = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackBlazeFactory.class)
+    @TickBox
+    public boolean trackBlazeFireballs = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackGhastFactory.class)
+    @TickBox
+    public boolean trackGhastFireballs = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackDragonFactory.class)
+    @TickBox
+    public boolean trackEnderDragonFireballs = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackWitherMobFactory.class)
+    @TickBox
+    public boolean trackWitherMob = true;
+
+    /**
+     * Master for non-mob source projectiles (player, dispenser, command).
+     */
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_other")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackOtherMasterFactory.class)
+    @MasterTickBox({
+            "trackPlayerProjectiles",
+            "trackDispenserProjectiles",
+            "trackCommandProjectiles"
+    })
+    public boolean trackOtherOwnerProjectiles = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_other")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackPlayerFactory.class)
+    @TickBox
+    public boolean trackPlayerProjectiles = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_other")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackDispenserFactory.class)
+    @TickBox
+    public boolean trackDispenserProjectiles = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_other")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackCommandFactory.class)
+    @TickBox
+    public boolean trackCommandProjectiles = true;
+
+    // ---- Visuals ------------------------------------------------------------
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderTrajectory = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderShockwaveDome = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderBlockHighlights = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderParticleAccents = true;
 
     @SerialEntry
@@ -119,13 +224,13 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderCoreGlow = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean enableRibbonPulse = true;
 
     @SerialEntry
@@ -143,7 +248,7 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
-    @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @TickBox
     public boolean renderImpactWarning = true;
 
     @SerialEntry
@@ -172,30 +277,29 @@ public class ModConfig {
                 ? client.getCurrentServer().ip
                 : null;
 
-        if (serverIp == null || serverIp.trim().isEmpty()) {
-            return baseGui.generateScreen(parentScreen);
+        dev.isxander.yacl3.api.Option<Float> serverOption = null;
+        if (serverIp != null && !serverIp.trim().isEmpty()) {
+            final String ip = serverIp.trim().toLowerCase(java.util.Locale.ROOT);
+            ModConfig config = instance();
+
+            serverOption = dev.isxander.yacl3.api.Option.<Float>createBuilder()
+                .name(net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower", ip))
+                .description(dev.isxander.yacl3.api.OptionDescription.of(
+                        net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
+                ))
+                .binding(
+                        0.0f,
+                        () -> config.serverFallbackPowers.getOrDefault(ip, 0.0f),
+                        val -> config.setServerFallbackPower(ip, val)
+                )
+                .controller(opt -> dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder.create(opt)
+                        .min(0.0f)
+                        .max(100.0f)
+                        .formatValue(v -> v <= 0.0f
+                                ? net.minecraft.network.chat.Component.literal("0.00 (Auto / None)")
+                                : net.minecraft.network.chat.Component.literal(String.format("%.2f", v))))
+                .build();
         }
-
-        final String ip = serverIp.trim().toLowerCase(java.util.Locale.ROOT);
-        ModConfig config = instance();
-
-        dev.isxander.yacl3.api.Option<Float> serverOption = dev.isxander.yacl3.api.Option.<Float>createBuilder()
-            .name(net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower", ip))
-            .description(dev.isxander.yacl3.api.OptionDescription.of(
-                    net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
-            ))
-            .binding(
-                    0.0f,
-                    () -> config.serverFallbackPowers.getOrDefault(ip, 0.0f),
-                    val -> config.setServerFallbackPower(ip, val)
-            )
-            .controller(opt -> dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder.create(opt)
-                    .min(0.0f)
-                    .max(100.0f)
-                    .formatValue(v -> v <= 0.0f
-                            ? net.minecraft.network.chat.Component.literal("0.00 (Auto / None)")
-                            : net.minecraft.network.chat.Component.literal(String.format("%.2f", v))))
-            .build();
 
         dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
                 .title(baseGui.title())
@@ -210,10 +314,45 @@ public class ModConfig {
             }
 
             for (dev.isxander.yacl3.api.OptionGroup group : category.groups()) {
-                categoryBuilder.group(group);
+                if (group.isRoot()) {
+                    categoryBuilder.group(group);
+                    continue;
+                }
+
+                // Determine if this group should be collapsed
+                boolean shouldCollapse = false;
+                String groupKey = "";
+                if (group.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
+                    groupKey = tc.getKey();
+                } else {
+                    groupKey = group.name().getString();
+                }
+
+                for (String suffix : COLLAPSED_GROUP_KEYS) {
+                    if (groupKey.endsWith(suffix) || groupKey.endsWith("group." + suffix)) {
+                        shouldCollapse = true;
+                        break;
+                    }
+                }
+
+                // Rebuild the group, preserving name, description, options, and setting collapsed state
+                dev.isxander.yacl3.api.OptionGroup.Builder groupBuilder = 
+                    dev.isxander.yacl3.api.OptionGroup.createBuilder()
+                        .name(group.name())
+                        .collapsed(shouldCollapse);
+
+                if (group.description() != null) {
+                    groupBuilder.description(group.description());
+                }
+
+                for (dev.isxander.yacl3.api.Option<?> opt : group.options()) {
+                    groupBuilder.option(opt);
+                }
+
+                categoryBuilder.group(groupBuilder.build());
             }
 
-            if (category.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translatable) {
+            if (serverOption != null && category.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translatable) {
                 if (translatable.getKey().endsWith("general")) {
                     categoryBuilder.option(serverOption);
                 }
@@ -237,4 +376,3 @@ public class ModConfig {
         return HANDLER.instance();
     }
 }
-

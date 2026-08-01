@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0
+
+### Smart Projectile Owner Tracking
+- **Multi-Tier Owner Inference Engine:** Client-side 5-tier inference engine (`Native NBT` -> `Server Packet` -> `Environmental Sweep` -> `Dispenser Fallback` -> `Unknown/Command`) that deduces origin for all hostile and neutral projectiles.
+- **Hierarchical Owner Filtering:** Tiered configuration featuring a global master toggle (`trackProjectiles`), mob-master toggle (`trackMobProjectiles`), individual mob switches (Blaze, Ghast, Ender Dragon, Wither), non-mob master toggle (`trackOtherOwnerProjectiles`), and per-source switches (Player, Dispenser, Command).
+- **Player Deflection Re-attribution:** Projectiles punched or hit by players (such as Ghast fireballs) automatically re-attribute ownership to `PLAYER`, hiding prediction highlights unless player tracking is enabled.
+
+
 ## 1.5.0
 
 ### Live Config Previews

@@ -3,11 +3,17 @@ package com.simonconrad.fireballpredictor.client.gui.preview;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Shared rendering utilities: colour packing, AA primitives, item-icon drawing,
@@ -45,8 +51,32 @@ final class RenderUtils {
             Identifier.withDefaultNamespace("textures/item/fire_charge.png");
     static final Identifier WIND_CHARGE_ICON =
             Identifier.withDefaultNamespace("textures/item/wind_charge.png");
+    static final Identifier BLAZE_POWDER_ICON =
+            Identifier.withDefaultNamespace("textures/item/blaze_powder.png");
+    static final Identifier GHAST_TEAR_ICON =
+            Identifier.withDefaultNamespace("textures/item/ghast_tear.png");
+
     static final Identifier WITHER_SKELETON_TEXTURE =
             Identifier.withDefaultNamespace("textures/entity/skeleton/wither_skeleton.png");
+    static final Identifier DRAGON_FIREBALL_TEXTURE =
+            Identifier.withDefaultNamespace("textures/entity/enderdragon/dragon_fireball.png");
+
+    static final Identifier DEFAULT_SKIN_WIDE =
+            Identifier.withDefaultNamespace("textures/entity/player/wide/steve.png");
+    static final Identifier DEFAULT_SKIN_LEGACY =
+            Identifier.withDefaultNamespace("textures/entity/steve.png");
+
+    static final Identifier DISPENSER_FRONT =
+            Identifier.withDefaultNamespace("textures/block/dispenser_front.png");
+    static final Identifier COMMAND_BLOCK_FRONT =
+            Identifier.withDefaultNamespace("textures/block/command_block_front.png");
+
+    /**
+     * Command-block faces are animated strips; we only ever want frame 0.
+     * If the vanilla frame count ever changes, the worst case is a slightly
+     * mis-cropped icon — never a crash.
+     */
+    private static final int COMMAND_BLOCK_FRAMES = 4;
 
     // ---- Clock --------------------------------------------------------------
 
@@ -98,16 +128,25 @@ final class RenderUtils {
      * Renders a vanilla item at an arbitrary size, with layered fallbacks:
      * <ol>
      *   <li>Proper GUI item render (only when a ClientLevel exists).</li>
-     *   <li>Known vanilla texture blit (fire charge, wind charge, wither skull).</li>
+     *   <li>Direct vanilla texture blit — curated entity/block faces for the
+     *       icons this preview uses, plus a generic
+     *       {@code textures/item/...} / {@code textures/block/...} lookup for
+     *       anything else.</li>
      *   <li>Flat coloured swatch as emergency fallback.</li>
      * </ol>
      */
     static void drawItemIcon(Painter p, Item item, int x, int y, int size, int fallbackArgb) {
-        if (tryDrawRenderedItemIcon(p, item, x, y, size)) {
-            return;
-        }
-        if (drawKnownVanillaIconTexture(p, item, x, y, size)) {
-            return;
+        if (item == Items.DRAGON_HEAD) {
+            if (drawKnownVanillaIconTexture(p, item, x, y, size)) {
+                return;
+            }
+        } else {
+            if (tryDrawRenderedItemIcon(p, item, x, y, size)) {
+                return;
+            }
+            if (drawKnownVanillaIconTexture(p, item, x, y, size)) {
+                return;
+            }
         }
         p.fill(x + 1, y + 1, x + size - 1, y + size - 1, fallbackArgb);
     }
@@ -133,15 +172,19 @@ final class RenderUtils {
 
         try {
             GuiGraphicsExtractor g = p.graphics();
-            var pose = g.pose();
-
-            pose.pushMatrix();
-            try {
-                pose.translate(x, y);
-                pose.scale(size / 16.0f, size / 16.0f);
-                g.item(new ItemStack(item), 0, 0);
-            } finally {
-                pose.popMatrix();
+            if (size != 16) {
+                var pose = g.pose();
+                pose.pushMatrix();
+                try {
+                    pose.translate(x, y);
+                    float scale = size / 16.0f;
+                    pose.scale(scale, scale);
+                    g.item(new ItemStack(item), 0, 0);
+                } finally {
+                    pose.popMatrix();
+                }
+            } else {
+                g.item(new ItemStack(item), x, y);
             }
 
             nextItemRenderAttemptNanos = 0L;
@@ -157,39 +200,171 @@ final class RenderUtils {
         }
     }
 
+    // ---- Raw-texture icon fallback -----------------------------------------
+
+    /** A single blit-able source region inside a vanilla texture. */
+    private record IconTexture(Identifier texture,
+                               int u, int v,
+                               int srcW, int srcH,
+                               int texW, int texH) {
+
+        /** Whole 16x16 sprite (normal item/block texture). */
+        static IconTexture sprite(Identifier texture) {
+            return new IconTexture(texture, 0, 0, 16, 16, 16, 16);
+        }
+
+        /** First frame of a vertically-stacked animated 16x16 strip. */
+        static IconTexture firstFrame(Identifier texture, int frames) {
+            return new IconTexture(texture, 0, 0, 16, 16, 16, 16 * Math.max(1, frames));
+        }
+
+        /** Arbitrary region of an entity texture (e.g. a head's front face). */
+        static IconTexture region(Identifier texture, int u, int v,
+                                  int srcW, int srcH, int texW, int texH) {
+            return new IconTexture(texture, u, v, srcW, srcH, texW, texH);
+        }
+    }
+
+    /** Sentinel meaning "no usable texture for this item"; keeps the cache simple. */
+    private static final IconTexture NO_ICON =
+            IconTexture.sprite(Identifier.withDefaultNamespace("textures/misc/unknown_pack.png"));
+
+    /** Curated overrides where the item id does not map to a usable sprite. */
+    private static final Map<Item, List<IconTexture>> CURATED_ICON_TEXTURES = new IdentityHashMap<>();
+
+    /** Resolved (or negatively resolved) lookups, so we probe resources once. */
+    private static final Map<Item, IconTexture> ICON_TEXTURE_CACHE = new IdentityHashMap<>();
+
+    static {
+        // Plain item sprites (listed explicitly so they skip the generic probe).
+        CURATED_ICON_TEXTURES.put(Items.FIRE_CHARGE, List.of(IconTexture.sprite(FIRE_CHARGE_ICON)));
+        CURATED_ICON_TEXTURES.put(Items.WIND_CHARGE, List.of(IconTexture.sprite(WIND_CHARGE_ICON)));
+        CURATED_ICON_TEXTURES.put(Items.BLAZE_POWDER, List.of(IconTexture.sprite(BLAZE_POWDER_ICON)));
+        CURATED_ICON_TEXTURES.put(Items.GHAST_TEAR, List.of(IconTexture.sprite(GHAST_TEAR_ICON)));
+
+        // Heads/skulls: no item sprite exists, so take the face off the entity skin.
+        CURATED_ICON_TEXTURES.put(Items.WITHER_SKELETON_SKULL,
+                List.of(IconTexture.region(WITHER_SKELETON_TEXTURE, 8, 8, 8, 8, 64, 32)));
+        CURATED_ICON_TEXTURES.put(Items.PLAYER_HEAD, List.of(
+                IconTexture.region(DEFAULT_SKIN_WIDE, 8, 8, 8, 8, 64, 64),
+                IconTexture.region(DEFAULT_SKIN_LEGACY, 8, 8, 8, 8, 64, 64)));
+
+        // Ender Dragon Head item fallback mapped directly to dragon fireball texture (16x16 sprite)
+        CURATED_ICON_TEXTURES.put(Items.DRAGON_HEAD,
+                List.of(IconTexture.sprite(DRAGON_FIREBALL_TEXTURE)));
+
+        // Blocks: use the recognisable front face rather than the generic side.
+        CURATED_ICON_TEXTURES.put(Items.DISPENSER, List.of(
+                IconTexture.sprite(DISPENSER_FRONT)));
+        CURATED_ICON_TEXTURES.put(Items.COMMAND_BLOCK,
+                List.of(IconTexture.firstFrame(COMMAND_BLOCK_FRONT, COMMAND_BLOCK_FRAMES)));
+    }
+
+    /** Call on resource reload if you ever want the probes re-run. */
+    static void invalidateIconTextureCache() {
+        ICON_TEXTURE_CACHE.clear();
+    }
+
     /**
-     * Draws the few icons used by this preview directly from vanilla textures.
-     * Only used when the real item renderer is unavailable or fails.
+     * Draws an icon directly from a vanilla texture. Used only when the real
+     * item renderer is unavailable or fails.
      */
     private static boolean drawKnownVanillaIconTexture(Painter p, Item item, int x, int y, int size) {
-        try {
-            GuiGraphicsExtractor g = p.graphics();
-
-            if (item == Items.FIRE_CHARGE) {
-                g.blit(RenderPipelines.GUI_TEXTURED,
-                        FIRE_CHARGE_ICON, x, y,
-                        0, 0, size, size, 14, 14);
-                return true;
-            }
-
-            if (item == Items.WIND_CHARGE) {
-                g.blit(RenderPipelines.GUI_TEXTURED,
-                        WIND_CHARGE_ICON, x, y,
-                        0, 0, size, size, 28, 28);
-                return true;
-            }
-
-            if (item == Items.WITHER_SKELETON_SKULL) {
-                // Draw the front face from the wither skeleton entity texture.
-                g.blit(RenderPipelines.GUI_TEXTURED,
-                        WITHER_SKELETON_TEXTURE, x, y,
-                        8, 8, size, size, 8, 8, 64, 32);
-                return true;
-            }
-        } catch (RuntimeException | LinkageError ignored) {
-            // Fall through to flat swatch fallback.
+        IconTexture icon = resolveIconTexture(item);
+        if (icon == null) {
+            return false;
         }
-        return false;
+        try {
+            p.graphics().blit(RenderPipelines.GUI_TEXTURED,
+                    icon.texture(), x, y,
+                    icon.u(), icon.v(),
+                    size, size,
+                    icon.srcW(), icon.srcH(),
+                    icon.texW(), icon.texH());
+            return true;
+        } catch (RuntimeException | LinkageError ignored) {
+            // Never retry a blit that blew up; fall through to the flat swatch.
+            ICON_TEXTURE_CACHE.put(item, NO_ICON);
+            return false;
+        }
+    }
+
+    /** First candidate texture that actually exists in the active resource packs. */
+    private static IconTexture resolveIconTexture(Item item) {
+        IconTexture cached = ICON_TEXTURE_CACHE.get(item);
+        if (cached != null) {
+            return cached == NO_ICON ? null : cached;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.getResourceManager() == null) {
+            // Too early to probe — don't poison the cache with a false negative.
+            return null;
+        }
+
+        IconTexture resolved = null;
+        for (IconTexture candidate : candidatesFor(item)) {
+            if (textureExists(candidate.texture())) {
+                resolved = candidate;
+                break;
+            }
+        }
+
+        ICON_TEXTURE_CACHE.put(item, resolved == null ? NO_ICON : resolved);
+        return resolved;
+    }
+
+    /**
+     * Curated entry if present, otherwise a best-effort guess derived from the
+     * item's registry id: item sprite first, then the common block-face names.
+     */
+    private static List<IconTexture> candidatesFor(Item item) {
+        List<IconTexture> curated = CURATED_ICON_TEXTURES.get(item);
+        if (curated != null) {
+            return curated;
+        }
+
+        Identifier id;
+        try {
+            id = BuiltInRegistries.ITEM.getKey(item);
+        } catch (RuntimeException | LinkageError ignored) {
+            return List.of();
+        }
+        if (id == null) {
+            return List.of();
+        }
+
+        String ns = id.getNamespace();
+        String path = id.getPath();
+
+        List<IconTexture> out = new ArrayList<>(6);
+        out.add(IconTexture.sprite(texture(ns, "textures/item/" + path + ".png")));
+        out.add(IconTexture.sprite(texture(ns, "textures/block/" + path + ".png")));
+        out.add(IconTexture.sprite(texture(ns, "textures/block/" + path + "_front.png")));
+        out.add(IconTexture.sprite(texture(ns, "textures/block/" + path + "_side.png")));
+        out.add(IconTexture.sprite(texture(ns, "textures/block/" + path + "_top.png")));
+        out.add(IconTexture.sprite(texture(ns, "textures/block/" + path + "_still.png")));
+        return out;
+    }
+
+    private static Identifier texture(String namespace, String path) {
+        try {
+            return Identifier.fromNamespaceAndPath(namespace, path);
+        } catch (RuntimeException ignored) {
+            return Identifier.withDefaultNamespace("textures/misc/unknown_pack.png");
+        }
+    }
+
+    private static boolean textureExists(Identifier id) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.getResourceManager() == null) {
+            return false;
+        }
+        try {
+            return mc.getResourceManager().getResource(id).isPresent();
+        } catch (RuntimeException | LinkageError ignored) {
+            return false;
+        }
     }
 
     // ---- Anti-aliased primitives shared across renderers --------------------

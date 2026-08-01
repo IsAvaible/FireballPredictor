@@ -19,6 +19,17 @@ import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.network.ExplosionInferenceHandler;
 import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
+import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
+import com.simonconrad.fireballpredictor.client.tracking.OwnerInferenceEngine;
+import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
+import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.monster.Blaze;
+import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.DispenserBlock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -339,4 +350,141 @@ public class FireballPredictorGameTest {
 
         context.succeed();
     }
+
+    // ---- Owner inference ----------------------------------------------------
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testOwnerInferenceNativeAndSweep(GameTestHelper context) {
+        // 1. Native owner via setOwner (singleplayer / NBT path)
+        Ghast ghast = context.spawn(EntityTypes.GHAST, 1, 3, 3);
+        ghast.setPos(context.absoluteVec(new Vec3(1.5, 3.0, 3.5)));
+
+        LargeFireball fireball = context.spawn(EntityTypes.FIREBALL, 2, 3, 3);
+        Vec3 spawn = context.absoluteVec(new Vec3(3.5, 3.0, 3.5));
+        fireball.setPos(spawn);
+        fireball.setOwner(ghast);
+        fireball.setDeltaMovement(context.absoluteVec(new Vec3(0.5, 0.0, 0.0)).subtract(context.absoluteVec(Vec3.ZERO)));
+
+        InferenceResult nativeResult = OwnerInferenceEngine.infer(fireball, context.getLevel());
+        if (nativeResult.owner() != ProjectileOwner.GHAST) {
+            throw new RuntimeException("Expected NATIVE GHAST owner, got: " + nativeResult.owner()
+                    + " via " + nativeResult.source());
+        }
+        if (nativeResult.source() != InferenceResult.InferenceSource.NATIVE_NBT) {
+            throw new RuntimeException("Expected NATIVE_NBT source, got: " + nativeResult.source());
+        }
+
+        // 2. Environmental sweep — no setOwner, ghast looking toward the fireball
+        fireball.setOwner((net.minecraft.world.entity.Entity) null);
+        // Face +X (toward the fireball relative spawn)
+        ghast.setYRot(context.getTestRotation().rotate(Direction.EAST).toYRot());
+        ghast.setXRot(0.0f);
+
+        // Place blaze farther away looking wrong way — should lose to ghast
+        Blaze blaze = context.spawn(EntityTypes.BLAZE, 5, 3, 5);
+        blaze.setPos(context.absoluteVec(new Vec3(8.0, 3.0, 8.0)));
+        blaze.setYRot(0.0f);
+
+        InferenceResult sweep = OwnerInferenceEngine.infer(fireball, context.getLevel());
+        if (sweep.owner() != ProjectileOwner.GHAST && sweep.owner() != ProjectileOwner.BLAZE
+                && sweep.owner() != ProjectileOwner.COMMAND) {
+            throw new RuntimeException("Unexpected sweep owner: " + sweep.owner() + " via " + sweep.source());
+        }
+        // With owner cleared, source must not be NATIVE_NBT
+        if (sweep.source() == InferenceResult.InferenceSource.NATIVE_NBT) {
+            throw new RuntimeException("Sweep should not report NATIVE_NBT after owner cleared");
+        }
+
+        ghast.discard();
+        blaze.discard();
+        fireball.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testOwnerInferenceDispenserAndDeflection(GameTestHelper context) {
+        // Dispenser facing EAST with fireball just outside its face
+        BlockPos relDispenser = new BlockPos(2, 2, 2);
+        BlockState dispenserState = Blocks.DISPENSER.defaultBlockState()
+                .setValue(DispenserBlock.FACING, Direction.EAST);
+        context.setBlock(relDispenser, dispenserState);
+
+        LargeFireball fireball = context.spawn(EntityTypes.FIREBALL, 3, 2, 2);
+        // Absolute position roughly one block east of the dispenser centre
+        Vec3 dispenseAbs = context.absoluteVec(new Vec3(3.2, 2.5, 2.5));
+        fireball.setPos(dispenseAbs);
+        Vec3 eastVel = context.absoluteVec(new Vec3(0.5, 0.0, 0.0)).subtract(context.absoluteVec(Vec3.ZERO));
+        fireball.setDeltaMovement(eastVel);
+
+        InferenceResult dispenserResult = OwnerInferenceEngine.infer(fireball, context.getLevel());
+        if (dispenserResult.owner() != ProjectileOwner.DISPENSER) {
+            throw new RuntimeException("Expected DISPENSER owner, got: " + dispenserResult.owner()
+                    + " via " + dispenserResult.source());
+        }
+
+        // Deflection: reverse velocity near a server mock player in the level → PLAYER
+        Player player = context.makeMockServerPlayerInLevel();
+        player.setPos(dispenseAbs.x + 1.0, dispenseAbs.y, dispenseAbs.z);
+
+        Vec3 prevVel = fireball.getDeltaMovement();
+        fireball.setDeltaMovement(prevVel.scale(-1.0));
+
+        InferenceResult deflected = OwnerInferenceEngine.reassignOnDeflection(
+                fireball, context.getLevel(), dispenserResult, prevVel);
+        if (deflected.owner() != ProjectileOwner.PLAYER) {
+            throw new RuntimeException("Expected PLAYER after deflection, got: " + deflected.owner()
+                    + " (playersNearby="
+                    + context.getLevel().getEntitiesOfClass(Player.class, fireball.getBoundingBox().inflate(5.0)).size()
+                    + ")");
+        }
+        if (!deflected.isDeflected()) {
+            throw new RuntimeException("Expected isDeflected() to be true after deflection");
+        }
+
+        // Sideways deflection (90-degree angle change, dot product ≈ 0.0)
+        Vec3 sidewaysVel = new Vec3(0.0, 0.0, prevVel.x != 0 ? prevVel.x : 0.5);
+        fireball.setDeltaMovement(sidewaysVel);
+        InferenceResult sidewaysDeflected = OwnerInferenceEngine.reassignOnDeflection(
+                fireball, context.getLevel(), dispenserResult, prevVel);
+        if (sidewaysDeflected.owner() != ProjectileOwner.PLAYER || !sidewaysDeflected.isDeflected()) {
+            throw new RuntimeException("Expected PLAYER and isDeflected()=true after 90-degree sideways deflection, got: " 
+                    + sidewaysDeflected.owner());
+        }
+
+        // Config filter: player projectiles off by default
+        ModConfig config = ModConfig.instance();
+        boolean previousPlayer = config.trackPlayerProjectiles;
+        boolean previousMaster = config.trackProjectiles;
+        try {
+            config.trackProjectiles = true;
+            config.trackPlayerProjectiles = false;
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, false)) {
+                throw new RuntimeException("Player filter should be false for non-deflected when trackPlayerProjectiles=false");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, true)) {
+                throw new RuntimeException("Deflected fireball filter should be true even when trackPlayerProjectiles=false");
+            }
+            config.trackPlayerProjectiles = true;
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
+                throw new RuntimeException("Player filter should be true when trackPlayerProjectiles=true");
+            }
+            config.trackProjectiles = false;
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.GHAST)) {
+                throw new RuntimeException("Master off should disable ghast tracking");
+            }
+        } finally {
+            config.trackPlayerProjectiles = previousPlayer;
+            config.trackProjectiles = previousMaster;
+        }
+
+        // Classifier sanity
+        if (OwnerClassifier.classifyEntity(player) != ProjectileOwner.PLAYER) {
+            throw new RuntimeException("classifyEntity(player) failed");
+        }
+
+        fireball.discard();
+        player.discard();
+        context.succeed();
+    }
 }
+
