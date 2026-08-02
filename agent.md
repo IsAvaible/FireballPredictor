@@ -15,7 +15,7 @@ graph TD
     C --> D[Send FireballPowerPayload & FireballOwnerPayload to client]
     E[Client receives payload / entity spawn] --> F[Store in ClientPowerCache & ClientOwnerCache]
     F --> G[OwnerInferenceEngine 5-tier resolution & deflection check]
-    G --> H[TrackedProjectile evaluates ModConfig filters]
+    G --> H[TrackedProjectile evaluates ModConfig filters & ServerTrackingRules mask]
     H -->|Enabled| I[Run TrajectoryPredictor]
     I --> J[Generate Flight Path]
     J --> K[Run ImpactPredictor if impact is found]
@@ -24,6 +24,9 @@ graph TD
     N[LevelRenderEvents.END_MAIN] --> O[Queue rendering data via PredictionRenderer]
     O --> P[FeatureRenderDispatcher calls PredictionFeatureRenderer]
     P --> Q[Render Ribbon Trail & Shockwave Dome]
+    R[ServerConfig fireballpredictor-server.json] --> S[On JOIN / /fireballpredictor reload: send TrackingRulesPayload]
+    S --> T[ServerTrackingRules mask on client]
+    T --> H
 ```
 
 ---
@@ -33,8 +36,10 @@ graph TD
 Here are the key source files and resources in the project:
 
 ### 1. Main Entrypoint & Configuration
-* [FireballPredictor.java](src/main/java/com/simonconrad/fireballpredictor/FireballPredictor.java): Root server/mod entrypoint. Syncs fireball size/power (`FireballPowerPayload`) and authoritative owner info (`FireballOwnerPayload`) to clients.
+* [FireballPredictor.java](src/main/java/com/simonconrad/fireballpredictor/FireballPredictor.java): Root server/mod entrypoint. Syncs fireball size/power (`FireballPowerPayload`) and authoritative owner info (`FireballOwnerPayload`) to clients. Pushes server tracking restrictions (`TrackingRulesPayload` from `ServerConfig.disabledOwnerMask()`) to players on join and registers `/fireballpredictor reload` (game-master permission) to reload the server config and re-broadcast restrictions live.
 * [ModConfig.java](src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java): Annotation-based config handling via YetAnotherConfigLib (YACL) v3. Configures owner-based projectile tracking (global `@MasterTickBox` + mob master + per-source filters), fireball/wither/wind toggles, ribbon/dome colors (including separate white defaults for wind charges), global fallback fireball power (`globalFallbackFireballPower`), per-server power fallbacks (`serverFallbackPowers`), and dynamic config GUI building via `createScreen`, HUD badge settings, and ray power multipliers. (See [yacl3.md](docs/yacl3.md) for full YACL v3 navigation guide).
+* [ServerConfig.java](src/main/java/com/simonconrad/fireballpredictor/config/ServerConfig.java): Dedicated-server-safe (plain Gson, no YACL/client classes) config at `config/fireballpredictor-server.json`. Lets server owners disable prediction tracking for the "other" owner category — master switch `disableOtherOwnerTracking` (whole group) or sub-options `disablePlayerTracking`, `disableDispenserTracking`, `disableCommandTracking` — and computes the `TrackingRules` bitmask broadcast to clients.
+* [TrackingRules.java](src/main/java/com/simonconrad/fireballpredictor/tracking/TrackingRules.java): Side-agnostic bitmask model (`PLAYER`, `DISPENSER`, `COMMAND`, `OTHER_GROUP`) mapping `ProjectileOwner` values to restriction bits (`UNKNOWN` folds into `COMMAND`, mirroring the client config mapping).
 * [TrajectoryStyle.java](src/main/java/com/simonconrad/fireballpredictor/config/TrajectoryStyle.java): Enum configuring ribbon render modes (`SOLID`, `DASHED`, `CORE_ONLY`).
 * [ImpactWarningBadgeAnchor.java](src/main/java/com/simonconrad/fireballpredictor/config/ImpactWarningBadgeAnchor.java): Enum controlling HUD warning badge screen anchor alignment (`TOP_LEFT`, `TOP_CENTER`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_CENTER`, `BOTTOM_RIGHT`).
 
@@ -43,10 +48,12 @@ Here are the key source files and resources in the project:
 * [ProjectileOwner.java](src/main/java/com/simonconrad/fireballpredictor/tracking/ProjectileOwner.java): Enum of inferred projectile origins (`BLAZE`, `GHAST`, `ENDER_DRAGON`, `WITHER`, `PLAYER`, `DISPENSER`, `COMMAND`, `UNKNOWN`).
 * [OwnerClassifier.java](src/main/java/com/simonconrad/fireballpredictor/tracking/OwnerClassifier.java): Side-agnostic entity→owner classification and dispenser adjacency shared by server sync and client inference.
 * [OwnerInferenceEngine.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/OwnerInferenceEngine.java): Client five-tier owner inference (`NATIVE_NBT` → `SERVER_PACKET` → `ENVIRONMENTAL_SWEEP` → `DISPENSER_FALLBACK` → `UNKNOWN`/`COMMAND`) plus deflection re-attribution.
-* [TrackedProjectile.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/TrackedProjectile.java): Per-projectile owner state, live filter evaluation, and packet upgrade path.
+* [TrackedProjectile.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/TrackedProjectile.java): Per-projectile owner state, live filter evaluation (including the `ServerTrackingRules` server-restriction gate, which overrides local config and the deflection bypass), and packet upgrade path.
+* [ServerTrackingRules.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ServerTrackingRules.java): Client store of the active server's restriction mask, updated by `TrackingRulesPayload`; cleared on disconnect so restrictions never leak between servers. Keep packet wiring inside `registerReceivers()` so mask accessors stay GameTest-safe.
 * [ClientOwnerCache.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ClientOwnerCache.java): Client cache for `FireballOwnerPayload` with update listener for in-flight upgrades.
 * [InferenceResult.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/InferenceResult.java): Record bundling `ProjectileOwner`, optional owner entity, and `InferenceSource` tier.
 * [FireballOwnerPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/FireballOwnerPayload.java): Server→client packet syncing owner type ordinal + owner entity id.
+* [TrackingRulesPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/TrackingRulesPayload.java): Server→client packet pushing the disabled "other" owner bitmask (`TrackingRules`) to clients on join and after server config reloads.
 * [ModMenuIntegration.java](src/main/java/com/simonconrad/fireballpredictor/client/compat/ModMenuIntegration.java): Registers the config screen with ModMenu using `ModConfig::createScreen`.
 
 ### 3. Math & Logic Simulators
@@ -81,7 +88,7 @@ Here are the key source files and resources in the project:
 * [TrackingRenderer.java](src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java): Helper renderer drawing master chip overviews, mob-master chip overviews, and single target lock-on badges for the YACL config preview panel.
 
 ### 6. Automated Testing (GameTest)
-* [FireballPredictorGameTest.java](src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test suite checking predicted trajectories and block-destruction counts against real in-game detonations, plus owner-inference coverage (`testOwnerInferenceNativeAndSweep`, `testOwnerInferenceDispenserAndDeflection`). Validates normal fireballs, normal/charged wither skulls, obsidian/waterlogged slab interactions, high-power fireballs, wind charges, zero-radius explosion power estimation & hierarchy, and owner filter evaluation.
+* [FireballPredictorGameTest.java](src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test suite checking predicted trajectories and block-destruction counts against real in-game detonations, plus owner-inference coverage (`testOwnerInferenceNativeAndSweep`, `testOwnerInferenceDispenserAndDeflection`). Validates normal fireballs, normal/charged wither skulls, obsidian/waterlogged slab interactions, high-power fireballs, wind charges, zero-radius explosion power estimation & hierarchy, and owner filter evaluation. `testServerTrackingRestrictions` covers the server restriction mask (whole group & sub-options, deflection non-bypass, `ServerConfig` mask computation).
 
 ### 7. Build & Publishing Infrastructure
 * [libs.versions.toml](gradle/libs.versions.toml): Central Gradle version catalog for Minecraft `26.2`, Loom, Fabric API, YACL, ModMenu, and publishing plugins.

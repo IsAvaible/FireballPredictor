@@ -270,7 +270,24 @@ public class ModConfig {
     public int impactWarningBadgeOffsetY = 0;
 
     // 3. Helper methods to match your existing client initialization calls
-    public static net.minecraft.client.gui.screens.Screen createScreen(net.minecraft.client.gui.screens.Screen parentScreen) {
+    public static dev.isxander.yacl3.api.YetAnotherConfigLib generateGui() {
+        // 1. Evaluate server tracking restrictions before building the GUI options
+        int serverMask = com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.mask();
+        boolean playerAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
+                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.PLAYER);
+        boolean dispenserAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
+                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.DISPENSER);
+        boolean commandAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
+                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.COMMAND);
+        boolean otherGroupAvailable = (serverMask & com.simonconrad.fireballpredictor.tracking.TrackingRules.OTHER_GROUP) !=
+                com.simonconrad.fireballpredictor.tracking.TrackingRules.OTHER_GROUP;
+
+        String prefix = "yacl3.config." + HANDLER.id().getNamespace() + ":" + HANDLER.id().getPath() + ".";
+        String playerKey = prefix + "trackPlayerProjectiles";
+        String dispenserKey = prefix + "trackDispenserProjectiles";
+        String commandKey = prefix + "trackCommandProjectiles";
+        String otherKey = prefix + "trackOtherOwnerProjectiles";
+
         dev.isxander.yacl3.api.YetAnotherConfigLib baseGui = HANDLER.generateGui();
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         String serverIp = (client != null && client.getCurrentServer() != null)
@@ -335,7 +352,7 @@ public class ModConfig {
                     }
                 }
 
-                // Rebuild the group, preserving name, description, options, and setting collapsed state
+                // Build option group with availability set directly on existing YACL option
                 dev.isxander.yacl3.api.OptionGroup.Builder groupBuilder = 
                     dev.isxander.yacl3.api.OptionGroup.createBuilder()
                         .name(group.name())
@@ -346,6 +363,19 @@ public class ModConfig {
                 }
 
                 for (dev.isxander.yacl3.api.Option<?> opt : group.options()) {
+                    if (opt != null && opt.name() != null && opt.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
+                        String key = tc.getKey();
+                        if (key.equals(playerKey) && !playerAvailable) {
+                            opt.setAvailable(false);
+                        } else if (key.equals(dispenserKey) && !dispenserAvailable) {
+                            opt.setAvailable(false);
+                        } else if (key.equals(commandKey) && !commandAvailable) {
+                            opt.setAvailable(false);
+                        } else if (key.equals(otherKey) && !otherGroupAvailable) {
+                            opt.setAvailable(false);
+                        }
+                    }
+
                     groupBuilder.option(opt);
                 }
 
@@ -361,7 +391,11 @@ public class ModConfig {
             builder.category(categoryBuilder.build());
         }
 
-        return builder.build().generateScreen(parentScreen);
+        return builder.build();
+    }
+
+    public static net.minecraft.client.gui.screens.Screen createScreen(net.minecraft.client.gui.screens.Screen parentScreen) {
+        return generateGui().generateScreen(parentScreen);
     }
 
     public static void load() {

@@ -97,6 +97,10 @@ public final class TrackedProjectile {
      * allowing deflected projectiles to bypass the player-owner filter.
      */
     public static boolean evaluateFilter(AbstractHurtingProjectile projectile, ProjectileOwner owner, boolean isDeflected) {
+        if (ServerTrackingRules.isDisabled(owner)) {
+            return false;
+        }
+
         ModConfig config = ModConfig.instance();
 
         if (!config.trackProjectiles) {

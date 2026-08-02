@@ -18,10 +18,29 @@ By syncing explosion power from the server to the client, the mod deterministica
 - **Impact Warning Badge:** On-screen HUD warning badge with a countdown timer when in the path of incoming projectiles.
 - **Multiple Projectiles:** Supports fireballs, non-charged and charged wither skulls, and wind charges.
 - **Smart Owner Tracking:** Infers which mob, player, dispenser, or command spawned each projectile and lets you filter highlights per source.
+- **Server Enforcement:** Server owners can disable tracking of "other"-source projectiles (players, dispensers, commands) for every connected client, either for the whole group or per sub-option.
 - **Configurable:** Tweak visual settings, colors, owner filters, and behavior through an in-game YetAnotherConfigLib (YACL) menu.
 
 ## Fair Play
 Some servers might classify this mod as Extra-Sensory Perception (ESP), which is a bannable offense on competitive networks. Always play fair and only use this mod on servers where it is explicitly allowed.
+
+## Server Configuration
+
+When the mod is installed on a server, it creates `config/fireballpredictor-server.json` on first start. Server owners can use it to disable prediction tracking of "other"-source projectiles (e.g. in PvP contexts where predicting player-owned fireballs is unwanted) for all mod users on the server:
+
+```json
+{
+  "disableOtherOwnerTracking": false,
+  "disablePlayerTracking": false,
+  "disableDispenserTracking": false,
+  "disableCommandTracking": false
+}
+```
+
+- `disableOtherOwnerTracking`: master switch — disables the whole "other" owner group (player, dispenser, command projectiles).
+- `disablePlayerTracking` / `disableDispenserTracking` / `disableCommandTracking`: sub-options to disable individual sources.
+
+Restrictions are pushed to clients when they join and override their local settings. After editing the file, run `/fireballpredictor reload` (operator permission) to apply changes to all connected players without a restart.
 
 ## Setup & Build Instructions
 

@@ -5,6 +5,7 @@ import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
@@ -72,6 +73,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         ClientPowerCache.registerReceivers();
         ClientOwnerCache.registerReceivers();
         ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
+        ServerTrackingRules.registerReceivers();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null) {
@@ -80,6 +82,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 currentlyHighlightedBlocks.clear();
                 ClientPowerCache.POWER_CACHE.clear();
                 ClientOwnerCache.clear();
+                ServerTrackingRules.clear();
                 com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
                 com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
                 impactWarningVisible = false;

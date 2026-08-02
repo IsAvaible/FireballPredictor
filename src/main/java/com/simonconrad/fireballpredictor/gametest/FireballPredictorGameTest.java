@@ -21,10 +21,13 @@ import com.simonconrad.fireballpredictor.client.network.ExplosionInferenceHandle
 import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
 import com.simonconrad.fireballpredictor.client.tracking.OwnerInferenceEngine;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.config.ServerConfig;
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
+import com.simonconrad.fireballpredictor.tracking.TrackingRules;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Ghast;
@@ -486,5 +489,224 @@ public class FireballPredictorGameTest {
         player.discard();
         context.succeed();
     }
-}
 
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testServerTrackingRestrictions(GameTestHelper context) {
+        LargeFireball fireball = context.spawn(EntityTypes.FIREBALL, 1, 2, 1);
+        ModConfig config = ModConfig.instance();
+        ServerConfig serverConfig = ServerConfig.instance();
+
+        boolean previousTrack = config.trackProjectiles;
+        boolean previousMobMaster = config.trackMobProjectiles;
+        boolean previousGhast = config.trackGhastFireballs;
+        boolean previousOther = config.trackOtherOwnerProjectiles;
+        boolean previousPlayer = config.trackPlayerProjectiles;
+        boolean previousDispenser = config.trackDispenserProjectiles;
+        boolean previousCommand = config.trackCommandProjectiles;
+        boolean prevScMaster = serverConfig.disableOtherOwnerTracking;
+        boolean prevScPlayer = serverConfig.disablePlayerTracking;
+        boolean prevScDispenser = serverConfig.disableDispenserTracking;
+        boolean prevScCommand = serverConfig.disableCommandTracking;
+        int previousMask = ServerTrackingRules.mask();
+        try {
+            // Local config allows everything; the server restriction alone must gate.
+            config.trackProjectiles = true;
+            config.trackMobProjectiles = true;
+            config.trackGhastFireballs = true;
+            config.trackOtherOwnerProjectiles = true;
+            config.trackPlayerProjectiles = true;
+            config.trackDispenserProjectiles = true;
+            config.trackCommandProjectiles = true;
+
+            // No restrictions -> local config decides
+            ServerTrackingRules.clear();
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
+                throw new RuntimeException("Player tracking should be allowed when the server does not restrict it");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
+                throw new RuntimeException("Dispenser tracking should be allowed when the server does not restrict it");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("Command tracking should be allowed when the server does not restrict it");
+            }
+
+            // Sub-option restriction: players only
+            ServerTrackingRules.applyMask(TrackingRules.PLAYER);
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, false)) {
+                throw new RuntimeException("Server restriction must disable player tracking even when locally enabled");
+            }
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, true)) {
+                throw new RuntimeException("Deflection must not bypass the server player restriction");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
+                throw new RuntimeException("Dispenser tracking must stay enabled when only players are restricted");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.UNKNOWN)) {
+                throw new RuntimeException("Unknown shares the command bit and must stay enabled when only players are restricted");
+            }
+
+            // Whole "other" group restriction
+            ServerTrackingRules.applyMask(TrackingRules.OTHER_GROUP);
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
+                throw new RuntimeException("Whole-group restriction must disable player tracking");
+            }
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
+                throw new RuntimeException("Whole-group restriction must disable dispenser tracking");
+            }
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("Whole-group restriction must disable command tracking");
+            }
+            if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.UNKNOWN)) {
+                throw new RuntimeException("Whole-group restriction must disable unknown (command) tracking");
+            }
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.GHAST)) {
+                throw new RuntimeException("Mob owners are not part of the server \"other\" restriction");
+            }
+
+            // Lifting restrictions restores local behaviour immediately
+            ServerTrackingRules.clear();
+            if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
+                throw new RuntimeException("Clearing the server mask must re-enable locally allowed player tracking");
+            }
+
+            // ServerConfig mask computation: sub-options combine, master covers the whole group
+            serverConfig.disableOtherOwnerTracking = false;
+            serverConfig.disablePlayerTracking = true;
+            if (serverConfig.disabledOwnerMask() != TrackingRules.PLAYER) {
+                throw new RuntimeException("ServerConfig sub-option must map to its TrackingRules bit");
+            }
+            serverConfig.disableDispenserTracking = true;
+            serverConfig.disableCommandTracking = true;
+            if (serverConfig.disabledOwnerMask() != TrackingRules.OTHER_GROUP) {
+                throw new RuntimeException("ServerConfig sub-options must combine into the whole group mask");
+            }
+            serverConfig.disableOtherOwnerTracking = true;
+            serverConfig.disablePlayerTracking = false;
+            serverConfig.disableDispenserTracking = false;
+            serverConfig.disableCommandTracking = false;
+            if (serverConfig.disabledOwnerMask() != TrackingRules.OTHER_GROUP) {
+                throw new RuntimeException("ServerConfig master must disable the whole other group");
+            }
+            serverConfig.disableOtherOwnerTracking = false;
+            if (serverConfig.disabledOwnerMask() != 0) {
+                throw new RuntimeException("Default ServerConfig must not restrict anything");
+            }
+        } finally {
+            config.trackProjectiles = previousTrack;
+            config.trackMobProjectiles = previousMobMaster;
+            config.trackGhastFireballs = previousGhast;
+            config.trackOtherOwnerProjectiles = previousOther;
+            config.trackPlayerProjectiles = previousPlayer;
+            config.trackDispenserProjectiles = previousDispenser;
+            config.trackCommandProjectiles = previousCommand;
+            serverConfig.disableOtherOwnerTracking = prevScMaster;
+            serverConfig.disablePlayerTracking = prevScPlayer;
+            serverConfig.disableDispenserTracking = prevScDispenser;
+            serverConfig.disableCommandTracking = prevScCommand;
+            ServerTrackingRules.applyMask(previousMask);
+        }
+
+        fireball.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testPacketSanitization(GameTestHelper context) {
+        int previousMask = ServerTrackingRules.mask();
+        try {
+            // Apply 0xFFFF -> only valid bits (0x07: PLAYER, DISPENSER, COMMAND) must survive
+            ServerTrackingRules.applyMask(0xFFFF);
+            int mask = ServerTrackingRules.mask();
+            if (mask != TrackingRules.OTHER_GROUP) {
+                throw new RuntimeException("Expected mask 0xFFFF to sanitize to OTHER_GROUP (" + TrackingRules.OTHER_GROUP + "), got: " + mask);
+            }
+            if ((mask & ~TrackingRules.OTHER_GROUP) != 0) {
+                throw new RuntimeException("Mask retained unsupported bits: 0x" + Integer.toHexString(mask));
+            }
+
+            // Apply 0xFF00 (no valid bits) -> should sanitize to 0
+            ServerTrackingRules.applyMask(0xFF00);
+            mask = ServerTrackingRules.mask();
+            if (mask != 0) {
+                throw new RuntimeException("Expected mask 0xFF00 to sanitize to 0, got: " + mask);
+            }
+        } finally {
+            ServerTrackingRules.applyMask(previousMask);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testDisconnectReset(GameTestHelper context) {
+        int previousMask = ServerTrackingRules.mask();
+        try {
+            // Join server A (restricted)
+            ServerTrackingRules.applyMask(TrackingRules.PLAYER | TrackingRules.DISPENSER);
+            if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER) || !ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)) {
+                throw new RuntimeException("Failed to set restrictions for server A");
+            }
+
+            // Disconnect -> clear restrictions (simulating disconnect event listener)
+            ServerTrackingRules.clear();
+            if (ServerTrackingRules.mask() != 0) {
+                throw new RuntimeException("Stale mask remains after disconnect! Expected 0, got: " + ServerTrackingRules.mask());
+            }
+
+            if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("Stale restriction active after disconnect!");
+            }
+        } finally {
+            ServerTrackingRules.applyMask(previousMask);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testGuiOptionAvailability(GameTestHelper context) {
+        int previousMask = ServerTrackingRules.mask();
+
+        try {
+            // 1. Unrestricted state -> no options restricted
+            ServerTrackingRules.clear();
+            if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("No options should be restricted when mask is clear");
+            }
+
+            // 2. Restricted PLAYER bit -> only PLAYER option disabled
+            ServerTrackingRules.applyMask(TrackingRules.PLAYER);
+            if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)) {
+                throw new RuntimeException("PLAYER option should be restricted when PLAYER bit is set");
+            }
+            if (ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("DISPENSER and COMMAND options should remain available when only PLAYER is restricted");
+            }
+
+            // 3. Whole OTHER_GROUP restricted -> all 3 options disabled
+            ServerTrackingRules.applyMask(TrackingRules.OTHER_GROUP);
+            if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
+                    || !ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
+                    || !ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("All tracking options should be restricted when OTHER_GROUP is set");
+            }
+
+            // 4. Disconnect / clear restrictions -> re-enabled
+            ServerTrackingRules.clear();
+            if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
+                    || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
+                throw new RuntimeException("All tracking options should re-enable after server restrictions are lifted");
+            }
+        } finally {
+            ServerTrackingRules.applyMask(previousMask);
+        }
+
+        context.succeed();
+    }
+}

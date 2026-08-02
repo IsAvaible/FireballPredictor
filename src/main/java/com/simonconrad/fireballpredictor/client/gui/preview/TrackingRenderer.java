@@ -281,10 +281,10 @@ final class TrackingRenderer {
             }
         }
 
-        if (!enabled) {
-            // Soft veil so the whole overview reads as off
-            p.fill(x, y, x + w, y + h, 0x550A0C10);
-        }
+        // if (!enabled) {
+        //     // Soft veil so the whole overview reads as off
+        //     p.fill(x, y, x + w, y + h, 0x550A0C10);
+        // }
     }
 
     // ---- Private helpers ----------------------------------------------------
