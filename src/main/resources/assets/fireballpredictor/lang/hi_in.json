@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: नारंगी (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "विंड चार्ज शॉकवेव गुंबद का रंग",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "विंड चार्ज के लिए शॉकवेव गुंबद का रंग।\nडिफ़ॉल्ट: सफेद (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "गुंबद फ्रेशनेल शक्ति",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "शॉकवेव गुंबद पर फ्रेशनेल रिम चमक की शक्ति। 0 पुराना फ्लैट शेडिंग बनाए रखता है, 1 गुंबद के किनारे को चमकदार और कैमरा की ओर वाली सतह को पारदर्शी बनाता है।\nडिफ़ॉल्ट: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "पावर फ़ॉलबैक मान",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "प्रोजेक्टाइल ट्रैकिंग",

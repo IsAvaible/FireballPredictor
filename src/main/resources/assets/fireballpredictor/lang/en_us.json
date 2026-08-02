@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "The color of the predicted blast radius dome.\nDefault: Orange (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Wind Charge Shockwave Color",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "The color of the predicted blast radius dome for wind charges.\nDefault: White (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "Dome Fresnel Strength",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "Strength of the Fresnel rim glow on the shockwave dome. 0 keeps the legacy flat shading, 1 makes the dome edge bright and the surface facing the camera transparent.\nDefault: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "Power Fallbacks",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "Projectile Tracking",

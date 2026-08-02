@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "পূর্বানুমানিত বিস্ফোরণ ডোমের রঙ।\nডিফল্ট: কমলা (২৫৫, ১২৮, ০)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "উইন্ড চার্জ শকওয়েভ ডোমের রঙ",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "উইন্ড চার্জের জন্য শকওয়েভ ডোমের রঙ।\nডিফল্ট: সাদা (২৫৫, ২৫৫, ২৫৫)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "ডোম ফ্রেসনেল শক্তি",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "শকওয়েভ ডোমে ফ্রেসনেল রিম গ্লো এর তীব্রতা। ০ পুরনো ফ্ল্যাট শেডিং বজায় রাখে, ১ ডোমের প্রান্তকে উজ্জ্বল এবং ক্যামেরার দিকে থাকা পৃষ্ঠকে স্বচ্ছ করে।\nডিফল্ট: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "পাওয়ার ফলব্যাক মান",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "প্রোজেক্টাইল ট্র্যাকিং",

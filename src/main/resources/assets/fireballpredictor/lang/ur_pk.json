@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "پیش گوئی شدہ دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: نارنجی (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "ونڈ چارج شاک ویو گنبد کا رنگ",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "ونڈ چارج کے لیے شاک ویو گنبد کا رنگ۔\nڈیفالٹ: سفید (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "گنبد فرینل کی طاقت",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "شاک ویو گنبد پر فرینل رم گلو کی طاقت۔ 0 پرانا فلیٹ شیڈنگ برقرار رکھتا ہے، 1 گنبد کے کنارے کو روشن اور کیمرے کے سامنے والی سطح کو شفاف بناتا ہے۔\nڈیفالٹ: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "پاور فال بیک قدریں",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "پروجیکٹائل ٹریکنگ",

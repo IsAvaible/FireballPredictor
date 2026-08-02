@@ -246,6 +246,12 @@ public class ModConfig {
     public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
+    @AutoGen(category = "visuals", group = "shockwave")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
+    @FloatField(min = 0.0f, max = 1.0f)
+    public float domeFresnelStrength = 0.3f;
+
+    @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     @TickBox

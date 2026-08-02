@@ -149,7 +149,8 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
                 pendingBool("renderBlockHighlights", true),
                 wind
                         ? pendingColor("windChargeShockwaveColor", new Color(255, 255, 255))
-                        : pendingColor("shockwaveColor", new Color(255, 128, 0)));
+                        : pendingColor("shockwaveColor", new Color(255, 128, 0)),
+                pendingFloat("domeFresnelStrength", 0.3f));
     }
 
     private void renderHud(Painter p, int x, int y, int w, int h) {

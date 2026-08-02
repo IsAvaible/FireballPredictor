@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Die Farbe der vorhergesagten Explosionskuppel.\nStandard: Orange (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Druckwellenkuppel-Farbe für Windkugeln",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "Die Farbe der vorhergesagten Druckwellenkuppel für Windkugeln.\nStandard: Weiß (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "Fresnel-Stärke der Kuppel",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "Stärke des Fresnel-Randglanzes auf der Druckwellenkuppel. 0 behält die alte flache Schattierung bei, 1 macht den Kuppelrand hell und die der Kamera zugewandte Fläche transparent.\nStandard: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "Stärken-Ausweichwerte",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "Projektilverfolgung",

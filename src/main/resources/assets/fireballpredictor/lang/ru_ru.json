@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "Цвет купола прогнозируемого радиуса взрыва.\nПо умолчанию: Оранжевый (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Цвет купола для ветрового заряда",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "Цвет купола ударной волны для ветровых зарядов.\nПо умолчанию: Белый (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "Сила эффекта Френеля купола",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "Сила свечения краёв (эффект Френеля) на куполе ударной волны. 0 сохраняет старое плоское затенение, 1 делает край купола ярким, а поверхность, обращённую к камере, прозрачной.\nПо умолчанию: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "Резервные значения силы",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "Отслеживание снарядов",

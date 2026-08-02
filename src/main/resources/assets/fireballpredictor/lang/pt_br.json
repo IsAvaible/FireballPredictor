@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "A cor do domo do raio de explosão previsto.\nPadrão: Laranja (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Cor do Domo para Cargas de Vento",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "A cor do domo de onda de choque para cargas de vento.\nPadrão: Branco (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "Intensidade Fresnel do Domo",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "Intensidade do brilho de borda Fresnel no domo de onda de choque. 0 mantém o sombreamento plano antigo, 1 torna a borda do domo brilhante e a superfície voltada para a câmera transparente.\nPadrão: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "Valores de Poder Reserva",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "Rastreamento de Projéteis",

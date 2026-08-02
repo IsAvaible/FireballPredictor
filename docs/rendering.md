@@ -15,6 +15,7 @@ This document describes the client-side visual effects (VFX) used to represent p
 ### 2. Shockwave Dome
 - **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads are emitted first so the ribbon blends on top.
 - **Procedural Dome Quads**: Renders a procedural hemisphere built from smooth quadrilateral latitude/longitude strips.
+- **Fresnel Rim Effect**: Per-vertex Schlick Fresnel (`F0 = 0.04`, exponent 5) is evaluated on the CPU in [PredictionFeatureRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java) and baked into the vertex alpha. Patches facing the camera become transparent while the silhouette rim (grazing angle) is pushed toward the alpha ceiling, giving the dome a glass-bubble look that tracks the camera. Because culling is disabled, the far side of the hemisphere receives the full rim term and reads as the bright shell of the blast. The latitude profile remains as a base density; `domeFresnelStrength` blends between the legacy flat profile (0) and full Fresnel shading (1).
 - **Pulse Animation**: Pulsates gracefully using a time-based sine wave algorithm to draw player attention.
 
 ### 3. Block Break Highlights & Mining Safeguards
@@ -42,6 +43,7 @@ This document describes the client-side visual effects (VFX) used to represent p
   - `renderCoreGlow`: Enables/disables the inner energy core pass.
   - `enableRibbonPulse`: Enables/disables the time-based alpha motion pulsing.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
+  - `domeFresnelStrength`: Strength of the Fresnel rim glow on the shockwave dome (0 = legacy flat shading, 1 = full Fresnel).
   - `renderBlockHighlights`: Enables/disables the cracking animation overlay.
   - `renderParticleAccents`: Enables/disables the ambient particles.
   - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
@@ -75,7 +77,7 @@ Options under the **Visuals** category annotate `@CustomImage(factory = …)` so
 | Mode | Factory | Reflects pending values of |
 | --- | --- | --- |
 | Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
-| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor` |
+| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength` |
 | HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
 
 Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAccess`, so colour pickers, cyclers, and sliders update the schematic immediately without saving.

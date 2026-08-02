@@ -18,7 +18,8 @@ final class ShockwaveRenderer {
     // ---- Public entry point -------------------------------------------------
 
     static void render(Painter p, int x, int y, int w, int h, boolean wind,
-                       boolean showDome, boolean showBlocks, Color color) {
+                       boolean showDome, boolean showBlocks, Color color,
+                       float fresnelStrength) {
 
         float time = seconds();
 
@@ -66,19 +67,45 @@ final class ShockwaveRenderer {
         int g = color.getGreen();
         int b = color.getBlue();
 
-        // Translucent dome body, brighter toward the silhouette rim
+        // Translucent dome body with 3D radial Fresnel falloff.
         int minY = Mth.floor(cy - radius);
         int maxY = Mth.ceil(cy + radius);
+        float fresnelWeight = Mth.clamp(fresnelStrength, 0.0f, 1.0f);
+
         for (int py = minY; py <= maxY; py++) {
             float dy = py + 0.5f - cy;
-            float under = radius * radius - dy * dy;
+            float dySq = dy * dy;
+            float under = radius * radius - dySq;
             if (under <= 0.0f) {
                 continue;
             }
-            float dx = (float) Math.sqrt(under);
-            float rim = Math.abs(dy) / Math.max(1.0f, radius);
-            int a = Mth.clamp((int) ((50 + 90 * rim) * pulse), 0, 140);
-            p.fillF(cx - dx, py, cx + dx, py + 1, pack(r, g, b, a));
+
+            float maxDx = (float) Math.sqrt(under);
+            int minX = Mth.floor(cx - maxDx);
+            int maxX = Mth.ceil(cx + maxDx);
+
+            for (int px = minX; px <= maxX; px++) {
+                float dx = px + 0.5f - cx;
+                float distSq = dx * dx + dySq;
+                if (distSq > radius * radius) {
+                    continue;
+                }
+
+                // Normalized radial distance (0 at center, 1 at edge)
+                float d = (float) Math.sqrt(distSq) / radius;
+
+                // 3D sphere view-factor Fresnel: 1 - cos(theta)
+                float fresnel = 1.0f - (float) Math.sqrt(Math.max(0.0f, 1.0f - d * d));
+
+                // When fresnelWeight = 0: Uniform flat alpha (70)
+                // When fresnelWeight = 1: Center clears up (20), rim glows (135)
+                float flatAlpha = 70.0f;
+                float modulatedAlpha = Mth.lerp(fresnel, 20.0f, 135.0f);
+                float baseAlpha = Mth.lerp(fresnelWeight, flatAlpha, modulatedAlpha);
+
+                int a = Mth.clamp((int) (baseAlpha * pulse), 0, 255);
+                p.fillF(px, py, px + 1, py + 1, pack(r, g, b, a));
+            }
         }
 
         // Rim + inner echo ring

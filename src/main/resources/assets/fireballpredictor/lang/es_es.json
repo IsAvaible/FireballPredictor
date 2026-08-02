@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "El color de la cúpula que indica el radio de explosión.\nPor defecto: Naranja (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "Color de cúpula para cargas de viento",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "El color de la cúpula de onda de choque para cargas de viento.\nPor defecto: Blanco (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "Intensidad Fresnel de la cúpula",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "Intensidad del brillo de borde Fresnel en la cúpula de onda de choque. 0 mantiene el sombreado plano heredado, 1 hace que el borde de la cúpula sea brillante y la superficie orientada a la cámara transparente.\nPor defecto: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "Valores de potencia de reserva",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "Seguimiento de proyectiles",

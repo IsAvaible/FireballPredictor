@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "预测爆炸半径圆顶的颜色。\n默认值：橙色 (255, 128, 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "风弹冲击波圆顶颜色",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "风弹预测爆炸半径圆顶的颜色。\n默认值：白色 (255, 255, 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "圆顶菲涅尔强度",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "冲击波圆顶上菲涅尔边缘光晕的强度。0 保持旧版的平面着色，1 使圆顶边缘明亮且面向摄像机的表面透明。\n默认值：0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "威力备用值",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "弹射物追踪",

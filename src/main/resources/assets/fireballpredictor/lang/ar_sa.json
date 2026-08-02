@@ -71,6 +71,8 @@
  "yacl3.config.fireballpredictor:config.shockwaveColor.desc": "لون قبة نطاق الانفجار المتوقع.\nالافتراضي: برتقالي (255، 128، 0)",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor": "لون قبة شحنات الرياح",
  "yacl3.config.fireballpredictor:config.windChargeShockwaveColor.desc": "لون قبة موجة الصدمة لشحنات الرياح.\nالافتراضي: أبيض (255، 255، 255)",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength": "قوة تأثير فرينل للقبة",
+ "yacl3.config.fireballpredictor:config.domeFresnelStrength.desc": "قوة توهج حافة فرينل على قبة موجة الصدمة. 0 يحافظ على التظليل المسطح القديم، و1 يجعل حافة القبة مضاءة والسطح المواجه للكاميرا شفافًا.\nالافتراضي: 0.3",
 
  "yacl3.config.fireballpredictor:config.category.general.group.power": "قيم قوة الاحتياطية",
  "yacl3.config.fireballpredictor:config.category.general.group.tracking": "تتبع المقذوفات",

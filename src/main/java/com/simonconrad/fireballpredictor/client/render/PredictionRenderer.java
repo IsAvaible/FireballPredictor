@@ -171,7 +171,9 @@ public class PredictionRenderer {
                 shockwaveColor.getBlue(),
                 pulseFactor,
                 poseMatrix,
-                fade
+                fade,
+                cameraPos,
+                config.domeFresnelStrength
             );
         }
 
