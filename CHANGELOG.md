@@ -11,6 +11,9 @@
 - **Server Enforcement of Owner Filters:** Servers can now disable prediction tracking for the "other" owner category on their server via `config/fireballpredictor-server.json` — either the whole group (`disableOtherOwnerTracking`) or individual sub-options (`disablePlayerTracking`, `disableDispenserTracking`, `disableCommandTracking`).
 - **Live Rule Sync:** Restrictions are pushed to clients with a new `TrackingRulesPayload` on join and are enforced client-side, overriding local config (including the deflection bypass). `/fireballpredictor reload` reloads the server config and re-syncs all connected players without a restart.
 
+### Performance & Stability
+- **Memory & Thread Safety:** Resolved client-side memory retention in owner caching and ensured background trajectory computations run completely thread-safe.
+
 
 ## 1.5.0
 

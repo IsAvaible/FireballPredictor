@@ -64,7 +64,7 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         int b = state.b();
         Vec3 camLook = state.camLook();
         List<Vec3> path = state.path();
-        int elapsedTicks = state.elapsedTicks();
+        int elapsedTicks = Math.max(0, state.elapsedTicks());
         int totalPathSteps = path.size() - 1;
         float startBlendSteps = 1.0f;
 

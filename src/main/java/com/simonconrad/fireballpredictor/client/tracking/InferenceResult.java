@@ -5,16 +5,18 @@ import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Outcome of the owner inference pipeline for a single projectile.
  *
- * @param owner   classified origin used by config filters
- * @param entity  resolved owner entity when available (may be {@code null} for dispenser/command)
- * @param source  which tier of the fallback chain produced this result
+ * @param owner     classified origin used by config filters
+ * @param entityRef weak reference to resolved owner entity when available (may be {@code null} for dispenser/command)
+ * @param source    which tier of the fallback chain produced this result
  */
 public record InferenceResult(
         ProjectileOwner owner,
-        @Nullable Entity entity,
+        @Nullable WeakReference<Entity> entityRef,
         InferenceSource source,
         boolean isDeflected
 ) {
@@ -31,15 +33,22 @@ public record InferenceResult(
         UNKNOWN
     }
 
+    /**
+     * Resolves the owner entity from the weak reference if still reachable.
+     */
+    public @Nullable Entity entity() {
+        return entityRef != null ? entityRef.get() : null;
+    }
+
     public static InferenceResult unknown() {
         return new InferenceResult(ProjectileOwner.COMMAND, null, InferenceSource.UNKNOWN, false);
     }
 
     public static InferenceResult of(ProjectileOwner owner, @Nullable Entity entity, InferenceSource source) {
-        return new InferenceResult(owner, entity, source, false);
+        return new InferenceResult(owner, entity != null ? new WeakReference<>(entity) : null, source, false);
     }
 
     public static InferenceResult of(ProjectileOwner owner, @Nullable Entity entity, InferenceSource source, boolean isDeflected) {
-        return new InferenceResult(owner, entity, source, isDeflected);
+        return new InferenceResult(owner, entity != null ? new WeakReference<>(entity) : null, source, isDeflected);
     }
 }

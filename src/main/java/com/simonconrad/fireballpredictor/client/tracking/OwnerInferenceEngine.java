@@ -47,7 +47,7 @@ public final class OwnerInferenceEngine {
 
     /**
      * Optional packet-tier lookup. Wired by {@code ClientOwnerCache} on the client;
-     * left null on dedicated server / GameTest so this class stays side-safe.
+     * left null in server or headless environments so this class stays side-safe.
      */
     @FunctionalInterface
     public interface PacketLookup {

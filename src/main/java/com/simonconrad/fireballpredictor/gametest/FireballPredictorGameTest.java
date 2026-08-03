@@ -1,48 +1,107 @@
 package com.simonconrad.fireballpredictor.gametest;
 
-import com.simonconrad.fireballpredictor.math.PredictionData;
-import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
-import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import com.simonconrad.fireballpredictor.FireballEntityAccessor;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.network.ExplosionInferenceHandler;
 import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
+import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
 import com.simonconrad.fireballpredictor.client.tracking.OwnerInferenceEngine;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
+import com.simonconrad.fireballpredictor.math.PredictionData;
+import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import com.simonconrad.fireballpredictor.tracking.TrackingRules;
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTestAssertException;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FireballPredictorGameTest {
 
+    // Constants for wall structure and projectile spawning
+    private static final int WALL_X = 2;
+    private static final int WALL_MIN_Y = 1;
+    private static final int WALL_MAX_Y = 5;
+    private static final int WALL_MIN_Z = 1;
+    private static final int WALL_MAX_Z = 5;
+
+    private static final Vec3 SPAWN_POS = new Vec3(1.5, 3.0, 3.5);
+    private static final Vec3 INITIAL_VELOCITY = new Vec3(0.5, 0.0, 0.0);
+
+    /**
+     * Helper to construct a framework-native GameTestAssertException with a Component message.
+     */
+    private static GameTestAssertException fail(String message) {
+        return new GameTestAssertException(Component.literal(message), 0);
+    }
+
+    /**
+     * Centralized reset method to be called before stateful tests
+     * to guarantee a clean environment and prevent test leakage.
+     */
+    private static void resetGlobalState() {
+        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerLookup.resetInferredPower();
+        FireballInferenceTracker.clear();
+        ClientOwnerCache.clear();
+        ServerTrackingRules.clear();
+
+        ServerConfig serverConfig = ServerConfig.instance();
+        serverConfig.disableOtherOwnerTracking = false;
+        serverConfig.disablePlayerTracking = false;
+        serverConfig.disableDispenserTracking = false;
+        serverConfig.disableCommandTracking = false;
+
+        ModConfig config = ModConfig.instance();
+        config.globalFallbackFireballPower = 1.0F;
+        config.serverFallbackPowers.clear();
+        config.trackProjectiles = true;
+        config.trackFireballs = true;
+        config.trackWitherSkulls = true;
+        config.trackWindCharges = true;
+        config.trackMobProjectiles = true;
+        config.trackBlazeFireballs = true;
+        config.trackGhastFireballs = true;
+        config.trackEnderDragonFireballs = true;
+        config.trackWitherMob = true;
+        config.trackOtherOwnerProjectiles = true;
+        config.trackPlayerProjectiles = true;
+        config.trackDispenserProjectiles = true;
+        config.trackCommandProjectiles = true;
+    }
+
     private void buildWall(GameTestHelper context, BlockState state) {
-        for (int y = 1; y <= 5; y++) {
-            for (int z = 1; z <= 5; z++) {
-                context.setBlock(new BlockPos(2, y, z), state);
+        for (int y = WALL_MIN_Y; y <= WALL_MAX_Y; y++) {
+            for (int z = WALL_MIN_Z; z <= WALL_MAX_Z; z++) {
+                context.setBlock(new BlockPos(WALL_X, y, z), state);
             }
         }
     }
@@ -55,8 +114,8 @@ public class FireballPredictorGameTest {
     private <T extends AbstractHurtingProjectile> T spawnProjectile(
             GameTestHelper context, EntityType<T> type, double accelerationPower, boolean isCharged) {
         T projectile = (T) context.spawn(type, 1, 3, 3);
-        projectile.setPos(context.absoluteVec(new Vec3(1.5, 3.0, 3.5)));
-        Vec3 rotatedVelocity = context.absoluteVec(new Vec3(0.5, 0.0, 0.0)).subtract(context.absoluteVec(Vec3.ZERO));
+        projectile.setPos(context.absoluteVec(SPAWN_POS));
+        Vec3 rotatedVelocity = context.absoluteVec(INITIAL_VELOCITY).subtract(context.absoluteVec(Vec3.ZERO));
         projectile.setDeltaMovement(rotatedVelocity);
         projectile.accelerationPower = accelerationPower;
         if (projectile instanceof WitherSkull skull) {
@@ -67,9 +126,9 @@ public class FireballPredictorGameTest {
 
     private List<BlockPos> getBrokenBlocks(GameTestHelper context, Block originalBlock) {
         List<BlockPos> actualAbsoluteBroken = new ArrayList<>();
-        for (int y = 1; y <= 5; y++) {
-            for (int z = 1; z <= 5; z++) {
-                BlockPos relPos = new BlockPos(2, y, z);
+        for (int y = WALL_MIN_Y; y <= WALL_MAX_Y; y++) {
+            for (int z = WALL_MIN_Z; z <= WALL_MAX_Z; z++) {
+                BlockPos relPos = new BlockPos(WALL_X, y, z);
                 BlockPos absPos = context.absolutePos(relPos);
                 BlockState state = context.getLevel().getBlockState(absPos);
                 if (!state.is(originalBlock)) {
@@ -94,34 +153,34 @@ public class FireballPredictorGameTest {
     ) {
         List<BlockPos> predictedAbsoluteBroken = getPredictedBrokenBlocks(projectile, context);
         if (predictedAbsoluteBroken.isEmpty()) {
-            throw new RuntimeException("Predicted 0 broken blocks, but it should hit the wall and break blocks.");
+            throw fail("Predicted 0 broken blocks, but it should hit the wall and break blocks.");
         }
 
-        context.runAfterDelay(20L, () -> {
+        Set<BlockPos> predictedSet = new HashSet<>(predictedAbsoluteBroken);
+
+        context.succeedWhen(() -> {
             List<BlockPos> actualAbsoluteBroken = getBrokenBlocks(context, wallBlock);
             if (actualAbsoluteBroken.isEmpty()) {
-                throw new RuntimeException("Actual explosion did not break any blocks.");
+                throw fail("Waiting for explosion to break blocks...");
             }
 
             for (BlockPos actualPos : actualAbsoluteBroken) {
-                if (!predictedAbsoluteBroken.contains(actualPos)) {
-                    throw new RuntimeException("Block at " + actualPos + " was actually broken, but was not predicted to break.");
+                if (!predictedSet.contains(actualPos)) {
+                    throw fail("Block at " + actualPos + " was actually broken, but was not predicted to break.");
                 }
             }
 
             int actualCount = actualAbsoluteBroken.size();
             int predictedCount = predictedAbsoluteBroken.size();
-            
+
             if (actualCount < minExpectedActualCount) {
-                throw new RuntimeException("Explosion only broke " + actualCount + " blocks, expected at least " + minExpectedActualCount);
+                throw fail("Explosion only broke " + actualCount + " blocks, expected at least " + minExpectedActualCount);
             }
 
             double minRatio = 0.4;
             if (actualCount < predictedCount * minRatio) {
-                throw new RuntimeException("Actual broken blocks count (" + actualCount + ") is too low compared to predicted (" + predictedCount + "). Min expected: " + (int)(predictedCount * minRatio));
+                throw fail("Actual broken blocks count (" + actualCount + ") is too low compared to predicted (" + predictedCount + "). Min expected: " + (int) (predictedCount * minRatio));
             }
-
-            context.succeed();
         });
     }
 
@@ -132,20 +191,23 @@ public class FireballPredictorGameTest {
     ) {
         List<BlockPos> predictedAbsoluteBroken = getPredictedBrokenBlocks(projectile, context);
         if (!predictedAbsoluteBroken.isEmpty()) {
-            throw new RuntimeException("Predicted " + predictedAbsoluteBroken.size() + " broken blocks, but it should not break any.");
+            throw fail("Predicted " + predictedAbsoluteBroken.size() + " broken blocks, but it should not break any.");
         }
 
-        context.runAfterDelay(20L, () -> {
+        context.succeedWhen(() -> {
+            if (projectile.isAlive()) {
+                throw fail("Waiting for projectile to collide/explode...");
+            }
             List<BlockPos> actualAbsoluteBroken = getBrokenBlocks(context, wallBlock);
             if (!actualAbsoluteBroken.isEmpty()) {
-                throw new RuntimeException("Explosion actually broke " + actualAbsoluteBroken.size() + " blocks, but was expected to break 0.");
+                throw fail("Explosion actually broke " + actualAbsoluteBroken.size() + " blocks, but was expected to break 0.");
             }
-            context.succeed();
         });
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testFireballPredictionAndExplosion(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
         LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 1);
@@ -153,6 +215,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testWitherSkullPredictionAndExplosion(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
         WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, false);
         assertExplosionDestruction(context, skull, Blocks.DIRT, 1);
@@ -160,6 +223,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testChargedWitherSkullPredictionAndExplosion(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
         WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
         assertExplosionDestruction(context, skull, Blocks.DIRT, 1);
@@ -167,6 +231,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testChargedWitherSkullAgainstObsidian(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.OBSIDIAN);
         WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
         assertExplosionDestruction(context, skull, Blocks.OBSIDIAN, 1);
@@ -174,6 +239,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testNormalWitherSkullAgainstObsidian(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.OBSIDIAN);
         WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, false);
         assertNoDestruction(context, skull, Blocks.OBSIDIAN);
@@ -181,6 +247,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testNormalFireballAgainstWaterloggedSlab(GameTestHelper context) {
+        resetGlobalState();
         BlockState waterloggedSlab = Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
         LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
@@ -189,6 +256,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testChargedWitherSkullAgainstWaterloggedSlab(GameTestHelper context) {
+        resetGlobalState();
         BlockState waterloggedSlab = Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
         WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
@@ -197,6 +265,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testHighPowerFireballPredictionAndExplosion(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
         LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         ((FireballEntityAccessor) fireball).setExplosionPower(3);
@@ -205,16 +274,16 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testWindChargePredictionAndExplosion(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
+        WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
         assertNoDestruction(context, windCharge, Blocks.DIRT);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testInferredExplosionPowerFallback(GameTestHelper context) {
+        resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        ClientPowerCache.POWER_CACHE.clear();
-        ClientPowerLookup.resetInferredPower();
 
         // Spawn fireball 1 and simulate its trajectory
         LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
@@ -232,14 +301,14 @@ public class FireballPredictorGameTest {
         // Assert that ExplosionInferenceHandler successfully inferred power 3.0f
         Float inferred = ClientPowerLookup.getInferredFireballPower();
         if (inferred == null || inferred != 3.0f) {
-            throw new RuntimeException("ExplosionInferenceHandler failed to infer power! Expected 3.0f, but got: " + inferred);
+            throw fail("ExplosionInferenceHandler failed to infer power! Expected 3.0f, but got: " + inferred);
         }
 
         // Spawn second unsynced fireball and verify ClientPowerLookup falls back to inferred 3.0f
         LargeFireball fireball2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
         float resolvedPower = ClientPowerLookup.getPower(fireball2);
         if (resolvedPower != 3.0f) {
-            throw new RuntimeException("Expected resolved power for unsynced fireball to be inferred 3.0f, but got: " + resolvedPower);
+            throw fail("Expected resolved power for unsynced fireball to be inferred 3.0f, but got: " + resolvedPower);
         }
 
         ((FireballEntityAccessor) fireball2).setExplosionPower(3);
@@ -248,8 +317,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testZeroRadiusAffectedBlockEstimationAndHierarchy(GameTestHelper context) {
-        ClientPowerCache.POWER_CACHE.clear();
-        ClientPowerLookup.resetInferredPower();
+        resetGlobalState();
 
         Vec3 explosionPos = new Vec3(10.0, 64.0, 10.0);
         LargeFireball fireball = new LargeFireball(EntityTypes.FIREBALL, context.getLevel());
@@ -268,7 +336,7 @@ public class FireballPredictorGameTest {
 
         Float blockEst = ClientPowerLookup.getInferredBlockEstimation();
         if (blockEst == null || Math.abs(blockEst - 3.0f) > 0.01f) {
-            throw new RuntimeException("Expected inferred block estimation ~3.0f, but got: " + blockEst);
+            throw fail("Expected inferred block estimation ~3.0f, but got: " + blockEst);
         }
 
         // 2. Test session max retention: smaller explosion (dMax = 1.3 -> 1.0f) should not decrease retained estimation (3.0f)
@@ -277,14 +345,14 @@ public class FireballPredictorGameTest {
         );
         ExplosionInferenceHandler.onExplosion(explosionPos, 0.0f, smallerAffected);
         if (Math.abs(ClientPowerLookup.getInferredBlockEstimation() - 3.0f) > 0.01f) {
-            throw new RuntimeException("Session max retention failed! Expected 3.0f, got: " + ClientPowerLookup.getInferredBlockEstimation());
+            throw fail("Session max retention failed! Expected 3.0f, got: " + ClientPowerLookup.getInferredBlockEstimation());
         }
 
         // 3. Test Precedence: Radius Inference (Tier 2) overrides Block Estimation (Tier 4)
         ExplosionInferenceHandler.onExplosion(explosionPos, 2.5f, null);
         float resolvedPower = ClientPowerLookup.getPower(fireball);
         if (resolvedPower != 2.5f) {
-            throw new RuntimeException("Radius inference (Tier 2) should override block estimation! Expected 2.5f, got: " + resolvedPower);
+            throw fail("Radius inference (Tier 2) should override block estimation! Expected 2.5f, got: " + resolvedPower);
         }
 
         fireball.discard();
@@ -293,8 +361,7 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testInflatedPacketRadiusSanityCheckAndServerPresetPriority(GameTestHelper context) {
-        ClientPowerCache.POWER_CACHE.clear();
-        ClientPowerLookup.resetInferredPower();
+        resetGlobalState();
 
         Vec3 explosionPos = new Vec3(10.0, 64.0, 10.0);
         LargeFireball fireball = new LargeFireball(EntityTypes.FIREBALL, context.getLevel());
@@ -307,19 +374,19 @@ public class FireballPredictorGameTest {
         // Verify that 4.0f was rejected as inflated packet radius
         Float inferredRadius = ClientPowerLookup.getInferredPacketRadius();
         if (inferredRadius != null) {
-            throw new RuntimeException("Expected inflated packet radius 4.0f to be rejected, but it was accepted: " + inferredRadius);
+            throw fail("Expected inflated packet radius 4.0f to be rejected, but it was accepted: " + inferredRadius);
         }
 
         Float blockEst = ClientPowerLookup.getInferredBlockEstimation();
         if (blockEst == null || Math.abs(blockEst - 1.44f) > 0.1f) {
-            throw new RuntimeException("Expected block estimation from 2 blocks ~1.44f, got: " + blockEst);
+            throw fail("Expected block estimation from 2 blocks ~1.44f, got: " + blockEst);
         }
 
         // 2. Simulate legitimate radius 4.0 with large block count (40 blocks estimates power ~3.91f)
         ExplosionInferenceHandler.onExplosion(explosionPos, 4.0f, 40, null);
         Float validRadius = ClientPowerLookup.getInferredPacketRadius();
         if (validRadius == null || validRadius != 4.0f) {
-            throw new RuntimeException("Expected valid packet radius 4.0f to be accepted, got: " + validRadius);
+            throw fail("Expected valid packet radius 4.0f to be accepted, got: " + validRadius);
         }
 
         fireball.discard();
@@ -328,36 +395,37 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testServerFallbackPowerSetAndUnset(GameTestHelper context) {
-        com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        resetGlobalState();
+        ModConfig config = ModConfig.instance();
         String testServer = "test.hypixel.net";
 
         // 1. Set server fallback power
         config.setServerFallbackPower(testServer, 2.5f);
         Float power = config.getServerFallbackPower(testServer);
         if (power == null || Math.abs(power - 2.5f) > 0.001f) {
-            throw new RuntimeException("Expected server fallback power to be 2.5f, but got: " + power);
+            throw fail("Expected server fallback power to be 2.5f, but got: " + power);
         }
 
         // 2. Set to 0.0f (should un-set / remove from map, returning null)
         config.setServerFallbackPower(testServer, 0.0f);
         if (config.getServerFallbackPower(testServer) != null) {
-            throw new RuntimeException("Expected server fallback power to be null after setting 0.0f, but got: " + config.getServerFallbackPower(testServer));
+            throw fail("Expected server fallback power to be null after setting 0.0f, but got: " + config.getServerFallbackPower(testServer));
         }
 
         // 3. Set to 3.0f then pass null (should un-set / remove from map, returning null)
         config.setServerFallbackPower(testServer, 3.0f);
         config.setServerFallbackPower(testServer, (Float) null);
         if (config.getServerFallbackPower(testServer) != null) {
-            throw new RuntimeException("Expected server fallback power to be null after passing null Float, but got: " + config.getServerFallbackPower(testServer));
+            throw fail("Expected server fallback power to be null after passing null Float, but got: " + config.getServerFallbackPower(testServer));
         }
 
         context.succeed();
     }
 
-    // ---- Owner inference ----------------------------------------------------
-
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
     public void testOwnerInferenceNativeAndSweep(GameTestHelper context) {
+        resetGlobalState();
+
         // 1. Native owner via setOwner (singleplayer / NBT path)
         Ghast ghast = context.spawn(EntityTypes.GHAST, 1, 3, 3);
         ghast.setPos(context.absoluteVec(new Vec3(1.5, 3.0, 3.5)));
@@ -370,11 +438,11 @@ public class FireballPredictorGameTest {
 
         InferenceResult nativeResult = OwnerInferenceEngine.infer(fireball, context.getLevel());
         if (nativeResult.owner() != ProjectileOwner.GHAST) {
-            throw new RuntimeException("Expected NATIVE GHAST owner, got: " + nativeResult.owner()
+            throw fail("Expected NATIVE GHAST owner, got: " + nativeResult.owner()
                     + " via " + nativeResult.source());
         }
         if (nativeResult.source() != InferenceResult.InferenceSource.NATIVE_NBT) {
-            throw new RuntimeException("Expected NATIVE_NBT source, got: " + nativeResult.source());
+            throw fail("Expected NATIVE_NBT source, got: " + nativeResult.source());
         }
 
         // 2. Environmental sweep — no setOwner, ghast looking toward the fireball
@@ -391,11 +459,11 @@ public class FireballPredictorGameTest {
         InferenceResult sweep = OwnerInferenceEngine.infer(fireball, context.getLevel());
         if (sweep.owner() != ProjectileOwner.GHAST && sweep.owner() != ProjectileOwner.BLAZE
                 && sweep.owner() != ProjectileOwner.COMMAND) {
-            throw new RuntimeException("Unexpected sweep owner: " + sweep.owner() + " via " + sweep.source());
+            throw fail("Unexpected sweep owner: " + sweep.owner() + " via " + sweep.source());
         }
         // With owner cleared, source must not be NATIVE_NBT
         if (sweep.source() == InferenceResult.InferenceSource.NATIVE_NBT) {
-            throw new RuntimeException("Sweep should not report NATIVE_NBT after owner cleared");
+            throw fail("Sweep should not report NATIVE_NBT after owner cleared");
         }
 
         ghast.discard();
@@ -406,6 +474,8 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
     public void testOwnerInferenceDispenserAndDeflection(GameTestHelper context) {
+        resetGlobalState();
+
         // Dispenser facing EAST with fireball just outside its face
         BlockPos relDispenser = new BlockPos(2, 2, 2);
         BlockState dispenserState = Blocks.DISPENSER.defaultBlockState()
@@ -421,13 +491,14 @@ public class FireballPredictorGameTest {
 
         InferenceResult dispenserResult = OwnerInferenceEngine.infer(fireball, context.getLevel());
         if (dispenserResult.owner() != ProjectileOwner.DISPENSER) {
-            throw new RuntimeException("Expected DISPENSER owner, got: " + dispenserResult.owner()
+            throw fail("Expected DISPENSER owner, got: " + dispenserResult.owner()
                     + " via " + dispenserResult.source());
         }
 
         // Deflection: reverse velocity near a server mock player in the level → PLAYER
-        Player player = context.makeMockServerPlayerInLevel();
+        Player player = context.makeMockPlayer(GameType.SURVIVAL);
         player.setPos(dispenseAbs.x + 1.0, dispenseAbs.y, dispenseAbs.z);
+        context.getLevel().addFreshEntity(player);
 
         Vec3 prevVel = fireball.getDeltaMovement();
         fireball.setDeltaMovement(prevVel.scale(-1.0));
@@ -435,13 +506,13 @@ public class FireballPredictorGameTest {
         InferenceResult deflected = OwnerInferenceEngine.reassignOnDeflection(
                 fireball, context.getLevel(), dispenserResult, prevVel);
         if (deflected.owner() != ProjectileOwner.PLAYER) {
-            throw new RuntimeException("Expected PLAYER after deflection, got: " + deflected.owner()
+            throw fail("Expected PLAYER after deflection, got: " + deflected.owner()
                     + " (playersNearby="
                     + context.getLevel().getEntitiesOfClass(Player.class, fireball.getBoundingBox().inflate(5.0)).size()
                     + ")");
         }
         if (!deflected.isDeflected()) {
-            throw new RuntimeException("Expected isDeflected() to be true after deflection");
+            throw fail("Expected isDeflected() to be true after deflection");
         }
 
         // Sideways deflection (90-degree angle change, dot product ≈ 0.0)
@@ -450,7 +521,7 @@ public class FireballPredictorGameTest {
         InferenceResult sidewaysDeflected = OwnerInferenceEngine.reassignOnDeflection(
                 fireball, context.getLevel(), dispenserResult, prevVel);
         if (sidewaysDeflected.owner() != ProjectileOwner.PLAYER || !sidewaysDeflected.isDeflected()) {
-            throw new RuntimeException("Expected PLAYER and isDeflected()=true after 90-degree sideways deflection, got: " 
+            throw fail("Expected PLAYER and isDeflected()=true after 90-degree sideways deflection, got: " 
                     + sidewaysDeflected.owner());
         }
 
@@ -462,18 +533,18 @@ public class FireballPredictorGameTest {
             config.trackProjectiles = true;
             config.trackPlayerProjectiles = false;
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, false)) {
-                throw new RuntimeException("Player filter should be false for non-deflected when trackPlayerProjectiles=false");
+                throw fail("Player filter should be false for non-deflected when trackPlayerProjectiles=false");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, true)) {
-                throw new RuntimeException("Deflected fireball filter should be true even when trackPlayerProjectiles=false");
+                throw fail("Deflected fireball filter should be true even when trackPlayerProjectiles=false");
             }
             config.trackPlayerProjectiles = true;
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
-                throw new RuntimeException("Player filter should be true when trackPlayerProjectiles=true");
+                throw fail("Player filter should be true when trackPlayerProjectiles=true");
             }
             config.trackProjectiles = false;
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.GHAST)) {
-                throw new RuntimeException("Master off should disable ghast tracking");
+                throw fail("Master off should disable ghast tracking");
             }
         } finally {
             config.trackPlayerProjectiles = previousPlayer;
@@ -482,7 +553,7 @@ public class FireballPredictorGameTest {
 
         // Classifier sanity
         if (OwnerClassifier.classifyEntity(player) != ProjectileOwner.PLAYER) {
-            throw new RuntimeException("classifyEntity(player) failed");
+            throw fail("classifyEntity(player) failed");
         }
 
         fireball.discard();
@@ -492,6 +563,8 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
     public void testServerTrackingRestrictions(GameTestHelper context) {
+        resetGlobalState();
+
         LargeFireball fireball = context.spawn(EntityTypes.FIREBALL, 1, 2, 1);
         ModConfig config = ModConfig.instance();
         ServerConfig serverConfig = ServerConfig.instance();
@@ -521,75 +594,75 @@ public class FireballPredictorGameTest {
             // No restrictions -> local config decides
             ServerTrackingRules.clear();
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
-                throw new RuntimeException("Player tracking should be allowed when the server does not restrict it");
+                throw fail("Player tracking should be allowed when the server does not restrict it");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
-                throw new RuntimeException("Dispenser tracking should be allowed when the server does not restrict it");
+                throw fail("Dispenser tracking should be allowed when the server does not restrict it");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("Command tracking should be allowed when the server does not restrict it");
+                throw fail("Command tracking should be allowed when the server does not restrict it");
             }
 
             // Sub-option restriction: players only
             ServerTrackingRules.applyMask(TrackingRules.PLAYER);
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, false)) {
-                throw new RuntimeException("Server restriction must disable player tracking even when locally enabled");
+                throw fail("Server restriction must disable player tracking even when locally enabled");
             }
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER, true)) {
-                throw new RuntimeException("Deflection must not bypass the server player restriction");
+                throw fail("Deflection must not bypass the server player restriction");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
-                throw new RuntimeException("Dispenser tracking must stay enabled when only players are restricted");
+                throw fail("Dispenser tracking must stay enabled when only players are restricted");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.UNKNOWN)) {
-                throw new RuntimeException("Unknown shares the command bit and must stay enabled when only players are restricted");
+                throw fail("Unknown shares the command bit and must stay enabled when only players are restricted");
             }
 
             // Whole "other" group restriction
             ServerTrackingRules.applyMask(TrackingRules.OTHER_GROUP);
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
-                throw new RuntimeException("Whole-group restriction must disable player tracking");
+                throw fail("Whole-group restriction must disable player tracking");
             }
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.DISPENSER)) {
-                throw new RuntimeException("Whole-group restriction must disable dispenser tracking");
+                throw fail("Whole-group restriction must disable dispenser tracking");
             }
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("Whole-group restriction must disable command tracking");
+                throw fail("Whole-group restriction must disable command tracking");
             }
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.UNKNOWN)) {
-                throw new RuntimeException("Whole-group restriction must disable unknown (command) tracking");
+                throw fail("Whole-group restriction must disable unknown (command) tracking");
             }
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.GHAST)) {
-                throw new RuntimeException("Mob owners are not part of the server \"other\" restriction");
+                throw fail("Mob owners are not part of the server \"other\" restriction");
             }
 
             // Lifting restrictions restores local behaviour immediately
             ServerTrackingRules.clear();
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
-                throw new RuntimeException("Clearing the server mask must re-enable locally allowed player tracking");
+                throw fail("Clearing the server mask must re-enable locally allowed player tracking");
             }
 
             // ServerConfig mask computation: sub-options combine, master covers the whole group
             serverConfig.disableOtherOwnerTracking = false;
             serverConfig.disablePlayerTracking = true;
             if (serverConfig.disabledOwnerMask() != TrackingRules.PLAYER) {
-                throw new RuntimeException("ServerConfig sub-option must map to its TrackingRules bit");
+                throw fail("ServerConfig sub-option must map to its TrackingRules bit");
             }
             serverConfig.disableDispenserTracking = true;
             serverConfig.disableCommandTracking = true;
             if (serverConfig.disabledOwnerMask() != TrackingRules.OTHER_GROUP) {
-                throw new RuntimeException("ServerConfig sub-options must combine into the whole group mask");
+                throw fail("ServerConfig sub-options must combine into the whole group mask");
             }
             serverConfig.disableOtherOwnerTracking = true;
             serverConfig.disablePlayerTracking = false;
             serverConfig.disableDispenserTracking = false;
             serverConfig.disableCommandTracking = false;
             if (serverConfig.disabledOwnerMask() != TrackingRules.OTHER_GROUP) {
-                throw new RuntimeException("ServerConfig master must disable the whole other group");
+                throw fail("ServerConfig master must disable the whole other group");
             }
             serverConfig.disableOtherOwnerTracking = false;
             if (serverConfig.disabledOwnerMask() != 0) {
-                throw new RuntimeException("Default ServerConfig must not restrict anything");
+                throw fail("Default ServerConfig must not restrict anything");
             }
         } finally {
             config.trackProjectiles = previousTrack;
@@ -612,23 +685,25 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testPacketSanitization(GameTestHelper context) {
+        resetGlobalState();
+
         int previousMask = ServerTrackingRules.mask();
         try {
             // Apply 0xFFFF -> only valid bits (0x07: PLAYER, DISPENSER, COMMAND) must survive
             ServerTrackingRules.applyMask(0xFFFF);
             int mask = ServerTrackingRules.mask();
             if (mask != TrackingRules.OTHER_GROUP) {
-                throw new RuntimeException("Expected mask 0xFFFF to sanitize to OTHER_GROUP (" + TrackingRules.OTHER_GROUP + "), got: " + mask);
+                throw fail("Expected mask 0xFFFF to sanitize to OTHER_GROUP (" + TrackingRules.OTHER_GROUP + "), got: " + mask);
             }
             if ((mask & ~TrackingRules.OTHER_GROUP) != 0) {
-                throw new RuntimeException("Mask retained unsupported bits: 0x" + Integer.toHexString(mask));
+                throw fail("Mask retained unsupported bits: 0x" + Integer.toHexString(mask));
             }
 
             // Apply 0xFF00 (no valid bits) -> should sanitize to 0
             ServerTrackingRules.applyMask(0xFF00);
             mask = ServerTrackingRules.mask();
             if (mask != 0) {
-                throw new RuntimeException("Expected mask 0xFF00 to sanitize to 0, got: " + mask);
+                throw fail("Expected mask 0xFF00 to sanitize to 0, got: " + mask);
             }
         } finally {
             ServerTrackingRules.applyMask(previousMask);
@@ -639,24 +714,26 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testDisconnectReset(GameTestHelper context) {
+        resetGlobalState();
+
         int previousMask = ServerTrackingRules.mask();
         try {
             // Join server A (restricted)
             ServerTrackingRules.applyMask(TrackingRules.PLAYER | TrackingRules.DISPENSER);
             if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER) || !ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)) {
-                throw new RuntimeException("Failed to set restrictions for server A");
+                throw fail("Failed to set restrictions for server A");
             }
 
             // Disconnect -> clear restrictions (simulating disconnect event listener)
             ServerTrackingRules.clear();
             if (ServerTrackingRules.mask() != 0) {
-                throw new RuntimeException("Stale mask remains after disconnect! Expected 0, got: " + ServerTrackingRules.mask());
+                throw fail("Stale mask remains after disconnect! Expected 0, got: " + ServerTrackingRules.mask());
             }
 
             if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("Stale restriction active after disconnect!");
+                throw fail("Stale restriction active after disconnect!");
             }
         } finally {
             ServerTrackingRules.applyMask(previousMask);
@@ -667,6 +744,8 @@ public class FireballPredictorGameTest {
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
     public void testGuiOptionAvailability(GameTestHelper context) {
+        resetGlobalState();
+
         int previousMask = ServerTrackingRules.mask();
 
         try {
@@ -675,17 +754,17 @@ public class FireballPredictorGameTest {
             if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("No options should be restricted when mask is clear");
+                throw fail("No options should be restricted when mask is clear");
             }
 
             // 2. Restricted PLAYER bit -> only PLAYER option disabled
             ServerTrackingRules.applyMask(TrackingRules.PLAYER);
             if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)) {
-                throw new RuntimeException("PLAYER option should be restricted when PLAYER bit is set");
+                throw fail("PLAYER option should be restricted when PLAYER bit is set");
             }
             if (ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("DISPENSER and COMMAND options should remain available when only PLAYER is restricted");
+                throw fail("DISPENSER and COMMAND options should remain available when only PLAYER is restricted");
             }
 
             // 3. Whole OTHER_GROUP restricted -> all 3 options disabled
@@ -693,7 +772,7 @@ public class FireballPredictorGameTest {
             if (!ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
                     || !ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
                     || !ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("All tracking options should be restricted when OTHER_GROUP is set");
+                throw fail("All tracking options should be restricted when OTHER_GROUP is set");
             }
 
             // 4. Disconnect / clear restrictions -> re-enabled
@@ -701,7 +780,7 @@ public class FireballPredictorGameTest {
             if (ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER)
                     || ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND)) {
-                throw new RuntimeException("All tracking options should re-enable after server restrictions are lifted");
+                throw fail("All tracking options should re-enable after server restrictions are lifted");
             }
         } finally {
             ServerTrackingRules.applyMask(previousMask);

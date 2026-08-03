@@ -26,13 +26,11 @@ public class ImpactPredictor {
 
 
 
-    public static List<BlockPos> predictBrokenBlocks(AbstractHurtingProjectile fireball, Vec3 explosionPos, BlockGetter world) {
-        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
+    public static List<BlockPos> predictBrokenBlocks(float power, boolean isWindCharge, boolean isDangerous, Vec3 explosionPos, BlockGetter world) {
+        if (isWindCharge || power <= 0.0f) {
             // Wind Charges do not break blocks, so we return an empty list.
             return List.of();
         }
-
-        float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();
 
@@ -72,7 +70,7 @@ public class ImpactPredictor {
                             float blastResistance = Math.max(blockState.getBlock().getExplosionResistance(), fluidState.getExplosionResistance());
                             
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
-                            if (fireball instanceof WitherSkull witherSkull && witherSkull.isDangerous()) {
+                            if (isDangerous) {
                                 if (blockState.getDestroySpeed(world, blockPos) >= 0.0F) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
@@ -96,5 +94,12 @@ public class ImpactPredictor {
         }
         
         return List.copyOf(affectedBlocks);
+    }
+
+    public static List<BlockPos> predictBrokenBlocks(AbstractHurtingProjectile fireball, Vec3 explosionPos, BlockGetter world) {
+        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+        boolean isDangerous = fireball instanceof WitherSkull witherSkull && witherSkull.isDangerous();
+        float power = resolveExplosionPower(fireball);
+        return predictBrokenBlocks(power, isWindCharge, isDangerous, explosionPos, world);
     }
 }

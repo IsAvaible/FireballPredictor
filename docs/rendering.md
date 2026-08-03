@@ -36,10 +36,11 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ## Mod Configuration
 
-- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `WorldRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
-- **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features:
+- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
+- **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features across General, Visuals, and Tracking categories:
   - `renderTrajectory`: Enables/disables the ribbon path.
-  - `trajectoryStyle`: Selects visual style (`solid`, `dashed`, `core_only`).
+  - `trajectoryWidth`: Line width multiplier for the trajectory ribbon trail (`0.1` to `2.0`).
+  - `trajectoryStyle`: Selects visual style (`SOLID`, `DASHED`, `CORE_ONLY`).
   - `renderCoreGlow`: Enables/disables the inner energy core pass.
   - `enableRibbonPulse`: Enables/disables the time-based alpha motion pulsing.
   - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
@@ -48,6 +49,10 @@ This document describes the client-side visual effects (VFX) used to represent p
   - `renderParticleAccents`: Enables/disables the ambient particles.
   - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
   - `windChargeTrajectoryColor` & `windChargeShockwaveColor`: Custom color configuration for wind charges (defaults to white).
+  - `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y`: HUD collision warning badge visibility, screen anchor alignment, and pixel offsets.
+  - `globalFallbackFireballPower`, `serverFallbackPowers`, `rayPowerMultiplier`: Fallback explosion power levels, per-server IP power overrides, and ray simulation blast resistance scaling.
+  - `trackProjectiles`, `trackMobProjectiles`, `trackOtherOwnerProjectiles`: Hierarchical master, mob-master, and non-mob master switches.
+  - Per-source filters: `trackFireballs`, `trackWitherSkulls`, `trackWindCharges`, `trackBlazeFireballs`, `trackGhastFireballs`, `trackEnderDragonFireballs`, `trackWitherMob`, `trackPlayerProjectiles`, `trackDispenserProjectiles`, `trackCommandProjectiles`.
 
 ---
 

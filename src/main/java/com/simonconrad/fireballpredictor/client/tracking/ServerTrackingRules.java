@@ -4,8 +4,6 @@ import com.simonconrad.fireballpredictor.FireballPredictor;
 import com.simonconrad.fireballpredictor.network.TrackingRulesPayload;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import com.simonconrad.fireballpredictor.tracking.TrackingRules;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,10 +17,6 @@ import java.util.List;
  * Restrictions always override the local config — including the deflection
  * bypass for player-owned projectiles — because the server owns the fair-play
  * policy on its own game.
- *
- * Like {@link ClientOwnerCache}, packet wiring lives behind
- * {@link #registerReceivers()} so the plain mask accessors stay loadable from
- * GameTest (server) environments.
  */
 public final class ServerTrackingRules {
 
@@ -31,13 +25,7 @@ public final class ServerTrackingRules {
     private ServerTrackingRules() {
     }
 
-    public static void registerReceivers() {
-        ClientPlayNetworking.registerGlobalReceiver(TrackingRulesPayload.ID, (payload, context) ->
-                context.client().execute(() -> applyMask(payload.disabledOwnerMask())));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clear());
-    }
-
-    /** Store a new restriction mask (from a packet or a test) and log the effective change. */
+    /** Store a new restriction mask (from a packet or local override) and log the effective change. */
     public static void applyMask(int mask) {
         int sanitized = TrackingRules.sanitize(mask);
         if (sanitized == disabledOwnerMask) {
@@ -56,7 +44,7 @@ public final class ServerTrackingRules {
         return disabledOwnerMask;
     }
 
-    /** Lift all restrictions (disconnect / server switch / tests). */
+    /** Lift all restrictions (disconnect / server switch / reset). */
     public static void clear() {
         applyMask(0);
     }

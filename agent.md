@@ -48,9 +48,10 @@ Here are the key source files and resources in the project:
 * [ProjectileOwner.java](src/main/java/com/simonconrad/fireballpredictor/tracking/ProjectileOwner.java): Enum of inferred projectile origins (`BLAZE`, `GHAST`, `ENDER_DRAGON`, `WITHER`, `PLAYER`, `DISPENSER`, `COMMAND`, `UNKNOWN`).
 * [OwnerClassifier.java](src/main/java/com/simonconrad/fireballpredictor/tracking/OwnerClassifier.java): Side-agnostic entity→owner classification and dispenser adjacency shared by server sync and client inference.
 * [OwnerInferenceEngine.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/OwnerInferenceEngine.java): Client five-tier owner inference (`NATIVE_NBT` → `SERVER_PACKET` → `ENVIRONMENTAL_SWEEP` → `DISPENSER_FALLBACK` → `UNKNOWN`/`COMMAND`) plus deflection re-attribution.
-* [TrackedProjectile.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/TrackedProjectile.java): Per-projectile owner state, live filter evaluation (including the `ServerTrackingRules` server-restriction gate, which overrides local config and the deflection bypass), and packet upgrade path.
-* [ServerTrackingRules.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ServerTrackingRules.java): Client store of the active server's restriction mask, updated by `TrackingRulesPayload`; cleared on disconnect so restrictions never leak between servers. Keep packet wiring inside `registerReceivers()` so mask accessors stay GameTest-safe.
-* [ClientOwnerCache.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ClientOwnerCache.java): Client cache for `FireballOwnerPayload` with update listener for in-flight upgrades.
+* [ServerTrackingRules.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ServerTrackingRules.java): Client store of the active server's restriction mask, updated by `TrackingRulesPayload`; cleared on disconnect so restrictions never leak between servers. Core mask accessors contain no client networking dependencies so they can be loaded safely in server or headless environments.
+* [ClientOwnerCache.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ClientOwnerCache.java): Client cache for `FireballOwnerPayload` with update listener for in-flight upgrades. Pure cache storage kept side-safe from client networking types.
+* [ClientOwnerCacheReceiver.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ClientOwnerCacheReceiver.java): `@Environment(EnvType.CLIENT)` receiver registering packet listeners and disconnect events for `ClientOwnerCache`.
+* [ServerTrackingRulesReceiver.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/ServerTrackingRulesReceiver.java): `@Environment(EnvType.CLIENT)` receiver registering packet listeners and disconnect events for `ServerTrackingRules`.
 * [InferenceResult.java](src/main/java/com/simonconrad/fireballpredictor/client/tracking/InferenceResult.java): Record bundling `ProjectileOwner`, optional owner entity, and `InferenceSource` tier.
 * [FireballOwnerPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/FireballOwnerPayload.java): Server→client packet syncing owner type ordinal + owner entity id.
 * [TrackingRulesPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/TrackingRulesPayload.java): Server→client packet pushing the disabled "other" owner bitmask (`TrackingRules`) to clients on join and after server config reloads.
@@ -66,6 +67,7 @@ Here are the key source files and resources in the project:
 ### 4. Networking & Mixins
 * [FireballPowerPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/FireballPowerPayload.java): Packet format for syncing fireball explosion power.
 * [ClientPowerCache.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java): Caches tracked entity powers client-side.
+* [ClientPowerCacheReceiver.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCacheReceiver.java): `@Environment(EnvType.CLIENT)` receiver registering packet listeners for `ClientPowerCache`.
 * [ClientPowerLookup.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java): 5-tier power resolution router (`POWER_CACHE` -> `serverFallbackPowers` -> `inferredPacketRadius` -> `inferredBlockEstimation` -> `globalFallbackFireballPower`).
 * [ExplosionInferenceHandler.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ExplosionInferenceHandler.java): Infers fireball explosion power from incoming `ClientboundExplodePacket` radii (`radius > 0`, with sanity checking against block destruction count/spatial spread) or destroyed block distance $d_{\max} / 1.3$ / block count when servers (e.g. Hypixel) zero out explosion radii or send inflated packet radii, retaining session-wide maximum estimation.
 * [FireballInferenceTracker.java](src/main/java/com/simonconrad/fireballpredictor/client/network/FireballInferenceTracker.java): Side-safe tracker managing `lastPos` and `hitPos` for fireballs with 3.0-block radius matching and 3000ms record retention. Includes explicit `isFireball` classification.
@@ -110,6 +112,9 @@ Here are the key source files and resources in the project:
   * Run Server: `.\gradlew runServer`
   * Run GameTests: `.\gradlew runGameTest`
   * Publish Release: `.\gradlew publishMods` (Requires `MODRINTH_TOKEN` & `CURSEFORGE_TOKEN` environment variables)
+
+### Troubleshooting Guidelines
+* **Gradle Clean / Output Folder Lock Recovery**: If `.\gradlew clean` or Gradle build tasks fail to clean output directories (e.g., due to Windows file locks on `build/`), do not loop `.\gradlew clean`. Instead, force-delete the build output directory directly (e.g. via `Remove-Item -Recurse -Force build`).
 
 ---
 

@@ -2,10 +2,13 @@ package com.simonconrad.fireballpredictor.client;
 
 import com.simonconrad.fireballpredictor.client.compat.IrisCompat;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
+import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRulesReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
@@ -70,10 +73,10 @@ public class FireballPredictorClient implements ClientModInitializer {
         ModConfig.load();
         PredictionPipelines.class.getName();
         IrisCompat.init(); 
-        ClientPowerCache.registerReceivers();
-        ClientOwnerCache.registerReceivers();
+        ClientPowerCacheReceiver.registerReceivers();
+        ClientOwnerCacheReceiver.registerReceivers();
         ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
-        ServerTrackingRules.registerReceivers();
+        ServerTrackingRulesReceiver.registerReceivers();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null) {
@@ -186,7 +189,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     
                     PREDICTION_EXECUTOR.submit(() -> {
                         try {
-                            PredictionData data = TrajectoryPredictor.computePrediction(fireball, result, predictionAge);
+                            PredictionData data = TrajectoryPredictor.computePrediction(result, predictionAge);
                             client.execute(() -> {
                                 if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction) {
                                     trackedPrediction.predictionData = data;
