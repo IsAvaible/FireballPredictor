@@ -36,7 +36,6 @@ public class TrajectoryPredictor {
         Vec3 velocity = initialVelocity;
         
         double accelerationPower = fireball.accelerationPower;
-        Vec3 acceleration = velocity.normalize().scale(accelerationPower);
         
         int maxTicks = 200;
         List<Vec3> path = new ArrayList<>();
@@ -57,6 +56,10 @@ public class TrajectoryPredictor {
         }
         
         for (int i = 0; i < maxTicks; i++) {
+            // Apply acceleration to velocity and apply drag BEFORE movement, matching vanilla tick phase
+            Vec3 acceleration = velocity.lengthSqr() > 1e-12 ? velocity.normalize().scale(accelerationPower) : Vec3.ZERO;
+            velocity = velocity.add(acceleration).scale(drag);
+
             Vec3 nextPos = currentPos.add(velocity);
             
             // Raycast for blocks
@@ -98,9 +101,6 @@ public class TrajectoryPredictor {
             
             currentPos = nextPos;
             path.add(currentPos);
-            
-            // Add acceleration to velocity and apply drag
-            velocity = velocity.add(acceleration).scale(drag);
             velocities.add(velocity);
         }
         
