@@ -179,9 +179,16 @@ public class FireballPredictorGameTest {
                 throw fail("Explosion only broke " + actualCount + " blocks, expected at least " + minExpectedActualCount);
             }
 
-            double minRatio = 0.4;
+            // Assert coverage (no false negatives threshold - actual broken blocks must be at least 50% of predicted)
+            double minRatio = 0.5;
             if (actualCount < predictedCount * minRatio) {
                 throw fail("Actual broken blocks count (" + actualCount + ") is too low compared to predicted (" + predictedCount + "). Min expected: " + (int) (predictedCount * minRatio));
+            }
+
+            // Assert over-prediction cap: predicted block count must not exceed 2.0x actual broken count (catching over-prediction regressions)
+            double maxOverPredictionRatio = 2.0;
+            if (predictedCount > actualCount * maxOverPredictionRatio) {
+                throw fail("Over-prediction detected! Predicted " + predictedCount + " blocks, but actual broken was only " + actualCount + " (exceeds max over-prediction factor of " + maxOverPredictionRatio + "x).");
             }
         });
     }
@@ -211,7 +218,7 @@ public class FireballPredictorGameTest {
     public void testFireballPredictionAndExplosion(GameTestHelper context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 1);
     }
 
@@ -248,11 +255,19 @@ public class FireballPredictorGameTest {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testChargedWitherSkullAgainstReinforcedDeepslate(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.REINFORCED_DEEPSLATE);
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, true);
+        assertNoDestruction(context, skull, Blocks.REINFORCED_DEEPSLATE);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testNormalFireballAgainstWaterloggedSlab(GameTestHelper context) {
         resetGlobalState();
         BlockState waterloggedSlab = Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
-        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         assertNoDestruction(context, fireball, Blocks.OAK_SLAB);
     }
 
@@ -269,7 +284,7 @@ public class FireballPredictorGameTest {
     public void testHighPowerFireballPredictionAndExplosion(GameTestHelper context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         ((FireballEntityAccessor) fireball).setExplosionPower(3);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 10);
     }
@@ -380,7 +395,7 @@ public class FireballPredictorGameTest {
         buildWall(context, Blocks.DIRT);
 
         // Spawn fireball 1 and simulate its trajectory
-        LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getLevel());
         PredictionData pred = TrajectoryPredictor.computePrediction(fireball1, traj, fireball1.tickCount);
         Vec3 hitPos = pred.hitResult != null ? pred.hitResult.getLocation() : fireball1.position();
@@ -399,7 +414,7 @@ public class FireballPredictorGameTest {
         }
 
         // Spawn second unsynced fireball and verify ClientPowerLookup falls back to inferred 3.0f
-        LargeFireball fireball2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.05, false);
+        LargeFireball fireball2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         float resolvedPower = ClientPowerLookup.getPower(fireball2);
         if (resolvedPower != 3.0f) {
             throw fail("Expected resolved power for unsynced fireball to be inferred 3.0f, but got: " + resolvedPower);

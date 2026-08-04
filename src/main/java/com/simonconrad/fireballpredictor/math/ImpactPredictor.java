@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
@@ -77,7 +78,7 @@ public class ImpactPredictor {
                             
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
                             if (isDangerous) {
-                                if (blockState.getDestroySpeed(world, blockPos) >= 0.0F) {
+                                if (WitherBoss.canDestroy(blockState)) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
                             }
