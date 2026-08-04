@@ -3,6 +3,8 @@ package com.simonconrad.fireballpredictor.client.network;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -13,6 +15,10 @@ public class ClientPowerLookup {
     private static volatile Float inferredBlockEstimation = null;
 
     public static float getPower(AbstractHurtingProjectile fireball) {
+        if (fireball instanceof SmallFireball || fireball instanceof DragonFireball) {
+            return 0.0F;
+        }
+
         if (ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
             return ClientPowerCache.POWER_CACHE.get(fireball.getId());
         }

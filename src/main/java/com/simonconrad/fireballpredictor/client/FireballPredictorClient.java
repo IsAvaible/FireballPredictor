@@ -234,7 +234,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
                     int ticksToImpact = Math.max(0, data.path.size() - 1 - elapsedTicks);
                     float power = ClientPowerLookup.getPower(fireball);
-                    double dangerRadius = power * 2.0f * 2.0f;
+                    float warningPower = power <= 0.0f ? 1.0f : power;
+                    double dangerRadius = warningPower * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 
                     if (isDangerousPath(playerPosition, playerVelocity, data.path, elapsedTicks, dangerRadiusSq)) {

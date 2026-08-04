@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,6 +16,10 @@ import net.minecraft.world.phys.Vec3;
 public class ImpactPredictor {
 
     public static float resolveExplosionPower(AbstractHurtingProjectile fireball) {
+        if (fireball instanceof SmallFireball || fireball instanceof DragonFireball) {
+            return 0.0F;
+        }
+
         if (!fireball.level().isClientSide()) {
             if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball f) {
                 return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();

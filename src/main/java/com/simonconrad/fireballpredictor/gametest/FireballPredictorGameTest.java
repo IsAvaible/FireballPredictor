@@ -29,7 +29,9 @@ import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
 import net.minecraft.world.level.GameType;
@@ -278,6 +280,28 @@ public class FireballPredictorGameTest {
         buildWall(context, Blocks.DIRT);
         WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
         assertNoDestruction(context, windCharge, Blocks.DIRT);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testSmallFireballPowerAndNoDestruction(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+        SmallFireball fireball = spawnProjectile(context, EntityTypes.SMALL_FIREBALL, 0.0, false);
+        if (com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball) != 0.0f) {
+            throw fail("SmallFireball explosion power expected to be 0.0f, got: " + com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball));
+        }
+        assertNoDestruction(context, fireball, Blocks.DIRT);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testDragonFireballPowerAndNoDestruction(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+        DragonFireball fireball = spawnProjectile(context, EntityTypes.DRAGON_FIREBALL, 0.0, false);
+        if (com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball) != 0.0f) {
+            throw fail("DragonFireball explosion power expected to be 0.0f, got: " + com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball));
+        }
+        assertNoDestruction(context, fireball, Blocks.DIRT);
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
