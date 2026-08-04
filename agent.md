@@ -58,7 +58,7 @@ Here are the key source files and resources in the project:
 * [ModMenuIntegration.java](src/main/java/com/simonconrad/fireballpredictor/client/compat/ModMenuIntegration.java): Registers the config screen with ModMenu using `ModConfig::createScreen`.
 
 ### 3. Math & Logic Simulators
-* [TrajectoryPredictor.java](src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java): Simulates projectile kinematics, raycasting, and entity-specific drag (`0.95` for fireballs, `0.73` for charged skulls, `1.0` for wind charges).
+* [TrajectoryPredictor.java](src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java): Simulates projectile kinematics, raycasting, and entity-specific drag (`0.95` for fireballs in air, `0.73` for charged skulls in air, `0.8` for fireballs/skulls in water, `1.0` for wind charges).
 * [ImpactPredictor.java](src/main/java/com/simonconrad/fireballpredictor/math/ImpactPredictor.java): Replicates the vanilla explosion raycasting algorithm deterministically using custom config multipliers. Short-circuits block destruction for wind charges (`List.of()`).
 * [PredictionData.java](src/main/java/com/simonconrad/fireballpredictor/math/PredictionData.java): Data class encapsulating path, hit result, broken blocks, and initial velocity.
 * [BlockStateSnapshot.java](src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java): Thread-safe local snapshot of block and fluid states captured on the main thread for background worker raycasting.

@@ -3,11 +3,15 @@ package com.simonconrad.fireballpredictor.math;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -31,9 +35,18 @@ public class TrajectoryPredictor {
     }
 
     public static TrajectoryResult simulateTrajectory(AbstractHurtingProjectile fireball, Level world) {
-        Vec3 currentPos = fireball.position();
+        Vec3 fireballPos = fireball.position();
+        Vec3 currentPos = fireballPos;
         Vec3 initialVelocity = fireball.getDeltaMovement();
         Vec3 velocity = initialVelocity;
+
+        AABB initialBoundingBox = fireball.getBoundingBox();
+        double boxMinXOffset = initialBoundingBox.minX - fireballPos.x;
+        double boxMinYOffset = initialBoundingBox.minY - fireballPos.y;
+        double boxMinZOffset = initialBoundingBox.minZ - fireballPos.z;
+        double boxMaxXOffset = initialBoundingBox.maxX - fireballPos.x;
+        double boxMaxYOffset = initialBoundingBox.maxY - fireballPos.y;
+        double boxMaxZOffset = initialBoundingBox.maxZ - fireballPos.z;
         
         double accelerationPower = fireball.accelerationPower;
         
@@ -48,14 +61,25 @@ public class TrajectoryPredictor {
         boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
         boolean isDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
 
-        double drag = 0.95;
+        double airDrag = 0.95;
         if (isWindCharge) {
-            drag = 1.0;
+            airDrag = 1.0;
         } else if (isDangerous) {
-            drag = 0.73;
+            airDrag = 0.73;
         }
+
+        double waterDrag = isWindCharge ? 1.0 : 0.8;
         
         for (int i = 0; i < maxTicks; i++) {
+            double minX = currentPos.x + boxMinXOffset;
+            double minY = currentPos.y + boxMinYOffset;
+            double minZ = currentPos.z + boxMinZOffset;
+            double maxX = currentPos.x + boxMaxXOffset;
+            double maxY = currentPos.y + boxMaxYOffset;
+            double maxZ = currentPos.z + boxMaxZOffset;
+
+            double drag = isTouchingWater(world, minX, minY, minZ, maxX, maxY, maxZ) ? waterDrag : airDrag;
+
             // Apply acceleration to velocity and apply drag BEFORE movement, matching vanilla tick phase
             Vec3 acceleration = velocity.lengthSqr() > 1e-12 ? velocity.normalize().scale(accelerationPower) : Vec3.ZERO;
             velocity = velocity.add(acceleration).scale(drag);
@@ -76,16 +100,12 @@ public class TrajectoryPredictor {
             }
             
             // Raycast for entities
-            // Calculate the box at the simulated current position
-            Vec3 offset = currentPos.subtract(fireball.position());
-            AABB currentBox = fireball.getBoundingBox().move(offset);
+            AABB currentBox = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
             AABB box = currentBox.expandTowards(velocity).inflate(1.0);
-
 
             EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(
                 world, fireball, currentPos, nextPos, box, 
                 entity -> false // Completely ignore entities for trajectory prediction
-                // entity -> !entity.isSpectator() && entity.canHit()
             );
             
             if (entityHitResult != null) {
@@ -179,5 +199,35 @@ public class TrajectoryPredictor {
         }
 
         return new PredictionRenderData(domeQuads);
+    }
+
+    public static boolean isTouchingWater(BlockGetter world, AABB box) {
+        return isTouchingWater(world, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
+    }
+
+    public static boolean isTouchingWater(BlockGetter world, double boxMinX, double boxMinY, double boxMinZ, double boxMaxX, double boxMaxY, double boxMaxZ) {
+        int minX = Mth.floor(boxMinX);
+        int maxX = Mth.ceil(boxMaxX);
+        int minY = Mth.floor(boxMinY);
+        int maxY = Mth.ceil(boxMaxY);
+        int minZ = Mth.floor(boxMinZ);
+        int maxZ = Mth.ceil(boxMaxZ);
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+                for (int z = minZ; z < maxZ; z++) {
+                    pos.set(x, y, z);
+                    FluidState fluidState = world.getFluidState(pos);
+                    if (fluidState.is(FluidTags.WATER)) {
+                        double fluidHeight = (double) y + fluidState.getHeight(world, pos);
+                        if (fluidHeight >= boxMinY) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

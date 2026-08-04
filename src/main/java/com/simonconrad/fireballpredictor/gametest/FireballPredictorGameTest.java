@@ -283,6 +283,76 @@ public class FireballPredictorGameTest {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testWaterDragPrediction(GameTestHelper context) {
+        resetGlobalState();
+        for (int x = 0; x <= 5; x++) {
+            for (int y = 1; y <= 5; y++) {
+                for (int z = 1; z <= 5; z++) {
+                    context.setBlock(new BlockPos(x, y, z), Blocks.WATER);
+                }
+            }
+        }
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(fireball, context.getLevel());
+
+        Vec3 v0 = trajResult.velocities().get(0);
+        Vec3 v1 = trajResult.velocities().get(1);
+        double expectedSpeed1 = v0.length() * 0.8;
+        if (Math.abs(v1.length() - expectedSpeed1) > 1e-4) {
+            throw fail("Expected water drag 0.8 to reduce speed from " + v0.length() + " to " + expectedSpeed1 + ", but got " + v1.length());
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testWindChargeWaterDragPrediction(GameTestHelper context) {
+        resetGlobalState();
+        for (int x = 0; x <= 5; x++) {
+            for (int y = 1; y <= 5; y++) {
+                for (int z = 1; z <= 5; z++) {
+                    context.setBlock(new BlockPos(x, y, z), Blocks.WATER);
+                }
+            }
+        }
+        WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(windCharge, context.getLevel());
+
+        Vec3 v0 = trajResult.velocities().get(0);
+        Vec3 v1 = trajResult.velocities().get(1);
+        if (Math.abs(v1.length() - v0.length()) > 1e-4) {
+            throw fail("Expected wind charge in water to maintain 1.0 drag (speed " + v0.length() + "), but got " + v1.length());
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBlockGetterWaterDetection(GameTestHelper context) {
+        resetGlobalState();
+        BlockPos waterPos = context.absolutePos(new BlockPos(2, 2, 2));
+        context.setBlock(new BlockPos(2, 2, 2), Blocks.WATER);
+
+        com.simonconrad.fireballpredictor.math.BlockStateSnapshot snapshot =
+            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
+                context.getLevel(), waterPos.offset(-1, -1, -1), waterPos.offset(1, 1, 1)
+            );
+
+        boolean touching = TrajectoryPredictor.isTouchingWater(
+            snapshot, waterPos.getX() + 0.1, waterPos.getY() + 0.1, waterPos.getZ() + 0.1,
+            waterPos.getX() + 0.9, waterPos.getY() + 0.9, waterPos.getZ() + 0.9
+        );
+
+        if (!touching) {
+            throw fail("Expected snapshot BlockGetter isTouchingWater to return true for water block");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testSmallFireballPowerAndNoDestruction(GameTestHelper context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);

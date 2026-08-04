@@ -9,9 +9,9 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
 - **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.raycast` and `RaycastContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
 - **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies entity-specific drag:
-  - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95`).
-  - **Charged Wither Skulls**: High drag (`0.73`).
-  - **Wind Charges (`AbstractWindChargeEntity`)**: No drag (`1.0`).
+  - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95` in air, `0.8` in water).
+  - **Charged Wither Skulls**: High drag (`0.73` in air, `0.8` in water).
+  - **Wind Charges (`AbstractWindChargeEntity`)**: No drag (`1.0` in air and water).
 - **Entity Filtering & Config Toggles**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types:
   - `trackWitherSkulls`: Toggle wither skull tracking (default `true`).
   - `trackWindCharges`: Toggle wind charge tracking (default `true`).
