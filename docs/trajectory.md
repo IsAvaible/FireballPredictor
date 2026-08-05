@@ -7,24 +7,23 @@ This document describes the trajectory prediction system implemented in the mod.
 ### 1. [TrajectoryPredictor.java](../src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java)
 Contains the physics simulation engine that mimics Minecraft's projectile update loops:
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
-- **Collision Checking**: In each simulated tick, it performs raycasts for both blocks (using `world.raycast` and `RaycastContext`) and entities (using `ProjectileUtil.getEntityCollision` with the fireball's bounding box).
+- **Collision Checking**: In each simulated tick, it performs raycasts for blocks (`world.clip` with `ClipContext.Block.COLLIDER`) and entities (`ProjectileUtil.getEntityHitResult`). To ensure trajectories represent full flight paths without terminating on mobs or players, the entity filter explicitly rejects all living entities (`entity -> false`).
 - **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies entity-specific drag:
   - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95` in air, `0.8` in water).
   - **Charged Wither Skulls**: High drag (`0.73` in air, `0.8` in water).
   - **Wind Charges (`AbstractWindChargeEntity`)**: No drag (`1.0` in air and water).
-- **Entity Filtering & Config Toggles**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types:
-  - `trackWitherSkulls`: Toggle wither skull tracking (default `true`).
-  - `trackWindCharges`: Toggle wind charge tracking (default `true`).
+- **Entity Filtering & Config Toggles**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can toggle tracking for specific entity types and inferred owner categories (`BLAZE`, `GHAST`, `ENDER_DRAGON`, `WITHER`, `PLAYER`, `DISPENSER`, `COMMAND`).
 - **Asynchronous Execution Split**: Calculates predictions in two distinct phases:
   - **Simulation Phase (Main Thread)**: Quickly runs the 200-tick flight path raycast and captures a thread-safe `BlockStateSnapshot` at the collision point.
   - **Prediction Phase (Background Thread)**: Submits calculations for the detailed broken blocks list (`ImpactPredictor.predictBrokenBlocks`) and rendering dome mesh generation to a background worker thread.
 
-### 2. [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)
-- Listens to `ClientTickEvents.END_CLIENT_TICK`.
+### 2. [TrackedProjectile.java](../src/main/java/com/simonconrad/fireballpredictor/client/tracking/TrackedProjectile.java) & [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java)
+- **Lifecycle Container**: `TrackedProjectile` wraps each active `ExplosiveProjectileEntity` on the client.
+- **Filter & Restriction Mask Evaluation**: Checks `ModConfig` owner/entity toggles against `InferenceResult` and combines them with `ServerTrackingRules.isAllowed(owner)`.
 - **Daemon Thread Executor**: Manages a background single-thread executor `"FireballPredictor-Worker"`.
-- **Deduplicated Updates**: Tracks an `isCalculating` flag for each active `ExplosiveProjectileEntity` to prevent queueing redundant simulation tasks if a task is already running.
+- **Deduplicated Updates**: Tracks an `isCalculating` flag for each active `TrackedProjectile` to prevent queueing redundant simulation tasks if a task is already running.
 - **Main Thread Safe Sync**: Once background calculations complete, applies the resulting `PredictionData` back to the main thread via the client's thread-safe executor (`client.execute()`).
-- **Dynamic Recalculation Cache Invalidation**: Tracks the projectile properties (such as the cached explosion power and `isCharged()` states for wither skulls) used in the last successful prediction calculation. If a mismatch is detected, it schedules an immediate recalculation.
+- **Dynamic Recalculation Cache Invalidation**: Tracks cached parameters (explosion power, `isCharged()` state, owner attribution, ray power multiplier snapshot). If a parameter changes or a block update occurs near the path, it schedules an immediate recalculation.
 - Cleans up tracking data when fireballs are destroyed or unloaded.
 
 ## Validation Results

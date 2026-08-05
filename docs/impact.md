@@ -9,8 +9,9 @@ Implements a client-side simulation of Minecraft's vanilla explosion ray-casting
 - **Explosion Algorithm**: Simulates 1352 rays extending to the outer boundaries of a 16x16x16 cube centered around the impact location.
 - **Ray Progression**: Steps along each ray, checking block blast resistances and reducing the remaining ray power. Blocks where the remaining power is greater than 0 are added to the list of predicted broken blocks.
 - **Deterministic and Configurable**: Vanilla explosions use a randomized power multiplier per ray (ranging randomly from `0.7F` to `1.3F`) which causes prediction jitter. To solve this, the mod uses a configurable multiplier `ModConfig.instance().rayPowerMultiplier` (default `1.3F`, adjustable between `0.7F` and `1.3F` via the YACL config screen) to ensure a perfectly stable prediction.
+- **Charged Wither Skull Resistance Capping**: For dangerous/charged wither skulls (`isDangerous == true`), `ImpactPredictor` evaluates `WitherBoss.canDestroy(blockState)`. If the target block is destructible by a Wither, its effective blast resistance is capped at `0.8F` (equivalent to wiki blast resistance 4.0). Blast-immune/unbreakable blocks like bedrock or reinforced deepslate return `false` for `WitherBoss.canDestroy` and retain their natural blast resistance, preventing false-positive destruction predictions.
 - **Wind Charge Bypass**: `AbstractWindChargeEntity` instances use `WindChargeExplosionBehavior` in vanilla which prevents block destruction entirely. `ImpactPredictor.predictBrokenBlocks()` detects wind charges and immediately returns an empty list (`List.of()`), accurately predicting 0 broken blocks.
-- **Accurate Coordinates**: Adhers to modern fireball logic where the raycast impact location, not the location of the fireball itself is the center of the explosion.
+- **Accurate Coordinates**: Adheres to modern fireball logic where the raycast impact location, not the location of the fireball itself, is the center of the explosion.
 
 ### 2. Explosion Power Syncing & 5-Tier Fallback Hierarchy
 Because fireball size/power is normally handled server-side, the mod resolves explosion power using a prioritized 5-tier resolution hierarchy in [ClientPowerLookup.java](../src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java):
@@ -22,8 +23,8 @@ Because fireball size/power is normally handled server-side, the mod resolves ex
 
 ### 3. Asynchronous Execution & Snapshot Caching
 To prevent game micro-stutters and keep frame rendering smooth when predicting multiple fireballs:
-- **[BlockStateSnapshot.java](../src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java)**: When a collision is predicted on the main thread, a thread-safe local block state snapshot is captured inside the bounding box of the explosion. It implements `BlockView` and stores immutable references to `BlockState` and `FluidState`.
-- **Asynchronous Raycasting**: The 1,356 explosion rays are simulated asynchronously on a background worker thread using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
+- **[BlockStateSnapshot.java](../src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java)**: When a collision is predicted on the main thread, a thread-safe local block state snapshot is captured inside the bounding box of the explosion. It implements `BlockGetter` (`BlockView`) and stores immutable references to `BlockState` and `FluidState`.
+- **Asynchronous Raycasting**: The 1352 explosion rays are simulated asynchronously on a background worker thread (`FireballPredictor-Worker`) using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
 
 ## Validation Results
 - Compiles and runs successfully under Minecraft `26.2` using the Fabric Loader.

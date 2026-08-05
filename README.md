@@ -19,7 +19,7 @@ By syncing explosion power from the server to the client, the mod deterministica
 - **Multiple Projectiles:** Supports fireballs, non-charged and charged wither skulls, and wind charges.
 - **Smart Owner Tracking:** Infers which mob, player, dispenser, or command spawned each projectile and lets you filter highlights per source.
 - **Server Enforcement:** Server owners can disable tracking of "other"-source projectiles (players, dispensers, commands) for every connected client, either for the whole group or per sub-option.
-- **Configurable:** Tweak visual settings, colors, owner filters, and behavior through an in-game YetAnotherConfigLib (YACL) menu.
+- **Configurable:** Tweak visual settings, colors, owner filters, and behavior through an in-game mod menu.
 
 ## Fair Play
 Some servers might classify this mod as Extra-Sensory Perception (ESP), which is a bannable offense on competitive networks. Always play fair and only use this mod on servers where it is explicitly allowed.
@@ -42,16 +42,30 @@ When the mod is installed on a server, it creates `config/fireballpredictor-serv
 
 Restrictions are pushed to clients when they join and override their local settings. After editing the file, run `/fireballpredictor reload` (operator permission) to apply changes to all connected players without a restart.
 
+## Requirements & Compatibility
+
+| Side | Requirement | Details |
+| --- | --- | --- |
+| **Minecraft** | `26.2` / `1.21.11` | Fabric Loader `>=0.19.3` |
+| **Java** | `Java 25` | Gradle toolchain target |
+| **Required Mods** | [Fabric API](https://modrinth.com/mod/fabric-api) | Core networking and lifecycle hooks |
+| | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.5` — In-game config screen & live previews |
+| **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) | In-game configuration screen button |
+| | [Iris Shaders](https://modrinth.com/mod/iris) + [Sodium](https://modrinth.com/mod/sodium) | Soft-loaded fullbright translucent pipeline integration |
+
 ## Setup & Build Instructions
 
 This mod requires **Java 25** and uses the Gradle toolchain.
 
 ```bash
-# Build the mod
+# Build the mod JAR
 ./gradlew build
 
 # Run the client development environment
 ./gradlew runClient
+
+# Run the client development environment with Iris & Sodium activated
+./gradlew runClientWithShaders
 
 # Run the server development environment
 ./gradlew runServer
