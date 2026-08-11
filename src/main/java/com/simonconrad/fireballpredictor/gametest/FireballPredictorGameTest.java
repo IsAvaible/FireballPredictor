@@ -651,6 +651,26 @@ public class FireballPredictorGameTest {
             if (!TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.PLAYER)) {
                 throw fail("Player filter should be true when trackPlayerProjectiles=true");
             }
+
+            // Wind charge owner filter priority check: Owner tracking > Projectile type tracking
+            WindCharge testWindCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
+            config.trackProjectiles = true;
+            config.trackWindCharges = true;
+            config.trackPlayerProjectiles = false;
+            if (TrackedProjectile.evaluateFilter(testWindCharge, ProjectileOwner.PLAYER, false)) {
+                throw fail("Player-owned wind charge filter should be false when trackPlayerProjectiles=false even if trackWindCharges=true");
+            }
+            config.trackPlayerProjectiles = true;
+            config.trackWindCharges = false;
+            if (TrackedProjectile.evaluateFilter(testWindCharge, ProjectileOwner.PLAYER, false)) {
+                throw fail("Wind charge filter should be false when trackWindCharges=false even if trackPlayerProjectiles=true");
+            }
+            config.trackWindCharges = true;
+            if (!TrackedProjectile.evaluateFilter(testWindCharge, ProjectileOwner.PLAYER, false)) {
+                throw fail("Wind charge filter should be true when both trackPlayerProjectiles=true and trackWindCharges=true");
+            }
+            testWindCharge.discard();
+
             config.trackProjectiles = false;
             if (TrackedProjectile.evaluateFilter(fireball, ProjectileOwner.GHAST)) {
                 throw fail("Master off should disable ghast tracking");

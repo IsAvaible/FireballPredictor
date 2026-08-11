@@ -107,7 +107,22 @@ public final class TrackedProjectile {
             return false;
         }
 
-        // 1. WHAT check (Projectile Type)
+        // 1. WHO check (Source / Owner) - Owner tracking takes priority
+        boolean passOwner = switch (owner) {
+            case BLAZE -> config.trackMobProjectiles && config.trackBlazeFireballs;
+            case GHAST -> config.trackMobProjectiles && config.trackGhastFireballs;
+            case ENDER_DRAGON -> config.trackMobProjectiles && config.trackEnderDragonFireballs;
+            case WITHER -> config.trackMobProjectiles && config.trackWitherMob;
+            case PLAYER -> (config.trackOtherOwnerProjectiles && config.trackPlayerProjectiles) || isDeflected;
+            case DISPENSER -> config.trackOtherOwnerProjectiles && config.trackDispenserProjectiles;
+            case COMMAND, UNKNOWN -> config.trackOtherOwnerProjectiles && config.trackCommandProjectiles;
+        };
+
+        if (!passOwner) {
+            return false;
+        }
+
+        // 2. WHAT check (Projectile Type)
         boolean passType;
         if (projectile instanceof AbstractWindCharge) {
             passType = config.trackWindCharges;
@@ -118,28 +133,11 @@ public final class TrackedProjectile {
             passType = config.trackFireballs;
         }
 
-        if (!passType) {
-            return false;
-        }
-
-        if (projectile instanceof AbstractWindCharge) {
-            return true;
-        }
-
-        // 2. WHO check (Source / Owner)
-        return switch (owner) {
-            case BLAZE -> config.trackMobProjectiles && config.trackBlazeFireballs;
-            case GHAST -> config.trackMobProjectiles && config.trackGhastFireballs;
-            case ENDER_DRAGON -> config.trackMobProjectiles && config.trackEnderDragonFireballs;
-            case WITHER -> config.trackMobProjectiles && config.trackWitherMob;
-            case PLAYER -> (config.trackOtherOwnerProjectiles && config.trackPlayerProjectiles) || isDeflected;
-            case DISPENSER -> config.trackOtherOwnerProjectiles && config.trackDispenserProjectiles;
-            case COMMAND, UNKNOWN -> config.trackOtherOwnerProjectiles && config.trackCommandProjectiles;
-        };
+        return passType;
     }
 
     /**
-     * Wind charges keep their dedicated toggle and are not owner-filtered.
+     * Wind charges keep their dedicated type toggle and are evaluated after owner filtering.
      */
     public static boolean passesLegacyTypeGate(AbstractHurtingProjectile projectile) {
         if (projectile instanceof AbstractWindCharge) {
@@ -149,15 +147,14 @@ public final class TrackedProjectile {
     }
 
     /**
-     * True when this entity is one of the owner-filterable hostile projectiles.
-     * Wind charges are still tracked for prediction but skip owner filtering
-     * (they are player/breeze toys, not the fireball threat model).
+     * True when this entity is one of the filterable projectiles.
      */
     public static boolean isOwnerFilterable(AbstractHurtingProjectile projectile) {
         return projectile instanceof LargeFireball
                 || projectile instanceof SmallFireball
                 || projectile instanceof DragonFireball
-                || projectile instanceof WitherSkull;
+                || projectile instanceof WitherSkull
+                || projectile instanceof AbstractWindCharge;
     }
 
     @Nullable
