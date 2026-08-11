@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2
+
+### Projectile Owner & Filter Priority
+- **Wind Charge Filtering Priority:** Enforced evaluation hierarchy so owner source filters (e.g., Player, Dispenser, Mob) take priority over projectile type toggles for wind charges. Player-thrown or dispenser-fired wind charges now correctly respect player and dispenser tracking settings.
+
+### Live Config Previews
+- **Trajectory Toggle Schematic Preview:** Disabling trajectory ribbon rendering in the config menu now continues to animate the traveling projectile head and impact flash in the preview schematic, skipping only the path ribbon instead of displaying a static "disabled" text label.
+
 ## 1.6.1
 
 ### Trajectory Physics & Accuracy Fixes
