@@ -36,11 +36,6 @@ final class TrajectoryRenderer {
         p.fill(x + 2, groundY, x + w - 2, groundY + 1, 0x33FFFFFF);
         p.fill(x + 2, groundY + 1, x + w - 2, y + h, 0x10FFFFFF);
 
-        if (!show) {
-            drawDisabledLabel(p, x, y, w, h);
-            return;
-        }
-
         // Leave room on the right so the impact ring isn't clipped in half.
         float left = x + 4f;
         float right = x + w - 10f;
@@ -69,36 +64,38 @@ final class TrajectoryRenderer {
         int dashScroll = (int) (time * 16.0f);
 
         // Column rasterisation: the arc is single-valued in x, so one soft slice per pixel column.
-        int pxStart = Mth.ceil(left);
-        int pxEnd = Mth.floor(right);
-        for (int px = pxStart; px <= pxEnd; px++) {
-            if (dashed && Math.floorMod(px + dashScroll, DASH_PERIOD_PX) >= DASH_ON_PX) {
-                continue;
-            }
+        if (show) {
+            int pxStart = Mth.ceil(left);
+            int pxEnd = Mth.floor(right);
+            for (int px = pxStart; px <= pxEnd; px++) {
+                if (dashed && Math.floorMod(px + dashScroll, DASH_PERIOD_PX) >= DASH_ON_PX) {
+                    continue;
+                }
 
-            float t = arc.tAtX(px + 0.5f);
-            if (t < 0.0f || t > 1.0f) {
-                continue;
-            }
+                float t = arc.tAtX(px + 0.5f);
+                if (t < 0.0f || t > 1.0f) {
+                    continue;
+                }
 
-            float cy = arc.yAt(t);
-            float slope = arc.slopeAt(t);
-            // A stroke of constant perpendicular width covers more vertical pixels as it steepens.
-            float stretch = Math.min(2.5f, (float) Math.sqrt(1.0f + slope * slope));
-            float half = halfWidth * widthProfile(t) * stretch;
+                float cy = arc.yAt(t);
+                float slope = arc.slopeAt(t);
+                // A stroke of constant perpendicular width covers more vertical pixels as it steepens.
+                float stretch = Math.min(2.5f, (float) Math.sqrt(1.0f + slope * slope));
+                float half = halfWidth * widthProfile(t) * stretch;
 
-            float wave = pulsing
-                    ? 0.78f + 0.22f * (float) Math.sin(time * 2.6f - t * 7.0f)
-                    : 1.0f;
-            float alpha = (1.0f - 0.28f * t) * wave;
+                float wave = pulsing
+                        ? 0.78f + 0.22f * (float) Math.sin(time * 2.6f - t * 7.0f)
+                        : 1.0f;
+                float alpha = (1.0f - 0.28f * t) * wave;
 
-            if (drawShroud) {
-                ribbonColumn(p, px, cy, half, r, g, b, 0.60f * alpha);
-            }
-            if (drawCore) {
-                float coreHalf = Math.max(0.45f, half * (coreOnly ? 0.50f : 0.30f));
-                ribbonColumn(p, px, cy, coreHalf, cr, cg, cb,
-                        (coreOnly ? 0.80f : 0.95f) * alpha);
+                if (drawShroud) {
+                    ribbonColumn(p, px, cy, half, r, g, b, 0.60f * alpha);
+                }
+                if (drawCore) {
+                    float coreHalf = Math.max(0.45f, half * (coreOnly ? 0.50f : 0.30f));
+                    ribbonColumn(p, px, cy, coreHalf, cr, cg, cb,
+                            (coreOnly ? 0.80f : 0.95f) * alpha);
+                }
             }
         }
 
