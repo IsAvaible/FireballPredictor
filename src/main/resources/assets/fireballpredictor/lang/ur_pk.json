@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "تنبیہ کا عمودی آفسیٹ",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "اینکر کے مقام سے عمودی فاصلہ۔ مثبت قدریں نیچے منتقل کرتی ہیں۔\nڈیفالٹ: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "نقصان کے ٹوٹے ہوئے دلوں کا اوورلے",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "آنے والے پروجیکٹائلز سے متوقع نقصان ظاہر کرنے کے لیے ہیلتھ بار پر ٹوٹے ہوئے دل دکھاتا ہے۔\nڈیفالٹ: فعال",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "نقصان اور ناک بیک کی پیمائش",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "ٹکراؤ کی تنبیہ کے ساتھ متوقع نقصان اور ناک بیک کی رفتار ظاہر کرتا ہے۔\nڈیفالٹ: فعال",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "نقصان کا تخمینہ",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "ٹکراؤ کی تنبیہ دکھائیں",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "جب فائر بال کے ساتھ ٹکراؤ کا خطرہ ہو تو اسکرین پر تنبیہی بیج دکھائیں۔\nڈیفالٹ: فعال",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "راستہ کا رنگ",

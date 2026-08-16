@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0
+
+### Damage & Knockback Estimation
+- **Cracking Damage Hearts Overlay:** Overlays your health bar with animated cracking hearts highlighting the exact health predicted to be lost upon detonation. Fully accounts for explosion distance falloff, line-of-sight cover, armor defense, Protection & Blast Protection enchantments, absorption hearts, and Resistance effects.
+- **Damage & Knockback Readout:** Added a HUD readout next to the impact warning badge displaying predicted heart loss and initial knockback velocity (in blocks per second) for the most threatening incoming projectile.
+
+### HUD Impact Warning Upgrades
+- **Projectile Category Theming:** The impact warning badge now features tailored icons and themed countdown progress bars for Fireballs (fire charge / fiery orange), Wither Skulls (wither skeleton skull / slate grey), Wind Charges (wind charge / ice blue), and Dragon Fireballs (custom dragon fireball sprite / magenta-purple).
+
+### Configuration Options
+- **Damage Estimation Settings:** Added options in the visual settings menu to independently toggle the cracking hearts health bar overlay and the damage/knockback numerical readout.
+
 ## 1.6.2
 
 ### Projectile Owner & Filter Priority

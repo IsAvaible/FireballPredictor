@@ -26,7 +26,22 @@ To prevent game micro-stutters and keep frame rendering smooth when predicting m
 - **[BlockStateSnapshot.java](../src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java)**: When a collision is predicted on the main thread, a thread-safe local block state snapshot is captured inside the bounding box of the explosion. It implements `BlockGetter` (`BlockView`) and stores immutable references to `BlockState` and `FluidState`.
 - **Asynchronous Raycasting**: The 1352 explosion rays are simulated asynchronously on a background worker thread (`FireballPredictor-Worker`) using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
 
+### 4. Damage & Knockback Prediction ([DamageCalculator.java](../src/main/java/com/simonconrad/fireballpredictor/math/DamageCalculator.java))
+The mod replicates Minecraft 26.2's complete explosion damage and knockback pipeline client-side without relying on server-only classes:
+- **Blast Radius & Distance Falloff**: Effective blast radius is $r = \text{power} \times 2.0$. If the player is within range ($d \le r$), exposure is computed from distance falloff $(1.0 - d / r) \times \text{seenPercent}$. Raw explosion damage follows vanilla formula:
+  $$\text{damage}_{\text{raw}} = \frac{\text{impact}^2 + \text{impact}}{2} \times 7.0 \times r + 1.0$$
+- **Line-of-Sight Exposure (`getSeenPercent`)**: Replicates vanilla `ServerExplosion.getSeenPercent` deterministically on the main render thread, raycasting a grid across the player's bounding box to detect partial cover and terrain shielding ($0.0 \le \text{seenPercent} \le 1.0$).
+- **Direct-Hit Damage**: When a projectile directly collides with the player, `calculateDirectHit` calculates direct impact damage (6.0 for Large Fireballs, 5.0 for Small Fireballs, 8.0 for Wither Skulls) alongside the accompanying detonation blast damage.
+- **Vanilla 26.2 Damage Mitigation Pipeline (`computeFinalDamage`)**:
+  1. **Difficulty Scaling**: Accounts for peaceful (0 damage), easy (half damage + 1), and hard (1.5x damage) scaling.
+  2. **Armor & Toughness**: Evaluates `CombatRules.getDamageAfterAbsorb` using the player's current armor points and armor toughness attribute.
+  3. **Resistance Effect**: Scales damage according to active Resistance effect amplifier ($25 - (\text{amplifier} + 1) \times 5$).
+  4. **Data-Driven Enchantment Protection (EPF)**: Because vanilla's `EnchantmentHelper.getDamageProtection` is server-only, `DamageCalculator.getEnchantmentProtection` inspects equipped armor items, queries `EnchantmentEffectComponents.DAMAGE_PROTECTION`, and evaluates loot condition requirements using [CompositeLootItemConditionAccessor.java](../src/main/java/com/simonconrad/fireballpredictor/mixin/CompositeLootItemConditionAccessor.java) for `AllOfCondition` / `AnyOfCondition` / `InvertedLootItemCondition` / `DamageSourceCondition`. Resulting EPF (e.g. +1/lvl Protection, +2/lvl Blast Protection) is soft-capped at `MAX_EPF = 20.0F` via `CombatRules.getDamageAfterMagicAbsorb`.
+  5. **Bypass Tags**: Respects `BYPASSES_ARMOR`, `BYPASSES_EFFECTS`, `BYPASSES_RESISTANCE`, and `BYPASSES_ENCHANTMENTS` damage-type tags.
+- **Knockback Impulse (`computeKnockback`)**: Predicts the initial horizontal/vertical blast impulse magnitude $(1 - d/r) \times \text{seenPercent} \times (1 - \text{EXPLOSION\_KNOCKBACK\_RESISTANCE})$, reported in blocks per second (impulse $\times 20$).
+
 ## Validation Results
 - Compiles and runs successfully under Minecraft `26.2` using the Fabric Loader.
 - Replicates the block breaking patterns of vanilla explosions accurately, scaling dynamically with custom fireball sizes.
 - Exposing the `rayPowerMultiplier` in the configuration screen allows players to choose between conservative (lower multiplier) and comprehensive (higher multiplier) block predictions.
+- Damage and knockback predictions match actual in-game damage values within strict tolerances across naked, armor-equipped, blast-protected, and partially covered player states.

@@ -15,11 +15,13 @@ By syncing explosion power from the server to the client, the mod deterministica
 - **Trajectory Ribbon:** A translucent trail showing the projectile's calculated flight path, accounting for drag and acceleration.
 - **Shockwave Dome:** Visualizes the predicted explosion radius at the exact point of impact.
 - **Block Highlights:** Highlights the specific blocks that will be destroyed by the explosion.
-- **Impact Warning Badge:** On-screen HUD warning badge with a countdown timer when in the path of incoming projectiles.
-- **Multiple Projectiles:** Supports fireballs, non-charged and charged wither skulls, and wind charges.
+- **Impact Warning Badge:** On-screen HUD warning badge with a countdown timer when on a collision course.
+- **Cracking Damage Hearts Overlay:** Overlays your health bar with animated cracking hearts showing the exact health predicted to be lost, fully accounting for distance falloff, line-of-sight cover, armor, Protection/Blast Protection enchantments, absorption hearts, and Resistance effects.
+- **Damage & Knockback Readout:** Live HUD readout displaying the predicted heart loss and initial knockback velocity (in blocks/second) for the most threatening incoming projectile.
+- **Multiple Projectiles:** Supports fireballs, uncharged and charged wither skulls, wind charges, and dragon fireballs.
 - **Smart Owner Tracking:** Infers which mob, player, dispenser, or command spawned each projectile and lets you filter highlights per source.
 - **Server Enforcement:** Server owners can disable tracking of "other"-source projectiles (players, dispensers, commands) for every connected client, either for the whole group or per sub-option.
-- **Configurable:** Tweak visual settings, colors, owner filters, and behavior through an in-game mod menu.
+- **Configurable:** Tweak visual settings, colors, owner filters, HUD badge anchors, and damage overlay toggles through an in-game mod menu with live previews.
 
 ## Fair Play
 Some servers might classify this mod as Extra-Sensory Perception (ESP), which is a bannable offense on competitive networks. Always play fair and only use this mod on servers where it is explicitly allowed.

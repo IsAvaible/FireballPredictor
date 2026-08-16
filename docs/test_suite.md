@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 25 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 39 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`
@@ -154,6 +154,62 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 ### 25. GUI Option Server Availability (`testGuiOptionAvailability`)
 * **Details**: Verifies GUI option lock state calculations under active server restriction bitmasks.
 
+### 26. Wind Charge Zero Damage Estimate (`testWindChargeZeroDamageEstimate`)
+* **Entity**: `WindCharge`
+* **Details**: Asserts that wind charges calculate a damage estimate of `DamageEstimate.NONE`, predicting 0.0 hearts lost and 0.0 final damage upon impact.
+
+### 27. Zero-Power Explosion Damage Bypass (`testDamageCalculatorZeroPowerNoDamage`)
+* **Entities**: `SmallFireball`, `DragonFireball`
+* **Details**: Verifies that explosive projectiles with power $\le 0$ evaluate immediately to `DamageEstimate.NONE` mirroring vanilla's early exit for zero-radius explosions.
+
+### 28. Out-of-Range Blast Estimate (`testDamageCalculatorOutOfRange`)
+* **Entity**: `LargeFireball` (power 1.0, blast radius 2.0 blocks)
+* **Details**: Spawns a mock player 5.0 blocks away from the detonation point, asserting that `DamageCalculator.calculate` returns `DamageEstimate.NONE` with `inRange() == false`.
+
+### 29. Unarmored Blast Damage Accuracy (`testDamageCalculatorMatchesRealExplosionNoArmor`)
+* **Entity**: `LargeFireball` (power 1.0)
+* **Details**: Places an unarmored mock player 1.0 block away from a detonation point. Runs `DamageCalculator.calculate`, creates an actual in-game explosion, and asserts that predicted damage matches the real damage inflicted within a 0.01 threshold.
+
+### 30. Armor & Blast Protection Mitigation (`testDamageCalculatorWithArmorAndBlastProtection`)
+* **Entity**: `LargeFireball` (power 1.0)
+* **Details**: Equips a mock player with full diamond armor enchanted with Protection IV and Blast Protection IV. Asserts that `DamageCalculator.getEnchantmentProtection` correctly evaluates EPF and matches the reduced damage taken in a real explosion.
+
+### 31. Line-of-Sight Cover Reduction (`testDamageCalculatorCoverReducesDamage`)
+* **Entity**: `LargeFireball` (power 1.0)
+* **Details**: Places a stone cover barrier partially obscuring line-of-sight between the explosion center and the player. Asserts that `DamageCalculator.getSeenPercent` detects partial exposure ($0 < \text{seenPercent} < 1$) and reduces predicted damage compared to unobstructed exposure.
+
+### 32. Large Fireball Direct Hit (`testDamageCalculatorDirectHit`)
+* **Entity**: `LargeFireball`
+* **Details**: Asserts that `DamageCalculator.calculateDirectHit` correctly combines 6.0 direct impact damage with the detonation blast damage.
+
+### 33. Wither Skull Direct Hit (`testDamageCalculatorWitherSkullDirectHit`)
+* **Entity**: `WitherSkull`
+* **Details**: Asserts that `DamageCalculator.calculateDirectHit` accounts for 8.0 direct impact damage combined with wither skull blast damage.
+
+### 34. Direct-Hit Collision In-Game Accuracy (`testDamageCalculatorDirectHitRealCollision`)
+* **Entity**: `LargeFireball`
+* **Details**: Spawns a live fireball moving directly into a mock player's hitbox, asserting that predicted direct-hit damage matches the exact health loss observed upon real collision.
+
+### 35. Absorption Hearts Clamping (`testDamageCalculatorAbsorptionClamp`)
+* **Entity**: `LargeFireball` (power 4.0)
+* **Details**: Gives a player 20 health and 10 absorption points. Verifies that `DamageEstimate.heartsLost` correctly includes absorption and clamps to $(20 + 10) / 2 = 15.0$ hearts without overflowing.
+
+### 36. Trajectory vs Damage Hit Result Separation (`testTrajectorySimulationEntityCollision`)
+* **Entities**: `LargeFireball`, mock `Player`, stone wall at $x = 10$
+* **Details**: Spawns a player at $x = 5$ in front of a wall at $x = 10$. Asserts that trajectory simulation produces a visual `hitResult` continuing to the wall at $x = 10$ (for ribbon/dome rendering), while `damageHitResult` captures the intercepted player at $x = 5$.
+
+### 37. CanHitEntity Projectile Accessor Fallback (`testCanHitEntityFallback`)
+* **Entities**: `LargeFireball`, mock `Player`
+* **Details**: Verifies that `TrajectoryPredictor.canHitEntity` successfully invokes `ProjectileAccessor.fireballpredictor$canHitEntity` to check valid entity targeting.
+
+### 38. Dynamic Entity Movement Damage Prediction (`testDynamicEntityMovementDamagePrediction`)
+* **Entities**: `LargeFireball`, mock `Player`, stone wall
+* **Details**: Asserts that `TrajectoryPredictor.findDamageHitResult` dynamically updates as players move into, step out of, and return to the projectile's remaining path segments without requiring full trajectory recalculation.
+
+### 39. Warning Projectile Type Resolution (`testWarningProjectileTypeResolution`)
+* **Entities**: `LargeFireball`, `SmallFireball`, `DragonFireball`, `WitherSkull`, `WindCharge`
+* **Details**: Validates that all projectile types resolve to their correct `WarningProjectileType` enum constants, custom icons, dragon fireball textures, and progress bar color themes.
+
 ---
 
 ## Key Technical Solutions
@@ -176,6 +232,7 @@ Vanilla charged wither skulls have a high drag constant of `0.73F` (compared to 
 To ensure the test suite is maintainable and adheres to DRY principles, it is structured around several modular helper methods:
 * **`buildWall`**: Overloaded helper to set up a 5x5 target wall of a given `Block` or `BlockState` at relative `x = 2`.
 * **`spawnProjectile`**: Spawns any type of `ExplosiveProjectileEntity` (like `FireballEntity`, `WitherSkullEntity`, or `WindChargeEntity`) at a standardized starting relative position `(1.5, 3.0, 3.5)` with rotated velocity `(0.5, 0.0, 0.0)`.
+* **`spawnMockPlayer`**: Spawns a headless mock `Player` at a given relative coordinate for damage, exposure, and collision testing.
 * **`getBrokenBlocks`**: Scans the target wall area and collects all positions where the block type has changed.
 * **`getPredictedBrokenBlocks`**: Simulates the trajectory of a projectile client-side to generate predicted broken block positions.
 * **`assertExplosionDestruction`**: A parameterized assertion helper that verifies trajectory predictions match actual world impact for destructive test cases, enforcing 0 false negatives, a minimum 50% coverage ratio, and a strict 2.0x over-prediction cap.
@@ -194,10 +251,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 25 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (25 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 25 GAME TESTS COMPLETE IN 1.502 s ======================
-[Server thread/INFO] (Minecraft) All 25 required tests passed :)
+[Server thread/INFO] (Minecraft) 39 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (39 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 39 GAME TESTS COMPLETE IN 1.814 s ======================
+[Server thread/INFO] (Minecraft) All 39 required tests passed :)
 BUILD SUCCESSFUL
 ```

@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Impact Warning Badge Offset Y",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertical offset applied after anchor placement. Positive values move down.\nDefault: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Cracking Damage Hearts Overlay",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Overlays the health bar with cracking hearts indicating predicted damage from incoming projectiles.\nDefault: True",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Damage & Knockback Readout",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Displays predicted damage and knockback speed next to the impact warning badge.\nDefault: True",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Damage Estimation",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Render Impact Warning",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Displays a HUD warning badge when you are on a collision course with a projectile.\nDefault: True",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Trajectory Color",

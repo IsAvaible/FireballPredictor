@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Вертикальное смещение индикатора",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Вертикальное смещение относительно привязки. Положительные значения сдвигают вниз.\nПо умолчанию: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Отображение растрескавшихся сердец",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Отображает растрескавшиеся сердца на шкале здоровья, показывая прогнозируемый урон от снарядов.\nПо умолчанию: Включено",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Индикатор урона и отдачи",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Отображает прогнозируемый урон и скорость отдачи рядом с индикатором предупреждения.\nПо умолчанию: Включено",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Оценка урона",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Отображать предупреждение о столкновении",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Отображает индикатор предупреждения на экране при угрозе столкновения с огненным шаром.\nПо умолчанию: Включено",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Цвет траектории",

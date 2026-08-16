@@ -60,7 +60,11 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         /** Single lock-on: dispenser projectile. */
         TRACK_DISPENSER,
         /** Single lock-on: command / unmatched projectile. */
-        TRACK_COMMAND
+        TRACK_COMMAND,
+        /** Health bar cracking hearts overlay preview. */
+        DAMAGE_HEARTS,
+        /** Damage and knockback numerical readout preview. */
+        KNOCKBACK_ESTIMATOR
     }
 
     // ---- Layout constants ---------------------------------------------------
@@ -70,6 +74,8 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
     private static final float TRACKING_ASPECT = 0.42f;
     /** Slightly taller for master overviews with chip rows. */
     private static final float MASTER_ASPECT = 0.48f;
+    /** Compact aspect for damage estimator preview panels. */
+    private static final float DAMAGE_ASPECT = 0.46f;
 
     // ---- Instance state -----------------------------------------------------
 
@@ -95,6 +101,7 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
             case TRACK_MASTER, TRACK_MOB_MASTER, TRACK_OTHER_MASTER -> MASTER_ASPECT;
             case TRACK_FIREBALL, TRACK_WITHER, TRACK_WIND, TRACK_BLAZE, TRACK_GHAST,
                  TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND -> TRACKING_ASPECT;
+            case DAMAGE_HEARTS, KNOCKBACK_ESTIMATOR -> DAMAGE_ASPECT;
             default -> PANEL_ASPECT;
         };
         int height = Math.max(40, Math.round(width * aspect));
@@ -117,6 +124,8 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
             case TRACK_FIREBALL, TRACK_WITHER, TRACK_WIND, TRACK_BLAZE, TRACK_GHAST,
                  TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND
                     -> renderTracking(p, innerX, innerY, innerW, innerH);
+            case DAMAGE_HEARTS -> renderDamageHearts(p, innerX, innerY, innerW, innerH);
+            case KNOCKBACK_ESTIMATOR -> renderKnockbackEstimator(p, innerX, innerY, innerW, innerH);
         }
 
         return height;
@@ -234,6 +243,16 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         Color color = target.fallbackColor;
 
         TrackingRenderer.renderSingle(p, x, y, w, h, target, tracked, color);
+    }
+
+    private void renderDamageHearts(Painter p, int x, int y, int w, int h) {
+        DamageEstimatorRenderer.renderHearts(p, x, y, w, h,
+                pendingBool("renderDamageHeartsOverlay", true));
+    }
+
+    private void renderKnockbackEstimator(Painter p, int x, int y, int w, int h) {
+        DamageEstimatorRenderer.renderKnockback(p, x, y, w, h,
+                pendingBool("showKnockbackEstimator", true));
     }
 
     // ---- Pending-value access (YACL live-preview bridge) --------------------
@@ -363,5 +382,13 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
 
     public static final class TrackCommandFactory extends ModeFactory {
         public TrackCommandFactory() { super(Mode.TRACK_COMMAND); }
+    }
+
+    public static final class DamageHeartsFactory extends ModeFactory {
+        public DamageHeartsFactory() { super(Mode.DAMAGE_HEARTS); }
+    }
+
+    public static final class KnockbackEstimatorFactory extends ModeFactory {
+        public KnockbackEstimatorFactory() { super(Mode.KNOCKBACK_ESTIMATOR); }
     }
 }

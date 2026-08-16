@@ -9,18 +9,24 @@ public class PredictionData {
     public final List<Vec3> path;
     public final List<Vec3> velocities;
     public final HitResult hitResult;
+    public final HitResult damageHitResult;
     public final List<BlockPos> brokenBlocks;
     public final Vec3 initialVelocity;
     public final PredictionRenderData renderData;
     public final int predictionAge;
 
-    public PredictionData(List<Vec3> path, List<Vec3> velocities, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3 initialVelocity, PredictionRenderData renderData, int predictionAge) {
+    public PredictionData(List<Vec3> path, List<Vec3> velocities, HitResult hitResult, HitResult damageHitResult, List<BlockPos> brokenBlocks, Vec3 initialVelocity, PredictionRenderData renderData, int predictionAge) {
         this.path = path;
         this.velocities = velocities;
         this.hitResult = hitResult;
+        this.damageHitResult = damageHitResult;
         this.brokenBlocks = brokenBlocks;
         this.initialVelocity = initialVelocity;
         this.renderData = renderData;
         this.predictionAge = predictionAge;
+    }
+
+    public PredictionData(List<Vec3> path, List<Vec3> velocities, HitResult hitResult, List<BlockPos> brokenBlocks, Vec3 initialVelocity, PredictionRenderData renderData, int predictionAge) {
+        this(path, velocities, hitResult, hitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
     }
 }

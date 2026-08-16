@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Desplazamiento vertical del aviso",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Desplazamiento vertical aplicado desde el anclaje. Valores positivos desplazan hacia abajo.\nPor defecto: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Superposición de corazones agrietados",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Superpone corazones agrietados en la barra de vida que indican el daño previsto de proyectiles entrantes.\nPor defecto: Activado",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Indicador de daño y empuje",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Muestra el daño y la velocidad de empuje previstos junto al aviso de impacto.\nPor defecto: Activado",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Estimación de daño",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Mostrar aviso de impacto",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Muestra el aviso en la pantalla cuando estés en rumbo de colisión con una bola de fuego.\nPor defecto: Activado",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Color de la trayectoria",

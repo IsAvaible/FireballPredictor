@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "चेतावनी का लंबवत ऑफसेट",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "स्थिति से लंबवत दूरी। सकारात्मक मान नीचे खिसकाते हैं।\nडिफ़ॉल्ट: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "टूटे हुए क्षति के दिलों का ओवरले",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "आने वाले प्रोजेक्टाइल से अनुमानित क्षति को दर्शाने के लिए स्वास्थ्य पट्टी पर टूटे हुए दिल दिखाता है।\nडिफ़ॉल्ट: सक्षम",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "क्षति और नॉकबैक प्रदर्शन",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "टक्कर की चेतावनी के पास अनुमानित क्षति और नॉकबैक की गति प्रदर्शित करता है।\nडिफ़ॉल्ट: सक्षम",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "क्षति का अनुमान",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "टक्कर की चेतावनी दिखाएं",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "फ़ायरबॉल से टक्कर की स्थिति होने पर स्क्रीन पर चेतावनी दिखाएं।\nडिफ़ॉल्ट: सक्षम",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "प्रक्षेपवक्र रंग",

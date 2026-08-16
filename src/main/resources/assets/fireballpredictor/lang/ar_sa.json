@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "الإزاحة الرأسية للتحذير",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "الإزاحة الرأسية المطبقة بالنسبة لنقطة التثبيت. القيم الموجبة تحرك لأسفل.\nالافتراضي: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "تراكب القلوب المتشققة للضرر",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "يعرض قلوباً متشققة على شريط الصحة لتوضيح الضرر المتوقع من المقذوفات القادمة.\nالافتراضي: مفعّل",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "عرض الضرر وقوة الارتداد",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "يعرض الضرر المتوقع وسرعة الارتداد بجانب شارة تحذير الاصطدام.\nالافتراضي: مفعّل",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "تقدير الضرر",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "عرض تحذير الاصطدام",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "عرض شارة التحذير على الشاشة عند وجود خطر اصطدام بكرة نار.\nالافتراضي: مفعّل",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "لون المسار",
