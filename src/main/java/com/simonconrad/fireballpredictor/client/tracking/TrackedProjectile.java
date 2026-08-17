@@ -147,6 +147,15 @@ public final class TrackedProjectile {
                 || projectile instanceof AbstractWindCharge;
     }
 
+    /**
+     * True for projectiles that deal no block/explosion blast power (SmallFireball, DragonFireball, WindCharge).
+     */
+    public static boolean isZeroExplosionPower(AbstractHurtingProjectile projectile) {
+        return projectile instanceof SmallFireball
+                || projectile instanceof DragonFireball
+                || projectile instanceof AbstractWindCharge;
+    }
+
     @Nullable
     public Entity ownerEntity() {
         return inference.entity();

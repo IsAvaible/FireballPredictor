@@ -55,9 +55,9 @@ public class PredictionRenderer {
             return;
         }
 
-        int[] badge = impactBadgePosition(client);
-        int x = badge[0];
-        int y = badge[1];
+        BadgePosition badge = impactBadgePosition(client);
+        int x = badge.x();
+        int y = badge.y();
 
         int size = 20;
         context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.withDefaultNamespace("hud/effect_background"), x, y, size, size);
@@ -84,11 +84,13 @@ public class PredictionRenderer {
         context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
     }
 
+    public record BadgePosition(int x, int y) {}
+
     /**
      * Top-left corner of the impact warning badge on screen, honouring the configured anchor and
      * X/Y offsets. Shared with the damage/knockback HUD readout so both stay visually aligned.
      */
-    public static int[] impactBadgePosition(Minecraft client) {
+    public static BadgePosition impactBadgePosition(Minecraft client) {
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
         int badgeWidth = 20;
         int badgeHeight = 20;
@@ -109,7 +111,7 @@ public class PredictionRenderer {
             default -> margin;
         } + config.impactWarningBadgeOffsetY;
 
-        return new int[]{x, y};
+        return new BadgePosition(x, y);
     }
 
 
@@ -125,7 +127,7 @@ public class PredictionRenderer {
         float yaw = camera.yRot();
         float pitch = camera.xRot();
         Vec3 camLook = Vec3.directionFromRotation(pitch, yaw);
-        int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge);
+        int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
 
@@ -136,7 +138,7 @@ public class PredictionRenderer {
         float fade = 1.0f;
 
         TrailRenderState trailState = null;
-        if (config.renderTrajectory && data.path != null && data.path.size() > 1) {
+        if (config.renderTrajectory && data.path() != null && data.path().size() > 1) {
             matrices.pushPose();
             matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
             Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
@@ -146,7 +148,7 @@ public class PredictionRenderer {
             TrajectoryStyle style = config.trajectoryStyle == null ? TrajectoryStyle.SOLID : config.trajectoryStyle;
 
             trailState = new TrailRenderState(
-                data.path,
+                data.path(),
                 elapsedTicks,
                 config.trajectoryWidth,
                 trajectoryColor.getRed(),
@@ -163,8 +165,8 @@ public class PredictionRenderer {
         }
 
         DomeRenderState domeState = null;
-        if (config.renderShockwaveDome && data.hitResult != null && data.renderData != null && !data.renderData.domeQuads().isEmpty()) {
-            Vec3 hitPos = data.hitResult.getLocation();
+        if (config.renderShockwaveDome && data.hitResult() != null && data.renderData() != null && !data.renderData().domeQuads().isEmpty()) {
+            Vec3 hitPos = data.hitResult().getLocation();
 
             matrices.pushPose();
             matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
@@ -177,7 +179,7 @@ public class PredictionRenderer {
 
             domeState = new DomeRenderState(
                 hitPos,
-                data.renderData.domeQuads(),
+                data.renderData().domeQuads(),
                 shockwaveColor.getRed(),
                 shockwaveColor.getGreen(),
                 shockwaveColor.getBlue(),

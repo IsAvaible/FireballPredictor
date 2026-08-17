@@ -106,7 +106,36 @@ final class RenderUtils {
                 | (Mth.clamp(b, 0, 255));
     }
 
+    /** Desaturates a color using standard ITU-R luminance weighting. */
+    static java.awt.Color desaturate(java.awt.Color color) {
+        int r = color.getRed(), g = color.getGreen(), b = color.getBlue();
+        int lum = (r * 30 + g * 59 + b * 11) / 100;
+        return new java.awt.Color((r + lum * 3) / 4, (g + lum * 3) / 4, (b + lum * 3) / 4);
+    }
+
+    /** Desaturates RGB components and returns packed ARGB with given alpha. */
+    static int desaturatePacked(int r, int g, int b, int a) {
+        int lum = (r * 30 + g * 59 + b * 11) / 100;
+        return pack((r + lum * 3) / 4, (g + lum * 3) / 4, (b + lum * 3) / 4, a);
+    }
+
     // ---- UI helpers ---------------------------------------------------------
+
+    /** Draws the vanilla effect background plate sprite with fallback procedural styling. */
+    static void drawEffectBackground(Painter p, GuiGraphicsExtractor g, int x, int y, int size) {
+        if (effectSpriteAvailable) {
+            try {
+                g.blitSprite(RenderPipelines.GUI_TEXTURED,
+                        Identifier.withDefaultNamespace("hud/effect_background"),
+                        x, y, size, size);
+                return;
+            } catch (RuntimeException | LinkageError ignored) {
+                effectSpriteAvailable = false;
+            }
+        }
+        p.fill(x, y, x + size, y + size, 0xCC2A2A2A);
+        p.fill(x, y, x + size, y + 1, 0x66FFFFFF);
+    }
 
     /** Centred "disabled" label drawn with the Minecraft font. */
     static void drawDisabledLabel(Painter p, int x, int y, int w, int h) {

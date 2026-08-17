@@ -6,9 +6,6 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
@@ -17,9 +14,7 @@ import net.minecraft.world.phys.Vec3;
 public class ImpactPredictor {
 
     public static float resolveExplosionPower(AbstractHurtingProjectile fireball) {
-        if (fireball instanceof SmallFireball
-                || fireball instanceof DragonFireball
-                || fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
+        if (com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile.isZeroExplosionPower(fireball)) {
             return 0.0F;
         }
 

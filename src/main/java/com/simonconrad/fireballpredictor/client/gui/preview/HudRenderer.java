@@ -3,8 +3,6 @@ package com.simonconrad.fireballpredictor.client.gui.preview;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Items;
 
@@ -78,19 +76,7 @@ final class HudRenderer {
         p.fill(bx + badge / 2, fy + 1, bx + badge / 2 + 1, fy + fh - 1, 0x18FFAA44);
 
         // Badge background (vanilla effect plate if available)
-        if (effectSpriteAvailable) {
-            try {
-                g.blitSprite(RenderPipelines.GUI_TEXTURED,
-                        Identifier.withDefaultNamespace("hud/effect_background"),
-                        bx, by, badge, badge);
-            } catch (RuntimeException | LinkageError ignored) {
-                effectSpriteAvailable = false;
-            }
-        }
-        if (!effectSpriteAvailable) {
-            p.fill(bx, by, bx + badge, by + badge, 0xCC2A2A2A);
-            p.fill(bx, by, bx + badge, by + 1, 0x66FFFFFF);
-        }
+        drawEffectBackground(p, g, bx, by, badge);
 
         // Icon
         int iconPad = Math.max(1, badge / 8);

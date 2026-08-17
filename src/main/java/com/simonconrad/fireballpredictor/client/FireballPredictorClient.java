@@ -90,20 +90,7 @@ public class FireballPredictorClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null) {
-                activePredictions.clear();
-                trackedOwners.clear();
-                currentlyHighlightedBlocks.clear();
-                ClientPowerCache.POWER_CACHE.clear();
-                ClientOwnerCache.clear();
-                ServerTrackingRules.clear();
-                ClientPowerLookup.resetInferredPower();
-                FireballInferenceTracker.clear();
-                impactWarningVisible = false;
-                impactWarningProgress = 0.0f;
-                impactWarningType = WarningProjectileType.FIREBALL;
-                currentDamageEstimate = DamageEstimate.NONE;
-                damageOverlayActive = false;
-                trackedWorld = null;
+                resetClientState(null);
                 return;
             }
 
@@ -143,33 +130,26 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            // Re-admit projectiles whose owner filter was turned back on
-            trackedOwners.entrySet().removeIf(entry -> {
-                int entityId = entry.getKey();
+            // Clean up dead non-active tracked owners and re-admit allowed projectiles
+            Iterator<Map.Entry<Integer, TrackedProjectile>> ownerIt = trackedOwners.entrySet().iterator();
+            while (ownerIt.hasNext()) {
+                Map.Entry<Integer, TrackedProjectile> ownerEntry = ownerIt.next();
+                int entityId = ownerEntry.getKey();
                 AbstractHurtingProjectile fireball = getProjectile(client.level, entityId);
                 if (fireball == null || !fireball.isAlive()) {
                     ClientPowerCache.POWER_CACHE.remove(entityId);
                     ClientOwnerCache.remove(entityId);
-                    return true;
+                    ownerIt.remove();
+                    continue;
                 }
-                return false;
-            });
-
-            for (Map.Entry<Integer, TrackedProjectile> ownerEntry : trackedOwners.entrySet()) {
-                int entityId = ownerEntry.getKey();
-                TrackedProjectile tracked = ownerEntry.getValue();
                 if (activePredictions.containsKey(entityId)) {
                     continue;
                 }
-                AbstractHurtingProjectile fireball = getProjectile(client.level, entityId);
-                if (fireball == null) {
-                    continue;
-                }
+                TrackedProjectile tracked = ownerEntry.getValue();
                 tracked.tick(client.level);
-                if (!tracked.shouldRender()) {
-                    continue;
+                if (tracked.shouldRender()) {
+                    createAndRegisterPrediction(fireball, client.level);
                 }
-                createAndRegisterPrediction(fireball, client.level);
             }
 
             for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
@@ -228,10 +208,10 @@ public class FireballPredictorClient implements ClientModInitializer {
                     continue;
                 }
 
-                int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge);
+                int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
 
-                if (player != null && data.hitResult != null && data.path != null && data.path.size() > 1) {
-                    int ticksToImpact = Math.max(0, data.path.size() - 1 - elapsedTicks);
+                if (player != null && data.hitResult() != null && data.path() != null && data.path().size() > 1) {
+                    int ticksToImpact = Math.max(0, data.path().size() - 1 - elapsedTicks);
                     float power = ClientPowerLookup.getPower(fireball);
                     float warningPower = power <= 0.0f ? 1.0f : power;
                     double dangerRadius = warningPower * 2.0f * 2.0f;
@@ -248,8 +228,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                     }
                 }
                 
-                if (data.brokenBlocks != null) {
-                    int ticksRemaining = Math.max(0, data.path.size() - 1 - elapsedTicks);
+                if (data.brokenBlocks() != null) {
+                    int ticksRemaining = Math.max(0, data.path().size() - 1 - elapsedTicks);
                     int age = fireball.tickCount;
                     int totalTicks = age + ticksRemaining;
                     
@@ -261,10 +241,10 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < ((period * 3) / 4);
                     int currentStage = isVisible ? baseStage : -1;
                     
-                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.level.getRandom().nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.level.getRandom().nextInt(2) == 0 && !data.brokenBlocks().isEmpty()) {
                         int particleCount = 1 + client.level.getRandom().nextInt(3);
                         for (int i = 0; i < particleCount; i++) {
-                            net.minecraft.core.BlockPos randomPos = data.brokenBlocks.get(client.level.getRandom().nextInt(data.brokenBlocks.size()));
+                            net.minecraft.core.BlockPos randomPos = data.brokenBlocks().get(client.level.getRandom().nextInt(data.brokenBlocks().size()));
                             if (!client.level.getBlockState(randomPos).isAir()) {
                                 double px = randomPos.getX() + client.level.getRandom().nextDouble();
                                 double py = randomPos.getY() + 1.1;
@@ -281,7 +261,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     }
 
                     if (ModConfig.instance().renderBlockHighlights) {
-                        for (net.minecraft.core.BlockPos pos : data.brokenBlocks) {
+                        for (net.minecraft.core.BlockPos pos : data.brokenBlocks()) {
                             if (!client.level.getBlockState(pos).isAir()) {
                                 newHighlightedBlocks.merge(pos, currentStage, Math::max);
                             }
@@ -431,16 +411,17 @@ public class FireballPredictorClient implements ClientModInitializer {
         activePredictions.put(entityId, trackedPrediction);
 
         if (trackedPrediction.predictionData != null) {
-            Vec3 hitPos = trackedPrediction.predictionData.hitResult != null ? trackedPrediction.predictionData.hitResult.getLocation() : null;
+            Vec3 hitPos = trackedPrediction.predictionData.hitResult() != null ? trackedPrediction.predictionData.hitResult().getLocation() : null;
             FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
         }
     }
 
-    private void resetWorldState(ClientLevel world) {
+    private void resetClientState(ClientLevel world) {
         trackedWorld = world;
         activePredictions.clear();
         trackedOwners.clear();
         currentlyHighlightedBlocks.clear();
+        ClientPowerCache.POWER_CACHE.clear();
         ClientOwnerCache.clear();
         FireballInferenceTracker.clear();
         ClientPowerLookup.resetInferredPower();
@@ -449,6 +430,13 @@ public class FireballPredictorClient implements ClientModInitializer {
         impactWarningType = WarningProjectileType.FIREBALL;
         currentDamageEstimate = DamageEstimate.NONE;
         damageOverlayActive = false;
+        if (world == null) {
+            ServerTrackingRules.clear();
+        }
+    }
+
+    private void resetWorldState(ClientLevel world) {
+        resetClientState(world);
 
         for (Entity entity : world.entitiesForRendering()) {
             handleEntityAdded(entity);
@@ -523,7 +511,7 @@ public class FireballPredictorClient implements ClientModInitializer {
     }
 
     private static boolean isThreateningPlayer(LocalPlayer player, AbstractHurtingProjectile projectile, PredictionData data, int elapsedTicks, double dangerRadiusSq) {
-        if (player == null || data == null || data.path == null || data.path.isEmpty()) {
+        if (player == null || data == null || data.path() == null || data.path().isEmpty()) {
             return false;
         }
 
@@ -532,21 +520,21 @@ public class FireballPredictorClient implements ClientModInitializer {
         if (damageHit instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
             return true;
         }
-        if (data.hitResult instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
+        if (data.hitResult() instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
             return true;
         }
 
         // 2. Impact detonation point is within blast danger radius of the player
         Vec3 playerPos = player.position();
-        Vec3 impactPos = damageHit != null ? damageHit.getLocation() : (data.hitResult != null ? data.hitResult.getLocation() : null);
+        Vec3 impactPos = damageHit != null ? damageHit.getLocation() : (data.hitResult() != null ? data.hitResult().getLocation() : null);
         if (impactPos != null && playerPos.distanceToSqr(impactPos) <= dangerRadiusSq) {
             return true;
         }
 
         // 3. Proximity along the flight path (current player position + short-term velocity extrapolation)
         Vec3 playerVel = player.getDeltaMovement();
-        for (int i = elapsedTicks; i < data.path.size(); i++) {
-            Vec3 pathPoint = data.path.get(i);
+        for (int i = elapsedTicks; i < data.path().size(); i++) {
+            Vec3 pathPoint = data.path().get(i);
             if (pathPoint.distanceToSqr(playerPos) <= dangerRadiusSq) {
                 return true;
             }
@@ -593,18 +581,18 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            if (predictionData == null || predictionData.path == null || predictionData.velocities == null) {
+            if (predictionData == null || predictionData.path() == null || predictionData.velocities() == null) {
                 return true;
             }
             
             // Check if the entity was deflected or velocity/position drifted
-            int elapsedTicks = fireball.tickCount - predictionData.predictionAge;
-            if (elapsedTicks < 0 || elapsedTicks >= predictionData.path.size()) {
+            int elapsedTicks = fireball.tickCount - predictionData.predictionAge();
+            if (elapsedTicks < 0 || elapsedTicks >= predictionData.path().size()) {
                 return true;
             }
 
-            Vec3 expectedPos = predictionData.path.get(elapsedTicks);
-            Vec3 expectedVel = predictionData.velocities.get(elapsedTicks);
+            Vec3 expectedPos = predictionData.path().get(elapsedTicks);
+            Vec3 expectedVel = predictionData.velocities().get(elapsedTicks);
             Vec3 actualPos = fireball.position();
             Vec3 actualVel = fireball.getDeltaMovement();
 
@@ -616,16 +604,16 @@ public class FireballPredictorClient implements ClientModInitializer {
             }
 
             // Check if path is obstructed or block states along it changed
-            if (predictionData.hitResult != null && predictionData.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-                net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) predictionData.hitResult;
+            if (predictionData.hitResult() != null && predictionData.hitResult().getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) predictionData.hitResult();
                 net.minecraft.core.BlockPos hitPos = blockHit.getBlockPos();
                 if (world.getBlockState(hitPos).isAir()) {
                     return true;
                 }
             }
 
-            for (int i = elapsedTicks; i < predictionData.path.size() - 1; i++) {
-                Vec3 pos = predictionData.path.get(i);
+            for (int i = elapsedTicks; i < predictionData.path().size() - 1; i++) {
+                Vec3 pos = predictionData.path().get(i);
                 net.minecraft.core.BlockPos blockPos = net.minecraft.core.BlockPos.containing(pos.x, pos.y, pos.z);
                 if (!world.getBlockState(blockPos).getCollisionShape(world, blockPos).isEmpty()) {
                     return true;

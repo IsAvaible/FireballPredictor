@@ -96,7 +96,7 @@ public final class DamageCalculator {
         }
 
         float seenPercent = getSeenPercent(level, explosionPos, player);
-        return calculateFromSeenPercent(explosionPos, explosionPower, player, explosionSource, seenPercent);
+        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent);
     }
 
     /**
@@ -115,12 +115,17 @@ public final class DamageCalculator {
             return DamageEstimate.NONE;
         }
 
+        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent);
+    }
+
+    private static DamageEstimate calculateInternal(
+            Vec3 explosionPos, float explosionPower, float radius, double distance, Player player, DamageSource explosionSource, float seenPercent) {
         float impact = (1.0F - (float) distance / radius) * seenPercent;
         // Vanilla ExplosionDamageCalculator.getEntityDamageAmount:
         float rawDamage = (impact * impact + impact) / 2.0F * 7.0F * radius + 1.0F;
 
         float finalDamage = computeFinalDamage(rawDamage, player, explosionSource);
-        double knockback = computeKnockback(explosionPos, explosionPower, player, seenPercent, 1.0F);
+        double knockback = computeKnockback(distance, radius, player, seenPercent, 1.0F);
 
         return new DamageEstimate(rawDamage, finalDamage,
                 Math.min(finalDamage, player.getHealth() + player.getAbsorptionAmount()) / 2.0F,
@@ -301,6 +306,11 @@ public final class DamageCalculator {
             Vec3 explosionPos, float explosionPower, Player player, float seenPercent, float knockbackMultiplier) {
         float radius = explosionPower * BLAST_RADIUS_MULTIPLIER;
         double distance = Math.sqrt(player.distanceToSqr(explosionPos));
+        return computeKnockback(distance, radius, player, seenPercent, knockbackMultiplier);
+    }
+
+    public static double computeKnockback(
+            double distance, float radius, Player player, float seenPercent, float knockbackMultiplier) {
         double knockbackResistance = player.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
         return (1.0 - distance / radius) * seenPercent * knockbackMultiplier * (1.0 - knockbackResistance);
     }

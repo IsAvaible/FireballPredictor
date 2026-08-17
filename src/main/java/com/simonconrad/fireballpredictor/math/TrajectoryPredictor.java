@@ -250,22 +250,19 @@ public class TrajectoryPredictor {
      * block hit result at the end of the path.
      */
     public static HitResult findDamageHitResult(Level world, AbstractHurtingProjectile fireball, PredictionData data) {
-        if (data == null || data.path == null || data.path.size() < 2) {
-            return data != null ? data.hitResult : null;
+        if (data == null || data.path() == null || data.path().size() < 2) {
+            return data != null ? data.hitResult() : null;
         }
 
-        int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge);
-        if (elapsedTicks >= data.path.size() - 1) {
-            return data.hitResult;
+        int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
+        if (elapsedTicks >= data.path().size() - 1) {
+            return data.hitResult();
         }
 
-        for (int i = elapsedTicks; i < data.path.size() - 1; i++) {
-            Vec3 p1 = data.path.get(i);
-            Vec3 p2 = data.path.get(i + 1);
-            AABB segBox = new AABB(
-                Math.min(p1.x, p2.x), Math.min(p1.y, p2.y), Math.min(p1.z, p2.z),
-                Math.max(p1.x, p2.x), Math.max(p1.y, p2.y), Math.max(p1.z, p2.z)
-            ).inflate(1.0);
+        for (int i = elapsedTicks; i < data.path().size() - 1; i++) {
+            Vec3 p1 = data.path().get(i);
+            Vec3 p2 = data.path().get(i + 1);
+            AABB segBox = new AABB(p1, p2).inflate(1.0);
 
             EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(
                 world, fireball, p1, p2, segBox, 
@@ -277,6 +274,6 @@ public class TrajectoryPredictor {
             }
         }
 
-        return data.hitResult;
+        return data.hitResult();
     }
 }

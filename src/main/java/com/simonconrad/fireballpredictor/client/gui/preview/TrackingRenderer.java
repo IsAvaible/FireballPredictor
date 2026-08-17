@@ -107,10 +107,10 @@ final class TrackingRenderer {
         int g = color.getGreen();
         int b = color.getBlue();
         if (!tracked) {
-            int lum = (r * 30 + g * 59 + b * 11) / 100;
-            r = (r + lum * 3) / 4;
-            g = (g + lum * 3) / 4;
-            b = (b + lum * 3) / 4;
+            Color desat = desaturate(color);
+            r = desat.getRed();
+            g = desat.getGreen();
+            b = desat.getBlue();
         }
 
         float time = seconds();
@@ -188,19 +188,7 @@ final class TrackingRenderer {
         int py = y + (h - plate) / 2;
 
         GuiGraphicsExtractor g = p.graphics();
-        if (effectSpriteAvailable) {
-            try {
-                g.blitSprite(RenderPipelines.GUI_TEXTURED,
-                        Identifier.withDefaultNamespace("hud/effect_background"),
-                        px, py, plate, plate);
-            } catch (RuntimeException | LinkageError ignored) {
-                effectSpriteAvailable = false;
-            }
-        }
-        if (!effectSpriteAvailable) {
-            p.fill(px, py, px + plate, py + plate, 0xCC2A2A2A);
-            p.fill(px, py, px + plate, py + 1, 0x66FFFFFF);
-        }
+        drawEffectBackground(p, g, px, py, plate);
 
         // Fire-charge or custom icon glyph on the plate
         // Fire charge texture has built-in transparent margin, so it needs smaller padding to visually match
@@ -257,12 +245,7 @@ final class TrackingRenderer {
             // p.fill(cx0, chipY, cx0 + chip, chipY + 1, on ? 0x44FFFFFF : 0x22FFFFFF);
 
             int pad = Math.max(1, chip / 8);
-            Color col = source.target.fallbackColor;
-            if (!on) {
-                int rr = col.getRed(), gg = col.getGreen(), bb = col.getBlue();
-                int lum = (rr * 30 + gg * 59 + bb * 11) / 100;
-                col = new Color((rr + lum * 3) / 4, (gg + lum * 3) / 4, (bb + lum * 3) / 4);
-            }
+            Color col = on ? source.target.fallbackColor : desaturate(source.target.fallbackColor);
             drawItemIcon(p, source.target.icon, cx0 + pad, chipY + pad,
                     chip - pad * 2, pack(col.getRed(), col.getGreen(), col.getBlue(), 255));
 

@@ -161,7 +161,7 @@ public final class HeartOverlayRenderer {
             return;
         }
 
-        int[] badge = PredictionRenderer.impactBadgePosition(client);
+        PredictionRenderer.BadgePosition badge = PredictionRenderer.impactBadgePosition(client);
         ImpactWarningBadgeAnchor anchor = ModConfig.instance().impactWarningBadgeAnchor;
         if (anchor == null) {
             anchor = ImpactWarningBadgeAnchor.TOP_LEFT;
@@ -172,9 +172,9 @@ public final class HeartOverlayRenderer {
 
         int textWidth = font.width(text);
         int textX = (anchor == ImpactWarningBadgeAnchor.TOP_RIGHT || anchor == ImpactWarningBadgeAnchor.BOTTOM_RIGHT)
-                ? badge[0] - textWidth - 6
-                : badge[0] + 24;
+                ? badge.x() - textWidth - 6
+                : badge.x() + 24;
 
-        graphics.text(font, text, textX, badge[1] + 6, TEXT_COLOR, true);
+        graphics.text(font, text, textX, badge.y() + 6, TEXT_COLOR, true);
     }
 }

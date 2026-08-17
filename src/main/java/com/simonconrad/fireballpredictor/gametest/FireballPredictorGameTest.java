@@ -161,7 +161,7 @@ public class FireballPredictorGameTest {
     private List<BlockPos> getPredictedBrokenBlocks(AbstractHurtingProjectile projectile, GameTestHelper context) {
         TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(projectile, context.getLevel());
         PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, projectile.tickCount);
-        return prediction.brokenBlocks;
+        return prediction.brokenBlocks();
     }
 
     private void assertExplosionDestruction(
@@ -435,7 +435,7 @@ public class FireballPredictorGameTest {
         LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getLevel());
         PredictionData pred = TrajectoryPredictor.computePrediction(traj, fireball1.tickCount);
-        Vec3 hitPos = pred.hitResult != null ? pred.hitResult.getLocation() : fireball1.position();
+        Vec3 hitPos = pred.hitResult() != null ? pred.hitResult().getLocation() : fireball1.position();
 
         // Register fireball location (lastPos and hitPos) in inference cache
         FireballInferenceTracker.registerFireballLocation(fireball1, hitPos);
