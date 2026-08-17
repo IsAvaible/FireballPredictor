@@ -36,9 +36,11 @@ public final class HeartOverlayRenderer {
     private static final Identifier CRACKING_FULL = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full");
     private static final Identifier CRACKING_HALF = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half");
     private static final Identifier CRACKING_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right");
+    private static final Identifier CRACKING_HALF_ABSORBING_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_right");
     private static final Identifier CRACKING_FULL_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full_blinking");
     private static final Identifier CRACKING_HALF_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_blinking");
     private static final Identifier CRACKING_HALF_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right_blinking");
+    private static final Identifier CRACKING_HALF_ABSORBING_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_right_blinking");
 
     private static final int TEXT_COLOR = 0xFFE67A00;
 
@@ -110,15 +112,15 @@ public final class HeartOverlayRenderer {
         boolean blinking = (gameTime % 6L) < 3L;
 
         // 1. Health heart slots (indices 0 .. healthSlots - 1)
-        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking);
+        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking, false);
 
         // 2. Absorption heart slots (placed after healthSlots, indices healthSlots .. totalHearts - 1)
-        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking);
+        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking, true);
     }
 
     private static void renderHeartSlots(GuiGraphicsExtractor graphics, int startSlot, int count,
                                          float remValue, float maxValue,
-                                         int left, int top, int rowSpacing, boolean blinking) {
+                                         int left, int top, int rowSpacing, boolean blinking, boolean absorbing) {
         for (int i = 0; i < count; i++) {
             float leftVal = i * 2.0F;
             float rightVal = i * 2.0F + 1.0F;
@@ -140,7 +142,11 @@ public final class HeartOverlayRenderer {
             if (leftLost && rightLost) {
                 sprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
             } else if (rightLost) {
-                sprite = blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;
+                if (absorbing) {
+                    sprite = blinking ? CRACKING_HALF_ABSORBING_RIGHT_BLINKING : CRACKING_HALF_ABSORBING_RIGHT;
+                } else {
+                    sprite = blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;
+                }
             } else {
                 sprite = blinking ? CRACKING_HALF_BLINKING : CRACKING_HALF;
             }
