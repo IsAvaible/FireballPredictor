@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.1
+
+### HUD & Visual Improvements
+- **Absorption Heart Textures:** Added dedicated half-heart cracking sprites for absorption hearts to accurately reflect partial absorption damage on the HUD.
+
+### Performance & Internal Refactoring
+- **State & Math Optimizations:** Consolidated client state resets, eliminated redundant damage and knockback math calculations, and added a power cache disconnect cleanup handler.
+- **Rendering & Data Cleanup:** Deduplicated ribbon, heart, and preview drawing utilities, converted `PredictionData` to a record, and eliminated per-frame badge coordinate allocations.
+
 ## 1.7.0
 
 ### Damage & Knockback Estimation
