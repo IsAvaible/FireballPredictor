@@ -42,29 +42,47 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         /** Other sources master overview. */
         TRACK_OTHER_MASTER,
         /** Single lock-on: fireball. */
-        TRACK_FIREBALL,
+        TRACK_FIREBALL(TrackingRenderer.Target.FIREBALL, "trackFireballs", ParentGroup.NONE),
         /** Single lock-on: wither skull. */
-        TRACK_WITHER,
+        TRACK_WITHER(TrackingRenderer.Target.WITHER, "trackWitherSkulls", ParentGroup.NONE),
         /** Single lock-on: wind charge. */
-        TRACK_WIND,
+        TRACK_WIND(TrackingRenderer.Target.WIND, "trackWindCharges", ParentGroup.NONE),
         /** Single lock-on: blaze fireball. */
-        TRACK_BLAZE,
+        TRACK_BLAZE(TrackingRenderer.Target.BLAZE, "trackBlazeFireballs", ParentGroup.MOB),
         /** Single lock-on: ghast fireball. */
-        TRACK_GHAST,
+        TRACK_GHAST(TrackingRenderer.Target.GHAST, "trackGhastFireballs", ParentGroup.MOB),
         /** Single lock-on: ender dragon fireball. */
-        TRACK_DRAGON,
+        TRACK_DRAGON(TrackingRenderer.Target.DRAGON, "trackEnderDragonFireballs", ParentGroup.MOB),
         /** Single lock-on: wither mob. */
-        TRACK_WITHER_MOB,
+        TRACK_WITHER_MOB(TrackingRenderer.Target.WITHER, "trackWitherMob", ParentGroup.MOB),
         /** Single lock-on: player-owned projectile. */
-        TRACK_PLAYER,
+        TRACK_PLAYER(TrackingRenderer.Target.PLAYER, "trackPlayerProjectiles", ParentGroup.OTHER),
         /** Single lock-on: dispenser projectile. */
-        TRACK_DISPENSER,
+        TRACK_DISPENSER(TrackingRenderer.Target.DISPENSER, "trackDispenserProjectiles", ParentGroup.OTHER),
         /** Single lock-on: command / unmatched projectile. */
-        TRACK_COMMAND,
+        TRACK_COMMAND(TrackingRenderer.Target.COMMAND, "trackCommandProjectiles", ParentGroup.OTHER),
         /** Health bar cracking hearts overlay preview. */
         DAMAGE_HEARTS,
         /** Damage and knockback numerical readout preview. */
-        KNOCKBACK_ESTIMATOR
+        KNOCKBACK_ESTIMATOR;
+
+        final TrackingRenderer.Target target;
+        final String configField;
+        final ParentGroup parentGroup;
+
+        Mode() {
+            this(null, null, ParentGroup.NONE);
+        }
+
+        Mode(TrackingRenderer.Target target, String configField, ParentGroup parentGroup) {
+            this.target = target;
+            this.configField = configField;
+            this.parentGroup = parentGroup;
+        }
+    }
+
+    private enum ParentGroup {
+        NONE, MOB, OTHER
     }
 
     // ---- Layout constants ---------------------------------------------------
@@ -201,48 +219,18 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
     }
 
     private void renderTracking(Painter p, int x, int y, int w, int h) {
-        TrackingRenderer.Target target = switch (mode) {
-            case TRACK_FIREBALL -> TrackingRenderer.Target.FIREBALL;
-            case TRACK_WITHER -> TrackingRenderer.Target.WITHER;
-            case TRACK_WIND -> TrackingRenderer.Target.WIND;
-            case TRACK_BLAZE -> TrackingRenderer.Target.BLAZE;
-            case TRACK_GHAST -> TrackingRenderer.Target.GHAST;
-            case TRACK_DRAGON -> TrackingRenderer.Target.DRAGON;
-            case TRACK_WITHER_MOB -> TrackingRenderer.Target.WITHER;
-            case TRACK_PLAYER -> TrackingRenderer.Target.PLAYER;
-            case TRACK_DISPENSER -> TrackingRenderer.Target.DISPENSER;
-            case TRACK_COMMAND -> TrackingRenderer.Target.COMMAND;
-            default -> TrackingRenderer.Target.FIREBALL;
-        };
-
-        String field = switch (mode) {
-            case TRACK_FIREBALL -> "trackFireballs";
-            case TRACK_WITHER -> "trackWitherSkulls";
-            case TRACK_WIND -> "trackWindCharges";
-            case TRACK_BLAZE -> "trackBlazeFireballs";
-            case TRACK_GHAST -> "trackGhastFireballs";
-            case TRACK_DRAGON -> "trackEnderDragonFireballs";
-            case TRACK_WITHER_MOB -> "trackWitherMob";
-            case TRACK_PLAYER -> "trackPlayerProjectiles";
-            case TRACK_DISPENSER -> "trackDispenserProjectiles";
-            case TRACK_COMMAND -> "trackCommandProjectiles";
-            default -> "trackFireballs";
-        };
+        TrackingRenderer.Target target = mode.target != null ? mode.target : TrackingRenderer.Target.FIREBALL;
+        String field = mode.configField != null ? mode.configField : "trackFireballs";
 
         // Honour master chain so the preview greys out when a parent is off
-        boolean tracked = pendingBool(field, true);
-        boolean master = pendingBool("trackProjectiles", true);
-        tracked = tracked && master;
-        if (mode == Mode.TRACK_BLAZE || mode == Mode.TRACK_GHAST
-                || mode == Mode.TRACK_DRAGON || mode == Mode.TRACK_WITHER_MOB) {
+        boolean tracked = pendingBool(field, true) && pendingBool("trackProjectiles", true);
+        if (mode.parentGroup == ParentGroup.MOB) {
             tracked = tracked && pendingBool("trackMobProjectiles", true);
-        } else if (mode == Mode.TRACK_PLAYER || mode == Mode.TRACK_DISPENSER || mode == Mode.TRACK_COMMAND) {
+        } else if (mode.parentGroup == ParentGroup.OTHER) {
             tracked = tracked && pendingBool("trackOtherOwnerProjectiles", false);
         }
 
-        Color color = target.fallbackColor;
-
-        TrackingRenderer.renderSingle(p, x, y, w, h, target, tracked, color);
+        TrackingRenderer.renderSingle(p, x, y, w, h, target, tracked, target.fallbackColor);
     }
 
     private void renderDamageHearts(Painter p, int x, int y, int w, int h) {

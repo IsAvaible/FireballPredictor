@@ -1,6 +1,15 @@
 package com.simonconrad.fireballpredictor.config;
 
 import com.simonconrad.fireballpredictor.client.gui.preview.ConfigPreviewRenderer;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
+import com.simonconrad.fireballpredictor.tracking.TrackingRules;
+import dev.isxander.yacl3.api.ConfigCategory;
+import dev.isxander.yacl3.api.Option;
+import dev.isxander.yacl3.api.OptionDescription;
+import dev.isxander.yacl3.api.OptionGroup;
+import dev.isxander.yacl3.api.YetAnotherConfigLib;
+import dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
@@ -13,9 +22,14 @@ import dev.isxander.yacl3.config.v2.api.autogen.MasterTickBox;
 import dev.isxander.yacl3.config.v2.api.autogen.TickBox;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 
 import java.awt.Color;
+import java.util.Map;
 import java.util.Set;
 
 public class ModConfig {
@@ -298,17 +312,13 @@ public class ModConfig {
     public boolean showKnockbackEstimator = true;
 
     // 3. Helper methods to match your existing client initialization calls
-    public static dev.isxander.yacl3.api.YetAnotherConfigLib generateGui() {
+    public static YetAnotherConfigLib generateGui() {
         // 1. Evaluate server tracking restrictions before building the GUI options
-        int serverMask = com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.mask();
-        boolean playerAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
-                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.PLAYER);
-        boolean dispenserAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
-                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.DISPENSER);
-        boolean commandAvailable = !com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules.isDisabled(
-                com.simonconrad.fireballpredictor.tracking.ProjectileOwner.COMMAND);
-        boolean otherGroupAvailable = (serverMask & com.simonconrad.fireballpredictor.tracking.TrackingRules.OTHER_GROUP) !=
-                com.simonconrad.fireballpredictor.tracking.TrackingRules.OTHER_GROUP;
+        int serverMask = ServerTrackingRules.mask();
+        boolean playerAvailable = !ServerTrackingRules.isDisabled(ProjectileOwner.PLAYER);
+        boolean dispenserAvailable = !ServerTrackingRules.isDisabled(ProjectileOwner.DISPENSER);
+        boolean commandAvailable = !ServerTrackingRules.isDisabled(ProjectileOwner.COMMAND);
+        boolean otherGroupAvailable = (serverMask & TrackingRules.OTHER_GROUP) != TrackingRules.OTHER_GROUP;
 
         String prefix = "yacl3.config." + HANDLER.id().getNamespace() + ":" + HANDLER.id().getPath() + ".";
         String playerKey = prefix + "trackPlayerProjectiles";
@@ -316,49 +326,49 @@ public class ModConfig {
         String commandKey = prefix + "trackCommandProjectiles";
         String otherKey = prefix + "trackOtherOwnerProjectiles";
 
-        dev.isxander.yacl3.api.YetAnotherConfigLib baseGui = HANDLER.generateGui();
-        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        YetAnotherConfigLib baseGui = HANDLER.generateGui();
+        Minecraft client = Minecraft.getInstance();
         String serverIp = (client != null && client.getCurrentServer() != null)
                 ? client.getCurrentServer().ip
                 : null;
 
-        dev.isxander.yacl3.api.Option<Float> serverOption = null;
+        Option<Float> serverOption = null;
         if (serverIp != null && !serverIp.trim().isEmpty()) {
             final String ip = serverIp.trim().toLowerCase(java.util.Locale.ROOT);
             ModConfig config = instance();
 
-            serverOption = dev.isxander.yacl3.api.Option.<Float>createBuilder()
-                .name(net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower", ip))
-                .description(dev.isxander.yacl3.api.OptionDescription.of(
-                        net.minecraft.network.chat.Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
+            serverOption = Option.<Float>createBuilder()
+                .name(Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower", ip))
+                .description(OptionDescription.of(
+                        Component.translatable("yacl.config.fireballpredictor:serverFallbackFireballPower.desc", ip)
                 ))
                 .binding(
                         0.0f,
                         () -> config.serverFallbackPowers.getOrDefault(ip, 0.0f),
                         val -> config.setServerFallbackPower(ip, val)
                 )
-                .controller(opt -> dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder.create(opt)
+                .controller(opt -> FloatFieldControllerBuilder.create(opt)
                         .min(0.0f)
                         .max(100.0f)
                         .formatValue(v -> v <= 0.0f
-                                ? net.minecraft.network.chat.Component.literal("0.00 (Auto / None)")
-                                : net.minecraft.network.chat.Component.literal(String.format("%.2f", v))))
+                                ? Component.literal("0.00 (Auto / None)")
+                                : Component.literal(String.format(java.util.Locale.ROOT, "%.2f", v))))
                 .build();
         }
 
-        dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
+        YetAnotherConfigLib.Builder builder = YetAnotherConfigLib.createBuilder()
                 .title(baseGui.title())
                 .save(ModConfig::save);
 
-        for (dev.isxander.yacl3.api.ConfigCategory category : baseGui.categories()) {
-            dev.isxander.yacl3.api.ConfigCategory.Builder categoryBuilder = dev.isxander.yacl3.api.ConfigCategory.createBuilder()
+        for (ConfigCategory category : baseGui.categories()) {
+            ConfigCategory.Builder categoryBuilder = ConfigCategory.createBuilder()
                     .name(category.name());
 
             if (category.tooltip() != null) {
                 categoryBuilder.tooltip(category.tooltip());
             }
 
-            for (dev.isxander.yacl3.api.OptionGroup group : category.groups()) {
+            for (OptionGroup group : category.groups()) {
                 if (group.isRoot()) {
                     categoryBuilder.group(group);
                     continue;
@@ -366,12 +376,9 @@ public class ModConfig {
 
                 // Determine if this group should be collapsed
                 boolean shouldCollapse = false;
-                String groupKey = "";
-                if (group.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
-                    groupKey = tc.getKey();
-                } else {
-                    groupKey = group.name().getString();
-                }
+                String groupKey = group.name().getContents() instanceof TranslatableContents tc
+                        ? tc.getKey()
+                        : group.name().getString();
 
                 for (String suffix : COLLAPSED_GROUP_KEYS) {
                     if (groupKey.endsWith(suffix) || groupKey.endsWith("group." + suffix)) {
@@ -381,8 +388,7 @@ public class ModConfig {
                 }
 
                 // Build option group with availability set directly on existing YACL option
-                dev.isxander.yacl3.api.OptionGroup.Builder groupBuilder = 
-                    dev.isxander.yacl3.api.OptionGroup.createBuilder()
+                OptionGroup.Builder groupBuilder = OptionGroup.createBuilder()
                         .name(group.name())
                         .collapsed(shouldCollapse);
 
@@ -390,16 +396,13 @@ public class ModConfig {
                     groupBuilder.description(group.description());
                 }
 
-                for (dev.isxander.yacl3.api.Option<?> opt : group.options()) {
-                    if (opt != null && opt.name() != null && opt.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
+                for (Option<?> opt : group.options()) {
+                    if (opt != null && opt.name() != null && opt.name().getContents() instanceof TranslatableContents tc) {
                         String key = tc.getKey();
-                        if (key.equals(playerKey) && !playerAvailable) {
-                            opt.setAvailable(false);
-                        } else if (key.equals(dispenserKey) && !dispenserAvailable) {
-                            opt.setAvailable(false);
-                        } else if (key.equals(commandKey) && !commandAvailable) {
-                            opt.setAvailable(false);
-                        } else if (key.equals(otherKey) && !otherGroupAvailable) {
+                        if ((key.equals(playerKey) && !playerAvailable)
+                                || (key.equals(dispenserKey) && !dispenserAvailable)
+                                || (key.equals(commandKey) && !commandAvailable)
+                                || (key.equals(otherKey) && !otherGroupAvailable)) {
                             opt.setAvailable(false);
                         }
                     }
@@ -410,7 +413,7 @@ public class ModConfig {
                 categoryBuilder.group(groupBuilder.build());
             }
 
-            if (serverOption != null && category.name().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translatable) {
+            if (serverOption != null && category.name().getContents() instanceof TranslatableContents translatable) {
                 if (translatable.getKey().endsWith("general")) {
                     categoryBuilder.option(serverOption);
                 }
@@ -422,7 +425,7 @@ public class ModConfig {
         return builder.build();
     }
 
-    public static net.minecraft.client.gui.screens.Screen createScreen(net.minecraft.client.gui.screens.Screen parentScreen) {
+    public static Screen createScreen(Screen parentScreen) {
         return generateGui().generateScreen(parentScreen);
     }
 

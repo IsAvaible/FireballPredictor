@@ -55,14 +55,7 @@ public class TrajectoryPredictor {
         Vec3 initialVelocity = fireball.getDeltaMovement();
         Vec3 velocity = initialVelocity;
 
-        AABB initialBoundingBox = fireball.getBoundingBox();
-        double boxMinXOffset = initialBoundingBox.minX - fireballPos.x;
-        double boxMinYOffset = initialBoundingBox.minY - fireballPos.y;
-        double boxMinZOffset = initialBoundingBox.minZ - fireballPos.z;
-        double boxMaxXOffset = initialBoundingBox.maxX - fireballPos.x;
-        double boxMaxYOffset = initialBoundingBox.maxY - fireballPos.y;
-        double boxMaxZOffset = initialBoundingBox.maxZ - fireballPos.z;
-        
+        AABB boundingBox = fireball.getBoundingBox();
         double accelerationPower = fireball.accelerationPower;
         
         int maxTicks = 200;
@@ -87,14 +80,8 @@ public class TrajectoryPredictor {
         double waterDrag = isWindCharge ? 1.0 : 0.8;
         
         for (int i = 0; i < maxTicks; i++) {
-            double minX = currentPos.x + boxMinXOffset;
-            double minY = currentPos.y + boxMinYOffset;
-            double minZ = currentPos.z + boxMinZOffset;
-            double maxX = currentPos.x + boxMaxXOffset;
-            double maxY = currentPos.y + boxMaxYOffset;
-            double maxZ = currentPos.z + boxMaxZOffset;
-
-            double drag = isTouchingWater(world, minX, minY, minZ, maxX, maxY, maxZ) ? waterDrag : airDrag;
+            AABB currentBox = boundingBox.move(currentPos.subtract(fireballPos));
+            double drag = isTouchingWater(world, currentBox) ? waterDrag : airDrag;
 
             // Apply acceleration to velocity and apply drag BEFORE movement, matching vanilla tick phase
             Vec3 acceleration = velocity.lengthSqr() > 1e-12 ? velocity.normalize().scale(accelerationPower) : Vec3.ZERO;
@@ -115,7 +102,6 @@ public class TrajectoryPredictor {
 
             // Raycast for entities along this step (only before any block collision)
             if (firstEntityHit == null) {
-                AABB currentBox = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
                 AABB box = currentBox.expandTowards(velocity).inflate(1.0);
 
                 EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(

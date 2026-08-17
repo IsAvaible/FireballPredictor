@@ -129,59 +129,49 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
 
             // Pass 1: Outer Shroud
             if (drawShroud) {
-                Vec3 right1 = rightDir.scale(width1);
-                Vec3 right2 = rightDir.scale(width2);
-
-                Vec3 p1L = p1.add(right1);
-                Vec3 p1R = p1.subtract(right1);
-                Vec3 p2L = p2.add(right2);
-                Vec3 p2R = p2.subtract(right2);
-
-                consumer.addVertex(positionMatrix, (float) p1L.x, (float) p1L.y, (float) p1L.z).setColor(r, g, b, edgeAlpha);
-                consumer.addVertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
-                consumer.addVertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
-                consumer.addVertex(positionMatrix, (float) p2L.x, (float) p2L.y, (float) p2L.z).setColor(r, g, b, edgeAlpha);
-
-                consumer.addVertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
-                consumer.addVertex(positionMatrix, (float) p1R.x, (float) p1R.y, (float) p1R.z).setColor(r, g, b, edgeAlpha);
-                consumer.addVertex(positionMatrix, (float) p2R.x, (float) p2R.y, (float) p2R.z).setColor(r, g, b, edgeAlpha);
-                consumer.addVertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
+                emitRibbonQuad(consumer, positionMatrix, p1, p2,
+                        rightDir.scale(width1), rightDir.scale(width2),
+                        r, g, b, edgeAlpha, edgeAlpha, centerAlpha1, centerAlpha2);
             }
 
             // Pass 2: Inner Core Layer
             if (drawCore) {
                 float coreWidthRatio = isCoreOnly ? 0.6f : 0.35f;
-                float coreWidth1 = width1 * coreWidthRatio;
-                float coreWidth2 = width2 * coreWidthRatio;
-
                 int pass2R = isCoreOnly ? r : Math.min(255, r + (int) ((255 - r) * 0.35f));
                 int pass2G = isCoreOnly ? g : Math.min(255, g + (int) ((255 - g) * 0.35f));
                 int pass2B = isCoreOnly ? b : Math.min(255, b + (int) ((255 - b) * 0.35f));
-
-                Vec3 coreRight1 = rightDir.scale(coreWidth1);
-                Vec3 coreRight2 = rightDir.scale(coreWidth2);
-
-                Vec3 cp1L = p1.add(coreRight1);
-                Vec3 cp1R = p1.subtract(coreRight1);
-                Vec3 cp2L = p2.add(coreRight2);
-                Vec3 cp2R = p2.subtract(coreRight2);
 
                 int coreAlphaCenter1 = isCoreOnly ? centerAlpha1 : Mth.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
                 int coreAlphaCenter2 = isCoreOnly ? centerAlpha2 : Mth.clamp((int) (centerAlpha2 * 1.25f), 0, maxAlpha);
                 int coreAlphaEdge1 = isCoreOnly ? 0 : (int) (centerAlpha1 * 0.4f);
                 int coreAlphaEdge2 = isCoreOnly ? 0 : (int) (centerAlpha2 * 0.4f);
 
-                consumer.addVertex(positionMatrix, (float) cp1L.x, (float) cp1L.y, (float) cp1L.z).setColor(pass2R, pass2G, pass2B, coreAlphaEdge1);
-                consumer.addVertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).setColor(pass2R, pass2G, pass2B, coreAlphaCenter1);
-                consumer.addVertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).setColor(pass2R, pass2G, pass2B, coreAlphaCenter2);
-                consumer.addVertex(positionMatrix, (float) cp2L.x, (float) cp2L.y, (float) cp2L.z).setColor(pass2R, pass2G, pass2B, coreAlphaEdge2);
-
-                consumer.addVertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).setColor(pass2R, pass2G, pass2B, coreAlphaCenter1);
-                consumer.addVertex(positionMatrix, (float) cp1R.x, (float) cp1R.y, (float) cp1R.z).setColor(pass2R, pass2G, pass2B, coreAlphaEdge1);
-                consumer.addVertex(positionMatrix, (float) cp2R.x, (float) cp2R.y, (float) cp2R.z).setColor(pass2R, pass2G, pass2B, coreAlphaEdge2);
-                consumer.addVertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).setColor(pass2R, pass2G, pass2B, coreAlphaCenter2);
+                emitRibbonQuad(consumer, positionMatrix, p1, p2,
+                        rightDir.scale(width1 * coreWidthRatio), rightDir.scale(width2 * coreWidthRatio),
+                        pass2R, pass2G, pass2B, coreAlphaEdge1, coreAlphaEdge2, coreAlphaCenter1, coreAlphaCenter2);
             }
         }
+    }
+
+    private static void emitRibbonQuad(
+            VertexConsumer consumer, Matrix4f pose,
+            Vec3 p1, Vec3 p2, Vec3 right1, Vec3 right2,
+            int r, int g, int b, int edgeAlpha1, int edgeAlpha2, int centerAlpha1, int centerAlpha2
+    ) {
+        Vec3 p1L = p1.add(right1);
+        Vec3 p1R = p1.subtract(right1);
+        Vec3 p2L = p2.add(right2);
+        Vec3 p2R = p2.subtract(right2);
+
+        consumer.addVertex(pose, (float) p1L.x, (float) p1L.y, (float) p1L.z).setColor(r, g, b, edgeAlpha1);
+        consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
+        consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
+        consumer.addVertex(pose, (float) p2L.x, (float) p2L.y, (float) p2L.z).setColor(r, g, b, edgeAlpha2);
+
+        consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
+        consumer.addVertex(pose, (float) p1R.x, (float) p1R.y, (float) p1R.z).setColor(r, g, b, edgeAlpha1);
+        consumer.addVertex(pose, (float) p2R.x, (float) p2R.y, (float) p2R.z).setColor(r, g, b, edgeAlpha2);
+        consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
     }
 
     private void renderDome(VertexConsumer consumer, DomeRenderState state) {

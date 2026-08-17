@@ -1,9 +1,11 @@
 package com.simonconrad.fireballpredictor.client;
 
+import com.simonconrad.fireballpredictor.FireballPredictor;
 import com.simonconrad.fireballpredictor.client.compat.IrisCompat;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
+import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
@@ -94,8 +96,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 ClientPowerCache.POWER_CACHE.clear();
                 ClientOwnerCache.clear();
                 ServerTrackingRules.clear();
-                com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
-                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
+                ClientPowerLookup.resetInferredPower();
+                FireballInferenceTracker.clear();
                 impactWarningVisible = false;
                 impactWarningProgress = 0.0f;
                 impactWarningType = WarningProjectileType.FIREBALL;
@@ -167,16 +169,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 if (!tracked.shouldRender()) {
                     continue;
                 }
-                TrackedPrediction trackedPrediction = new TrackedPrediction();
-                trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, client.level);
-                trackedPrediction.calculatedPower = ClientPowerLookup.getPower(fireball);
-                trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-                activePredictions.put(entityId, trackedPrediction);
-                if (trackedPrediction.predictionData != null) {
-                    Vec3 hitPos = trackedPrediction.predictionData.hitResult != null
-                            ? trackedPrediction.predictionData.hitResult.getLocation() : null;
-                    com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
-                }
+                createAndRegisterPrediction(fireball, client.level);
             }
 
             for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
@@ -206,7 +199,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                                 }
                             });
                         } catch (Exception e) {
-                            com.simonconrad.fireballpredictor.FireballPredictor.LOGGER.error("Failed to calculate fireball prediction", e);
+                            FireballPredictor.LOGGER.error("Failed to calculate fireball prediction", e);
                             client.execute(() -> {
                                 trackedPrediction.isCalculating = false;
                             });
@@ -429,14 +422,28 @@ public class FireballPredictorClient implements ClientModInitializer {
         return entity instanceof AbstractHurtingProjectile projectile ? projectile : null;
     }
 
+    private void createAndRegisterPrediction(AbstractHurtingProjectile fireball, ClientLevel world) {
+        int entityId = fireball.getId();
+        TrackedPrediction trackedPrediction = new TrackedPrediction();
+        trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, world);
+        trackedPrediction.calculatedPower = ClientPowerLookup.getPower(fireball);
+        trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
+        activePredictions.put(entityId, trackedPrediction);
+
+        if (trackedPrediction.predictionData != null) {
+            Vec3 hitPos = trackedPrediction.predictionData.hitResult != null ? trackedPrediction.predictionData.hitResult.getLocation() : null;
+            FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
+        }
+    }
+
     private void resetWorldState(ClientLevel world) {
         trackedWorld = world;
         activePredictions.clear();
         trackedOwners.clear();
         currentlyHighlightedBlocks.clear();
         ClientOwnerCache.clear();
-        com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
-        com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
+        FireballInferenceTracker.clear();
+        ClientPowerLookup.resetInferredPower();
         impactWarningVisible = false;
         impactWarningProgress = 0.0f;
         impactWarningType = WarningProjectileType.FIREBALL;
@@ -466,16 +473,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            TrackedPrediction trackedPrediction = new TrackedPrediction();
-            trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
-            trackedPrediction.calculatedPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
-            trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-            activePredictions.put(entityId, trackedPrediction);
-
-            if (trackedPrediction.predictionData != null) {
-                Vec3 hitPos = trackedPrediction.predictionData.hitResult != null ? trackedPrediction.predictionData.hitResult.getLocation() : null;
-                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
-            }
+            createAndRegisterPrediction(fireball, trackedWorld);
         }
     }
 
@@ -509,23 +507,13 @@ public class FireballPredictorClient implements ClientModInitializer {
 
         if (tracked.shouldRender() && !activePredictions.containsKey(entityId)) {
             // Filter now allows this projectile — begin prediction
-            TrackedPrediction trackedPrediction = new TrackedPrediction();
-            trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
-            trackedPrediction.calculatedPower = ClientPowerLookup.getPower(fireball);
-            trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-            activePredictions.put(entityId, trackedPrediction);
-
-            if (trackedPrediction.predictionData != null) {
-                Vec3 hitPos = trackedPrediction.predictionData.hitResult != null
-                        ? trackedPrediction.predictionData.hitResult.getLocation() : null;
-                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
-            }
+            createAndRegisterPrediction(fireball, trackedWorld);
         }
     }
 
     private void handleEntityRemoved(Entity entity) {
         if (entity instanceof AbstractHurtingProjectile fireball) {
-            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.unregisterFireballLocation(fireball);
+            FireballInferenceTracker.unregisterFireballLocation(fireball);
             int entityId = fireball.getId();
             activePredictions.remove(entityId);
             trackedOwners.remove(entityId);

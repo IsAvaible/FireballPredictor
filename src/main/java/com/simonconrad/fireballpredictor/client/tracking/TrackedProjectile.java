@@ -137,16 +137,6 @@ public final class TrackedProjectile {
     }
 
     /**
-     * Wind charges keep their dedicated type toggle and are evaluated after owner filtering.
-     */
-    public static boolean passesLegacyTypeGate(AbstractHurtingProjectile projectile) {
-        if (projectile instanceof AbstractWindCharge) {
-            return ModConfig.instance().trackWindCharges;
-        }
-        return true;
-    }
-
-    /**
      * True when this entity is one of the filterable projectiles.
      */
     public static boolean isOwnerFilterable(AbstractHurtingProjectile projectile) {

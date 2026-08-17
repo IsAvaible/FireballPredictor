@@ -1,15 +1,10 @@
 package com.simonconrad.fireballpredictor.client.tracking;
 
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
-
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.monster.Blaze;
-import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.level.Level;
@@ -17,7 +12,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Client-side owner inference for explosive projectiles.
@@ -76,7 +70,7 @@ public final class OwnerInferenceEngine {
         // Tier 1 — native owner (works in singleplayer when NBT owner is present / resolved)
         Entity nativeOwner = projectile.getOwner();
         if (nativeOwner != null) {
-            ProjectileOwner classified = classifyEntity(nativeOwner);
+            ProjectileOwner classified = OwnerClassifier.classifyEntity(nativeOwner);
             if (classified != ProjectileOwner.UNKNOWN) {
                 return InferenceResult.of(classified, nativeOwner, InferenceResult.InferenceSource.NATIVE_NBT);
             }
@@ -108,29 +102,6 @@ public final class OwnerInferenceEngine {
     }
 
     /**
-     * Re-run only the environmental + dispenser tiers (used when a packet arrives late
-     * or the caller already ruled out native/packet).
-     */
-    public static InferenceResult inferEnvironmentOnly(AbstractHurtingProjectile projectile, Level world) {
-        InferenceResult sweep = sweepEnvironment(projectile, world);
-        if (sweep != null) {
-            return sweep;
-        }
-        InferenceResult dispenser = matchDispenser(projectile, world);
-        if (dispenser != null) {
-            return dispenser;
-        }
-        return InferenceResult.unknown();
-    }
-
-    /**
-     * Classify a known entity into a {@link ProjectileOwner} bucket.
-     */
-    public static ProjectileOwner classifyEntity(Entity entity) {
-        return OwnerClassifier.classifyEntity(entity);
-    }
-
-    /**
      * Build a packet-sourced result, resolving the owner entity by id when possible.
      */
     public static InferenceResult fromPacket(Level world, ProjectileOwner owner, int ownerEntityId) {
@@ -138,7 +109,7 @@ public final class OwnerInferenceEngine {
         if (world != null && ownerEntityId >= 0) {
             entity = world.getEntity(ownerEntityId);
             if (entity != null) {
-                ProjectileOwner refined = classifyEntity(entity);
+                ProjectileOwner refined = OwnerClassifier.classifyEntity(entity);
                 if (refined != ProjectileOwner.UNKNOWN) {
                     owner = refined;
                 }
@@ -264,7 +235,7 @@ public final class OwnerInferenceEngine {
             return null;
         }
 
-        ProjectileOwner owner = classifyEntity(best);
+        ProjectileOwner owner = OwnerClassifier.classifyEntity(best);
         if (owner == ProjectileOwner.UNKNOWN) {
             return null;
         }
@@ -272,14 +243,7 @@ public final class OwnerInferenceEngine {
     }
 
     private static boolean isCapableShooter(LivingEntity entity) {
-        if (entity == null || !entity.isAlive()) {
-            return false;
-        }
-        return entity instanceof Blaze
-                || entity instanceof Ghast
-                || entity instanceof EnderDragon
-                || entity instanceof WitherBoss
-                || entity instanceof Player;
+        return entity != null && entity.isAlive() && OwnerClassifier.classifyEntity(entity) != ProjectileOwner.UNKNOWN;
     }
 
     private static InferenceResult matchDispenser(AbstractHurtingProjectile projectile, Level world) {
@@ -289,16 +253,5 @@ public final class OwnerInferenceEngine {
             return null;
         }
         return InferenceResult.of(ProjectileOwner.DISPENSER, null, InferenceResult.InferenceSource.DISPENSER_FALLBACK);
-    }
-
-    /**
-     * Resolve an owner UUID against known players (utility for tests / packet paths).
-     * Non-player entities are not globally indexable from the public Level API.
-     */
-    public static Entity findEntityByUuid(Level world, UUID uuid) {
-        if (world == null || uuid == null) {
-            return null;
-        }
-        return world.getPlayerByUUID(uuid);
     }
 }

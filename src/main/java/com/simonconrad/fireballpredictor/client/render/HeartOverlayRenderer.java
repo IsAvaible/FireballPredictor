@@ -110,56 +110,34 @@ public final class HeartOverlayRenderer {
         boolean blinking = (gameTime % 6L) < 3L;
 
         // 1. Health heart slots (indices 0 .. healthSlots - 1)
-        for (int i = 0; i < healthSlots; i++) {
-            float hpLeftVal = i * 2.0F;
-            float hpRightVal = i * 2.0F + 1.0F;
-
-            boolean leftLost = remHp <= hpLeftVal && hpLeftVal < health;
-            boolean rightLost = remHp <= hpRightVal && hpRightVal < health;
-
-            if (!leftLost && !rightLost) {
-                continue;
-            }
-
-            int row = i / NUM_HEARTS_PER_ROW;
-            int col = i % NUM_HEARTS_PER_ROW;
-            int x = left + col * HEART_SEPARATION;
-            int y = top - row * rowSpacing;
-
-            boolean full = leftLost && rightLost;
-            Identifier sprite;
-            if (full) {
-                sprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
-            } else if (rightLost) {
-                sprite = blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;
-            } else {
-                sprite = blinking ? CRACKING_HALF_BLINKING : CRACKING_HALF;
-            }
-
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, HEART_SIZE, HEART_SIZE);
-        }
+        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking);
 
         // 2. Absorption heart slots (placed after healthSlots, indices healthSlots .. totalHearts - 1)
-        for (int j = 0; j < absorbSlots; j++) {
-            float absLeftVal = j * 2.0F;
-            float absRightVal = j * 2.0F + 1.0F;
+        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking);
+    }
 
-            boolean leftLost = remAbs <= absLeftVal && absLeftVal < absorption;
-            boolean rightLost = remAbs <= absRightVal && absRightVal < absorption;
+    private static void renderHeartSlots(GuiGraphicsExtractor graphics, int startSlot, int count,
+                                         float remValue, float maxValue,
+                                         int left, int top, int rowSpacing, boolean blinking) {
+        for (int i = 0; i < count; i++) {
+            float leftVal = i * 2.0F;
+            float rightVal = i * 2.0F + 1.0F;
+
+            boolean leftLost = remValue <= leftVal && leftVal < maxValue;
+            boolean rightLost = remValue <= rightVal && rightVal < maxValue;
 
             if (!leftLost && !rightLost) {
                 continue;
             }
 
-            int slot = healthSlots + j;
+            int slot = startSlot + i;
             int row = slot / NUM_HEARTS_PER_ROW;
             int col = slot % NUM_HEARTS_PER_ROW;
             int x = left + col * HEART_SEPARATION;
             int y = top - row * rowSpacing;
 
-            boolean full = leftLost && rightLost;
             Identifier sprite;
-            if (full) {
+            if (leftLost && rightLost) {
                 sprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
             } else if (rightLost) {
                 sprite = blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;

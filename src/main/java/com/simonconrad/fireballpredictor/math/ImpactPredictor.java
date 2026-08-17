@@ -104,11 +104,4 @@ public class ImpactPredictor {
         
         return List.copyOf(affectedBlocks);
     }
-
-    public static List<BlockPos> predictBrokenBlocks(AbstractHurtingProjectile fireball, Vec3 explosionPos, BlockGetter world) {
-        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
-        boolean isDangerous = fireball instanceof WitherSkull witherSkull && witherSkull.isDangerous();
-        float power = resolveExplosionPower(fireball);
-        return predictBrokenBlocks(power, isWindCharge, isDangerous, explosionPos, world);
-    }
 }
