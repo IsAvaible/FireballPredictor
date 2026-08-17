@@ -2,7 +2,14 @@
 
 A client-side Fabric mod for Minecraft 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
 
+
+
+
 ![Screenshot](docs/assets/Screenshot.png)
+
+
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/fireball-predictor?logo=modrinth&logoColor=white&label=Modrinth)](https://modrinth.com/mod/fireball-predictor)
+[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1613094?logo=curseforge&logoColor=white&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/fireball-predictor/)
 
 ## What it does
 
@@ -80,7 +87,7 @@ Consult the [/docs](docs) directory for more technical details.
 
 ## Publishing a New Release
 
-To publish a new version to **Modrinth**, **CurseForge**, and **GitHub Releases**:
+To publish a new version to **[Modrinth](https://modrinth.com/mod/fireball-predictor)**, **[CurseForge](https://www.curseforge.com/minecraft/mc-mods/fireball-predictor/)**, and **[GitHub Releases](https://github.com/IsAvaible/FireballPredictor/releases)**:
 
 1. Update `mod_version` in [gradle.properties](gradle.properties) and add the version release notes under [CHANGELOG.md](CHANGELOG.md).
 2. Commit and push a release tag matching `v*`:
