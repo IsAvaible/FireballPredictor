@@ -67,44 +67,53 @@ final class ShockwaveRenderer {
         int g = color.getGreen();
         int b = color.getBlue();
 
-        // Translucent dome body with 3D radial Fresnel falloff.
+        // Translucent dome body with 3D radial Fresnel falloff rendered via stepped radial spans.
         int minY = Mth.floor(cy - radius);
         int maxY = Mth.ceil(cy + radius);
         float fresnelWeight = Mth.clamp(fresnelStrength, 0.0f, 1.0f);
 
+        final int numBands = 16;
+        float[] bandRadiiSq = new float[numBands + 1];
+        int[] bandColors = new int[numBands];
+
+        for (int i = 0; i <= numBands; i++) {
+            float rBand = radius * ((float) i / numBands);
+            bandRadiiSq[i] = rBand * rBand;
+        }
+
+        for (int i = 0; i < numBands; i++) {
+            float d = (i + 0.5f) / numBands;
+            float fresnel = 1.0f - (float) Math.sqrt(Math.max(0.0f, 1.0f - d * d));
+            float flatAlpha = 70.0f;
+            float modulatedAlpha = Mth.lerp(fresnel, 20.0f, 135.0f);
+            float baseAlpha = Mth.lerp(fresnelWeight, flatAlpha, modulatedAlpha);
+            int a = Mth.clamp((int) (baseAlpha * pulse), 0, 255);
+            bandColors[i] = pack(r, g, b, a);
+        }
+
         for (int py = minY; py <= maxY; py++) {
             float dy = py + 0.5f - cy;
             float dySq = dy * dy;
-            float under = radius * radius - dySq;
-            if (under <= 0.0f) {
+            if (dySq >= bandRadiiSq[numBands]) {
                 continue;
             }
 
-            float maxDx = (float) Math.sqrt(under);
-            int minX = Mth.floor(cx - maxDx);
-            int maxX = Mth.ceil(cx + maxDx);
-
-            for (int px = minX; px <= maxX; px++) {
-                float dx = px + 0.5f - cx;
-                float distSq = dx * dx + dySq;
-                if (distSq > radius * radius) {
+            float prevDx = 0.0f;
+            for (int i = 0; i < numBands; i++) {
+                float outerR2 = bandRadiiSq[i + 1];
+                if (outerR2 <= dySq) {
                     continue;
                 }
+                float nextDx = (float) Math.sqrt(outerR2 - dySq);
+                int bandColor = bandColors[i];
 
-                // Normalized radial distance (0 at center, 1 at edge)
-                float d = (float) Math.sqrt(distSq) / radius;
-
-                // 3D sphere view-factor Fresnel: 1 - cos(theta)
-                float fresnel = 1.0f - (float) Math.sqrt(Math.max(0.0f, 1.0f - d * d));
-
-                // When fresnelWeight = 0: Uniform flat alpha (70)
-                // When fresnelWeight = 1: Center clears up (20), rim glows (135)
-                float flatAlpha = 70.0f;
-                float modulatedAlpha = Mth.lerp(fresnel, 20.0f, 135.0f);
-                float baseAlpha = Mth.lerp(fresnelWeight, flatAlpha, modulatedAlpha);
-
-                int a = Mth.clamp((int) (baseAlpha * pulse), 0, 255);
-                p.fillF(px, py, px + 1, py + 1, pack(r, g, b, a));
+                if (prevDx == 0.0f) {
+                    p.fillF(cx - nextDx, py, cx + nextDx, py + 1, bandColor);
+                } else {
+                    p.fillF(cx - nextDx, py, cx - prevDx, py + 1, bandColor);
+                    p.fillF(cx + prevDx, py, cx + nextDx, py + 1, bandColor);
+                }
+                prevDx = nextDx;
             }
         }
 

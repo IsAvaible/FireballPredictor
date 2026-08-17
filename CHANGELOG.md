@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.2
+
+### Performance & Polish
+- **Config Menu Smoothness:** Optimized the live shockwave dome preview in the settings screen, eliminating lag and frame drops when viewing and tweaking explosion visuals.
+
 ## 1.7.1
 
 ### HUD & Visual Improvements
