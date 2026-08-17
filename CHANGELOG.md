@@ -2,8 +2,15 @@
 
 ## 1.7.2
 
+### HUD & Knockback Readout
+- **Zero-Damage Knockback Display:** The damage and knockback HUD readout now displays predicted knockback velocity for blast attacks even when damage is fully absorbed by armor, resistance, or distance (such as Wind Charges or heavy Blast Protection).
+- **Themed Readout Text Colors:** The readout text dynamically matches the color of the incoming projectile's badge and progress bar (fiery orange for Fireballs, slate grey for Wither Skulls, breeze ice-blue for Wind Charges, and magenta-purple for Dragon Fireballs).
+- **Cleaned-Up Formatting:** Automatically hides the `-0.0❤` label on zero-damage attacks (displaying cleanly as `⚡14.2b/s`) and omits knockback on zero-knockback hits.
+
 ### Performance & Polish
-- **Config Menu Smoothness:** Optimized the live shockwave dome preview in the settings screen, eliminating lag and frame drops when viewing and tweaking explosion visuals.
+- **Config Menu Smoothness:** Optimized the live shockwave dome preview in the settings screen, eliminating lag and frame drops when viewing explosion visuals.
+- **Client Memory Optimizations:** Eliminated transient per-tick memory allocations during block-break highlight tracking.
+- **Dynamic Resource Pack Reloads:** Hooked config preview textures to Fabric's resource reload listener so custom resource pack changes reflect immediately on `F3+T`.
 
 ## 1.7.1
 

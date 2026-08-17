@@ -43,6 +43,7 @@ import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
 import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -319,16 +320,46 @@ public class FireballPredictorGameTest {
         resetGlobalState();
         WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
         float resolvedPower = ImpactPredictor.resolveExplosionPower(windCharge);
-        float clientPower = ClientPowerLookup.getPower(windCharge);
-        if (resolvedPower != 0.0f || clientPower != 0.0f) {
-            throw fail("WindCharge should have 0.0 power, but got resolved=" + resolvedPower + ", client=" + clientPower);
+        if (Math.abs(resolvedPower - 1.2f) > 1e-4) {
+            throw fail("WindCharge should have 1.2 power, but got resolved=" + resolvedPower);
         }
 
         Player player = context.makeMockPlayer(GameType.SURVIVAL);
         DamageEstimate directEstimate = DamageCalculator.calculateDirectHit(
                 player.position(), resolvedPower, player, context.getLevel(), windCharge, null);
-        if (directEstimate.inRange() || directEstimate.finalDamage() > 0.0f) {
-            throw fail("WindCharge direct hit should yield DamageEstimate.NONE, but got inRange=" + directEstimate.inRange() + ", damage=" + directEstimate.finalDamage());
+        if (!directEstimate.inRange()) {
+            throw fail("WindCharge direct hit should be in range");
+        }
+        if (directEstimate.finalDamage() != 0.0f) {
+            throw fail("WindCharge direct hit should deal 0 final damage, but got " + directEstimate.finalDamage());
+        }
+        if (directEstimate.knockbackBlocksPerSecond() <= 0.0) {
+            throw fail("WindCharge direct hit should have positive knockback, but got " + directEstimate.knockbackBlocksPerSecond());
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBreezeWindChargeKnockbackAndDamageEstimate(GameTestHelper context) {
+        resetGlobalState();
+        BreezeWindCharge breezeCharge = spawnProjectile(context, EntityTypes.BREEZE_WIND_CHARGE, 0.0, false);
+        float resolvedPower = ImpactPredictor.resolveExplosionPower(breezeCharge);
+        if (Math.abs(resolvedPower - 3.0f) > 1e-4) {
+            throw fail("BreezeWindCharge should have 3.0 power, but got resolved=" + resolvedPower);
+        }
+
+        Player player = context.makeMockPlayer(GameType.SURVIVAL);
+        DamageEstimate directEstimate = DamageCalculator.calculateDirectHit(
+                player.position(), resolvedPower, player, context.getLevel(), breezeCharge, null);
+        if (!directEstimate.inRange()) {
+            throw fail("BreezeWindCharge direct hit should be in range");
+        }
+        if (directEstimate.finalDamage() != 0.0f) {
+            throw fail("BreezeWindCharge direct hit should deal 0 final damage, but got " + directEstimate.finalDamage());
+        }
+        if (directEstimate.knockbackBlocksPerSecond() <= 0.0) {
+            throw fail("BreezeWindCharge direct hit should have positive knockback, but got " + directEstimate.knockbackBlocksPerSecond());
         }
 
         context.succeed();

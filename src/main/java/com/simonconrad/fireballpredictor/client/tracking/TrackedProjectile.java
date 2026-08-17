@@ -148,12 +148,11 @@ public final class TrackedProjectile {
     }
 
     /**
-     * True for projectiles that deal no block/explosion blast power (SmallFireball, DragonFireball, WindCharge).
+     * True for projectiles that deal no blast power (SmallFireball, DragonFireball).
      */
     public static boolean isZeroExplosionPower(AbstractHurtingProjectile projectile) {
         return projectile instanceof SmallFireball
-                || projectile instanceof DragonFireball
-                || projectile instanceof AbstractWindCharge;
+                || projectile instanceof DragonFireball;
     }
 
     @Nullable

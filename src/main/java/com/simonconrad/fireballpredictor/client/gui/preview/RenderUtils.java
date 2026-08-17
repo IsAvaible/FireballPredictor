@@ -19,7 +19,7 @@ import java.util.Map;
  * Shared rendering utilities: colour packing, AA primitives, item-icon drawing,
  * and the monotonic animation clock.
  */
-final class RenderUtils {
+public final class RenderUtils {
 
     private RenderUtils() {
     }
@@ -290,7 +290,7 @@ final class RenderUtils {
     }
 
     /** Call on resource reload if you ever want the probes re-run. */
-    static void invalidateIconTextureCache() {
+    public static void invalidateIconTextureCache() {
         ICON_TEXTURE_CACHE.clear();
     }
 

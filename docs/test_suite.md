@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 39 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 41 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`
@@ -251,10 +251,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 39 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (39 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 39 GAME TESTS COMPLETE IN 1.814 s ======================
-[Server thread/INFO] (Minecraft) All 39 required tests passed :)
+[Server thread/INFO] (Minecraft) 41 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (41 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 41 GAME TESTS COMPLETE IN 1.814 s ======================
+[Server thread/INFO] (Minecraft) All 41 required tests passed :)
 BUILD SUCCESSFUL
 ```

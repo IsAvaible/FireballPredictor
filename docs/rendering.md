@@ -48,7 +48,7 @@ This document describes the client-side visual effects (VFX) used to represent p
   - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
   - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
   - `hud/heart/cracking_half_right` / `hud/heart/cracking_half_right_blinking`
-- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
+- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
 
 ---
 
@@ -115,9 +115,9 @@ Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAcc
 - **[Painter.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Painter.java)**: Immediate-mode drawing context handling clipping rects and GUI primitives.
 - **[Arc.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Arc.java)**: Bezier curve computation for 2D schematic flight paths.
 - **[TrajectoryRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrajectoryRenderer.java)**: Renders 2D animated path with ribbon width, color, pulse wave, core glow, and `SOLID`/`DASHED`/`CORE_ONLY` styles.
-- **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc, Fresnel rim shading, and crack overlays.
+- **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc via banded horizontal scanlines, Fresnel rim shading, and crack overlays.
 - **[HudRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/HudRenderer.java)**: Renders miniature screen frame showing HUD anchor alignment, X/Y pixel offsets, and dynamic progress bar.
 - **[DamageEstimatorRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/DamageEstimatorRenderer.java)**: Renders animated cracking damage hearts on a 10-heart health bar with rising fiery embers, and the impact badge with damage/knockback readout.
 - **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
-- **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers.
+- **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers with dynamic icon texture cache invalidation on resource reload.
 

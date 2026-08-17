@@ -2,7 +2,6 @@ package com.simonconrad.fireballpredictor.client.network;
 
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 
 import net.fabricmc.api.EnvType;
@@ -14,10 +13,6 @@ public class ClientPowerLookup {
     private static volatile Float inferredBlockEstimation = null;
 
     public static float getPower(AbstractHurtingProjectile fireball) {
-        if (TrackedProjectile.isZeroExplosionPower(fireball)) {
-            return 0.0F;
-        }
-
         if (ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
             return ClientPowerCache.POWER_CACHE.get(fireball.getId());
         }
@@ -89,7 +84,7 @@ public class ClientPowerLookup {
     @Environment(EnvType.CLIENT)
     private static class ClientHelper {
         private static String getClientServerIp() {
-            Minecraft client = Minecraft.getInstance();
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
             if (client != null && client.getCurrentServer() != null) {
                 return client.getCurrentServer().ip;
             }

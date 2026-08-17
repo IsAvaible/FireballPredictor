@@ -18,6 +18,13 @@ public class ImpactPredictor {
             return 0.0F;
         }
 
+        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge) {
+            return 3.0F;
+        }
+        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
+            return 1.2F;
+        }
+
         if (!fireball.level().isClientSide()) {
             if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball f) {
                 return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();

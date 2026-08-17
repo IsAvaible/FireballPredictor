@@ -96,7 +96,9 @@ public final class DamageCalculator {
         }
 
         float seenPercent = getSeenPercent(level, explosionPos, player);
-        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent);
+        boolean isWindCharge = explosionSource.getDirectEntity() instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge
+                || explosionSource.getEntity() instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent, isWindCharge);
     }
 
     /**
@@ -115,16 +117,19 @@ public final class DamageCalculator {
             return DamageEstimate.NONE;
         }
 
-        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent);
+        boolean isWindCharge = explosionSource.getDirectEntity() instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge
+                || explosionSource.getEntity() instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+
+        return calculateInternal(explosionPos, explosionPower, radius, distance, player, explosionSource, seenPercent, isWindCharge);
     }
 
     private static DamageEstimate calculateInternal(
-            Vec3 explosionPos, float explosionPower, float radius, double distance, Player player, DamageSource explosionSource, float seenPercent) {
+            Vec3 explosionPos, float explosionPower, float radius, double distance, Player player, DamageSource explosionSource, float seenPercent, boolean isWindCharge) {
         float impact = (1.0F - (float) distance / radius) * seenPercent;
-        // Vanilla ExplosionDamageCalculator.getEntityDamageAmount:
-        float rawDamage = (impact * impact + impact) / 2.0F * 7.0F * radius + 1.0F;
+        // Vanilla ExplosionDamageCalculator.getEntityDamageAmount (returns 0 for wind charges):
+        float rawDamage = isWindCharge ? 0.0F : (impact * impact + impact) / 2.0F * 7.0F * radius + 1.0F;
 
-        float finalDamage = computeFinalDamage(rawDamage, player, explosionSource);
+        float finalDamage = rawDamage > 0.0F ? computeFinalDamage(rawDamage, player, explosionSource) : 0.0F;
         double knockback = computeKnockback(distance, radius, player, seenPercent, 1.0F);
 
         return new DamageEstimate(rawDamage, finalDamage,
@@ -152,10 +157,6 @@ public final class DamageCalculator {
      */
     public static DamageEstimate calculateDirectHitFromSeenPercent(
             Vec3 hitPos, float explosionPower, Player player, Level level, AbstractHurtingProjectile projectile, @Nullable Entity owner, float seenPercent) {
-        if (projectile instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
-            return DamageEstimate.NONE;
-        }
-
         float directBaseDamage = 0.0F;
         DamageSource directSource = null;
 

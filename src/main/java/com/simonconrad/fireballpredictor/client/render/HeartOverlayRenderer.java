@@ -52,6 +52,10 @@ public final class HeartOverlayRenderer {
      * No-op unless the threat is in range, config toggles are enabled and the player is alive.
      */
     public static void render(GuiGraphicsExtractor graphics, Minecraft client, boolean active, DamageEstimate estimate) {
+        render(graphics, client, active, estimate, WarningProjectileType.FIREBALL);
+    }
+
+    public static void render(GuiGraphicsExtractor graphics, Minecraft client, boolean active, DamageEstimate estimate, WarningProjectileType type) {
         if (!active || estimate == null || !estimate.inRange()) {
             return;
         }
@@ -68,15 +72,16 @@ public final class HeartOverlayRenderer {
         }
 
         float finalDamage = estimate.finalDamage();
-        if (finalDamage <= 0.0F) {
+        double knockback = estimate.knockbackBlocksPerSecond();
+        if (finalDamage <= 0.0F && knockback <= 0.0) {
             return;
         }
 
-        if (drawHearts) {
+        if (drawHearts && finalDamage > 0.0F) {
             drawCrackedHearts(graphics, player, finalDamage);
         }
-        if (drawText) {
-            drawDamageText(graphics, client, estimate);
+        if (drawText && (finalDamage > 0.0F || knockback > 0.0)) {
+            drawDamageText(graphics, client, estimate, type);
         }
     }
 
@@ -155,7 +160,7 @@ public final class HeartOverlayRenderer {
         }
     }
 
-    private static void drawDamageText(GuiGraphicsExtractor graphics, Minecraft client, DamageEstimate estimate) {
+    private static void drawDamageText(GuiGraphicsExtractor graphics, Minecraft client, DamageEstimate estimate, WarningProjectileType type) {
         Font font = client.font;
         if (font == null) {
             return;
@@ -167,14 +172,22 @@ public final class HeartOverlayRenderer {
             anchor = ImpactWarningBadgeAnchor.TOP_LEFT;
         }
 
-        String text = String.format(Locale.ROOT, "-%.1f\u2764  \u26a1%.1fb/s",
-                estimate.heartsLost(), estimate.knockbackBlocksPerSecond());
+        String text;
+        if (estimate.finalDamage() > 0.0F && estimate.knockbackBlocksPerSecond() > 0.0) {
+            text = String.format(Locale.ROOT, "-%.1f\u2764  \u26a1%.1fb/s",
+                    estimate.heartsLost(), estimate.knockbackBlocksPerSecond());
+        } else if (estimate.finalDamage() > 0.0F) {
+            text = String.format(Locale.ROOT, "-%.1f\u2764", estimate.heartsLost());
+        } else {
+            text = String.format(Locale.ROOT, "\u26a1%.1fb/s", estimate.knockbackBlocksPerSecond());
+        }
 
         int textWidth = font.width(text);
         int textX = (anchor == ImpactWarningBadgeAnchor.TOP_RIGHT || anchor == ImpactWarningBadgeAnchor.BOTTOM_RIGHT)
                 ? badge.x() - textWidth - 6
                 : badge.x() + 24;
 
-        graphics.text(font, text, textX, badge.y() + 6, TEXT_COLOR, true);
+        int textColor = type != null ? type.barFillColor() : TEXT_COLOR;
+        graphics.text(font, text, textX, badge.y() + 6, textColor, true);
     }
 }
