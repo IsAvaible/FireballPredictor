@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.8.0
+
+### Visual Render Themes
+- **16 Curated Visual Themes:** Added a suite of 16 special render themes that dynamically override the trajectory ribbon and shockwave dome with unique color palettes, patterns, and animations — Rainbow Chroma, Cyberpunk Neon, Matrix Digital, Inferno Firestorm, Thermal Heatmap, Celestial Nebula, Spectral Soul, Abyssal Sculk, High-Voltage Plasma, Aviation HUD, Aurora Borealis, Event Horizon, Sakura Drift, Prismatic Crystal, and 8-Bit Arcade (plus the Default custom-colors mode).
+- **Theme Animation Speed:** Added a configurable animation speed multiplier (`0.0x` to `3.0x`) for animated themes; setting it to `0.0x` completely freezes theme animations into static gradients for motion-sensitive players.
+- **Distance-Based Decoration LOD:** Particle, glyph, and sprite decorations scale down with camera distance and fade out entirely beyond ~60 blocks, keeping render budgets flat during heavy projectile barrages.
+
+### Theme Preview Gallery
+- **In-Game Preview Gallery:** Added `/fppreview` (or `/fireballpredictor preview`) to spawn all 16 visual themes simultaneously in a circular exhibition around the player with flight ribbons and animated shockwave blast domes.
+- **Interactive Theme Selection:** Left-clicking any theme in the gallery targets its dome, ribbon, or nameplate and offers a clickable `[Confirm]` chat link to instantly apply and save it as the active theme.
+- **One-Click Toggling:** Gallery status messages format the `/fppreview` command as a clickable chat link, with `on` / `off` / `clear` / `set <theme>` subcommands for explicit control.
+
+### Configuration & Compatibility
+- **Theme Dropdown & Gallery Button:** The settings menu now presents the visual theme as a dropdown selector with a "Toggle Preview Gallery" button positioned directly beneath it.
+- **Smart Option Availability:** Trajectory and shockwave color options are automatically disabled while a non-default theme is active (since the theme overrides them) and re-enabled when returning to Default.
+- **Localization:** Added the new theme, gallery, and animation-speed strings across all 11 supported languages.
+
+### Bug Fixes
+- **Wither Skull Prediction Fix:** The server now sends a `-1.0f` power sentinel for projectiles without a statically known power (such as wither skulls), and the client treats non-positive cached powers as "no value" — restoring shockwave domes, block-destruction highlights, and damage estimates for these projectiles.
+
 ## 1.7.2
 
 ### HUD & Knockback Readout

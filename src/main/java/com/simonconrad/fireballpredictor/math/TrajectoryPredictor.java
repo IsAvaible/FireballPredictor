@@ -149,13 +149,17 @@ public class TrajectoryPredictor {
             brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.isWindCharge, result.isDangerous, result.hitResult.getLocation(), result.snapshot);
         }
         
-        PredictionRenderData renderData = createRenderData(result.path, result.explosionPower);
+        PredictionRenderData renderData = createRenderData(result.explosionPower);
         Vec3 initialVelocity = result.velocities.isEmpty() ? Vec3.ZERO : result.velocities.get(0);
         
         return new PredictionData(result.path, result.velocities, result.hitResult, result.damageHitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
     }
 
-    private static PredictionRenderData createRenderData(List<Vec3> path, float explosionPower) {
+    public static PredictionRenderData createRenderData(List<Vec3> path, float explosionPower) {
+        return createRenderData(explosionPower);
+    }
+
+    public static PredictionRenderData createRenderData(float explosionPower) {
         if (explosionPower <= 0.0f) {
             return PredictionRenderData.EMPTY;
         }

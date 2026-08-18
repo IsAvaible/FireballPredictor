@@ -50,12 +50,44 @@ This document describes the client-side visual effects (VFX) used to represent p
   - `hud/heart/cracking_half_right` / `hud/heart/cracking_half_right_blinking`
 - **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
 
+### 7. Special Render Themes & Zero-Allocation VFX Pipeline ([VisualTheme.java](../src/main/java/com/simonconrad/fireballpredictor/config/VisualTheme.java))
+- **Dynamic Thematic Overrides**: Users can select from a curated suite of 16 visual render themes that dynamically calculate per-vertex colors, alpha modulations, patterns, and pulse dynamics across both the trajectory ribbon and shockwave dome:
+  - `DEFAULT`: Standard user colors and styling.
+  - `RAINBOW`: Continuous chromatic HSV wave cycling along the path and ascending the blast dome with rich, non-desaturated saturation.
+  - `CYBERPUNK`: Dual-tone outrun gradient from electric cyan (`#00F0FF`) to hot neon magenta (`#FF007F`) with high-intensity laser core.
+  - `MATRIX`: Cascading terminal phosphor code rain (`#E6FFE6` $\to$ `#00FF41`) with camera-billboarded digital glyphs aligned on the dome shell.
+  - `INFERNO`: Roaring volcanic firestorm: licking multi-tier flame tongues with uniform small spatial spacing along the ribbon, floating heat embers, and molten magma convection dome with glowing fissure veins.
+  - `HEATMAP`: Scientific FLIR false-color thermal ramp (deep blue $\to$ cyan $\to$ green $\to$ amber $\to$ searing hot red-white).
+  - `CELESTIAL`: Translucent cosmic nebula (galactic violet `#6D28D9` $\to$ nebula teal `#06B6D4` $\to$ lilac `#C084FC`) with diamond star glints and high shader visibility.
+  - `GHOST`: Spectral soul-fire turquoise (`#0D9488` $\to$ `#2DD4BF` $\to$ `#99F6E4`) with undulating soul tendrils and orbiting spirit vortex filaments.
+  - `SCULK_VOID`: Abyssal matte void (`#031A1C`) with pulsing Warden soul-glow veins (`#00F5D4`) drifting backward along the ribbon.
+  - `ELECTRIC_ARC`: High-voltage plasma: blistering white core streamers with turbulent ionized cyan/cobalt gas sheaths, crackling dielectric breakdown streamers, high-frequency voltage jitter, and branching lightning discharge arcs flashing along the trajectory and across the blast dome.
+  - `TACTICAL_HUD`: High-contrast aviation radar sweep beam with decaying phosphor trail, range tick marks, altitude rings, and tactical escort fighter jets flying along the trajectory.
+  - `AURORA`: Polar atmospheric shimmer (emerald green `#00FF87` $\to$ glacial cyan `#60EFFF` $\to$ polar violet `#A855F7`) with floating hexagonal ice crystal glints and vertical auroral curtain folds.
+  - `SINGULARITY`: Gravitational singularity with burning solar accretion orange (`#FF6A00`), cosmic ultraviolet event horizon (`#4338CA` $\to$ `#312E81`), dark obsidian trajectory core (`#05010B`), central pitch-black singularity void disc, incandescent white photon sphere lensing ring (`#FFFFFF`), multi-tiered relativistic Doppler-beamed accretion vortex disc, and dual-pass relativistic apex jet.
+  - `SAKURA`: Japanese cherry blossom drift (blossom pink `#FFB7C5` $\to$ rose quartz `#F472B6` $\to$ ivory `#FFF1F2`) with orbiting 5-petal blossom flowers, fluttering drifting petals, and an ultra high-density 640-quad 4-tier notched 5-petal flower base at the dome ground plane.
+  - `CRYSTAL`: Faceted gemstone dispersion (amethyst purple `#7E22CE` $\to$ quartz lilac `#C084FC` $\to$ diamond specular white `#FFFFFF` $\to$ emerald glint `#34D399`) with faceted octahedron crystal billboards and geode sparkle highlights.
+  - `ARCADE`: 8-bit retro arcade CRT scanlines and pixel quantization with 8 unique retro bitmap sprites (Space Invader, Heart, Cherries, Star, Ghost, Pac-Coin, Mushroom, Gem) across a 3-tier constellation on the dome shell.
+- **Theme Animation Rate (`themeAnimationSpeed`)**: Configurable speed multiplier (`0.0x` to `3.0x`, default `1.0x`). Setting to `0.0x` completely freezes theme animations into static gradients for motion-sensitive players.
+- **Distance-Based Decoration LOD**: Particle, glyph, and sprite decorations on the dome scale down linearly with camera distance and fade out entirely beyond ~60 blocks, so many simultaneously tracked projectiles (e.g. a ghast barrage) keep a flat render budget. The base dome shell geometry is never LOD'd.
+- **Zero-Allocation Math Architecture**: All vertex color math, hue sampling, and alpha modulation use bit-packed 32-bit `int` values (`0xRRGGBB`), precomputed 256-entry lookup tables (LUTs), and fast bitwise math, eliminating all object allocations in the per-frame 3D render loop and 2D GUI previews.
+
+### 8. Circular Theme Preview Gallery ([ThemePreviewGallery.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/ThemePreviewGallery.java))
+- **In-Game Command (`/fppreview` or `/fireballpredictor preview`)**: Available in all environments (both production and development).
+- **Config Screen Button & Dropdown**: The Visual Theme option is presented as a convenient dropdown selector, and can be previewed by clicking the "Toggle Preview Gallery" button positioned directly beneath it in the mod configuration menu.
+- **Interactive 3D Circular Exhibition**: Spawns all 16 visual themes simultaneously in a 360-degree circle around the player in 3D world space. The circle radius is dynamically calculated ($R = \max(12.0, \frac{S}{2 \sin(\pi / N)})$ with chord spacing $S = 6.5$ blocks) to guarantee abundant spacing between adjacent blast domes, particle accents, billboard sprites, and shader VFX without visual overlaps.
+- **Clickable Chat Command Link**: Chat feedback messages sent when enabling, disabling, or referencing `/fppreview` format the command as an interactive clickable link (`ClickEvent.RUN_COMMAND` with tooltip hover text) allowing instant one-click toggling of the gallery directly from the chat window.
+- **Interactive Left-Click Theme Selection**: Left-clicking while looking at any theme in the active gallery targets its blast dome, trajectory ribbon, or nameplate via continuous line-of-sight raycasting. A confirmation chat message is sent with an interactive `[Confirm]` clickable link (`/fppreview set <theme>`) allowing players to instantly apply and save that theme as their active visual theme.
+- **Toggle / Clear**: Executing `/fppreview`, clicking the chat link, or pressing the config button toggles the exhibition on/off at the player's current position; subcommands `/fppreview on` and `/fppreview off` (or `/fppreview clear`), as well as `/fppreview set <theme>`, allow explicit command-line control.
+
 ---
 
 ## Mod Configuration
 
 - **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass). HUD overlays are registered via Fabric's `HudElementRegistry`.
 - **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features across General, Visuals, and Tracking categories:
+  - `visualTheme`: Dropdown selector for the active visual theme (`DEFAULT` or one of 15 stylized modes).
+  - `themeAnimationSpeed`: Animation speed numeric field for visual themes (`0.0` to `3.0`).
   - `renderTrajectory`: Enables/disables the ribbon path.
   - `trajectoryWidth`: Line width multiplier for the trajectory ribbon trail (`0.1` to `2.0`).
   - `trajectoryStyle`: Selects visual style (`SOLID`, `DASHED`, `CORE_ONLY`).
@@ -101,8 +133,9 @@ Options under the **Visuals** and **Tracking** categories annotate `@CustomImage
 
 | Mode | Factory | Reflects pending values of |
 | --- | --- | --- |
-| Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
-| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength` |
+| Visual theme | `VisualThemeFactory` | `visualTheme`, `themeAnimationSpeed`, `trajectoryColor`, `shockwaveColor` |
+| Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse`, `visualTheme`, `themeAnimationSpeed` |
+| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength`, `visualTheme`, `themeAnimationSpeed` |
 | HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
 | Damage hearts overlay | `DamageHeartsFactory` | `renderDamageHeartsOverlay` |
 | Damage & knockback readout | `KnockbackEstimatorFactory` | `showKnockbackEstimator` |
@@ -117,6 +150,7 @@ Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAcc
 - **[TrajectoryRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrajectoryRenderer.java)**: Renders 2D animated path with ribbon width, color, pulse wave, core glow, and `SOLID`/`DASHED`/`CORE_ONLY` styles.
 - **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc via banded horizontal scanlines, Fresnel rim shading, and crack overlays.
 - **[HudRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/HudRenderer.java)**: Renders miniature screen frame showing HUD anchor alignment, X/Y pixel offsets, and dynamic progress bar.
+- **[PreviewThemeDecorations.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/PreviewThemeDecorations.java)**: Renders theme-specific 2D trajectory and dome overlays (arcs, tendrils, flames, code rain, radar sweeps, blossoms, arcade sprites) and 2D drawing primitives.
 - **[DamageEstimatorRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/DamageEstimatorRenderer.java)**: Renders animated cracking damage hearts on a 10-heart health bar with rising fiery embers, and the impact badge with damage/knockback readout.
 - **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
 - **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers with dynamic icon texture cache invalidation on resource reload.

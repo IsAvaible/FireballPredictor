@@ -14,8 +14,6 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -130,21 +128,24 @@ public class PredictionRenderer {
         int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
+        com.simonconrad.fireballpredictor.config.VisualTheme theme = config.visualTheme == null ? com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT : config.visualTheme;
+        float animSpeed = config.themeAnimationSpeed;
 
         boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
         java.awt.Color trajectoryColor = isWindCharge ? config.windChargeTrajectoryColor : config.trajectoryColor;
         java.awt.Color shockwaveColor = isWindCharge ? config.windChargeShockwaveColor : config.shockwaveColor;
 
         float fade = 1.0f;
+        Matrix4f basePose = matrices.last().pose();
+        // Theme animations run on game time (seconds) scaled by themeAnimationSpeed; game time is
+        // used (not wall clock) so animations pause with the game (pause menu / single-player).
+        double gameSeconds = ((world != null ? world.getGameTime() : 0L)
+                + client.getDeltaTracker().getGameTimeDeltaPartialTick(true)) / 20.0;
+        double animSeconds = gameSeconds * Math.max(0.0f, animSpeed);
 
         TrailRenderState trailState = null;
         if (config.renderTrajectory && data.path() != null && data.path().size() > 1) {
-            matrices.pushPose();
-            matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-            Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
-            matrices.popPose();
-
-            double animTime = (world != null ? world.getGameTime() : 0L) + client.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+            Matrix4f poseMatrix = new Matrix4f(basePose).translate((float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z);
             TrajectoryStyle style = config.trajectoryStyle == null ? TrajectoryStyle.SOLID : config.trajectoryStyle;
 
             trailState = new TrailRenderState(
@@ -159,23 +160,22 @@ public class PredictionRenderer {
                 style,
                 config.renderCoreGlow,
                 config.enableRibbonPulse,
-                animTime,
-                fade
+                animSeconds,
+                fade,
+                theme
             );
         }
 
         DomeRenderState domeState = null;
         if (config.renderShockwaveDome && data.hitResult() != null && data.renderData() != null && !data.renderData().domeQuads().isEmpty()) {
             Vec3 hitPos = data.hitResult().getLocation();
+            Matrix4f poseMatrix = new Matrix4f(basePose).translate(
+                (float) (hitPos.x - cameraPos.x),
+                (float) (hitPos.y - cameraPos.y),
+                (float) (hitPos.z - cameraPos.z)
+            );
 
-            matrices.pushPose();
-            matrices.translate(hitPos.x - cameraPos.x, hitPos.y - cameraPos.y, hitPos.z - cameraPos.z);
-            Matrix4f poseMatrix = new Matrix4f(matrices.last().pose());
-            matrices.popPose();
-
-            long time = System.currentTimeMillis();
-            double angle = (time % 2000) / 2000.0 * 2.0 * Math.PI;
-            float pulseFactor = 0.8f + 0.2f * (float) Math.sin(angle);
+            float pulseFactor = computePulseFactor(animSeconds);
 
             domeState = new DomeRenderState(
                 hitPos,
@@ -187,7 +187,9 @@ public class PredictionRenderer {
                 poseMatrix,
                 fade,
                 cameraPos,
-                config.domeFresnelStrength
+                config.domeFresnelStrength,
+                theme,
+                animSeconds
             );
         }
 
@@ -196,5 +198,14 @@ public class PredictionRenderer {
             PredictionSubmit submit = new PredictionSubmit(distSq, trailState, domeState);
             collection.translucentModels.submit(submit);
         }
+    }
+
+    /**
+     * Dome breathing pulse at 0.5 Hz (period 2 s) — the same rate the dome always used — driven by
+     * the same game-time {@code animSeconds} as all other theme animations, so the pulse pauses with
+     * the game and freezes at full alpha when {@code themeAnimationSpeed} is 0.
+     */
+    public static float computePulseFactor(double animSeconds) {
+        return com.simonconrad.fireballpredictor.config.VisualTheme.computePulseFactor(animSeconds);
     }
 }

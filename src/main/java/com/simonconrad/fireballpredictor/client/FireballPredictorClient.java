@@ -91,6 +91,8 @@ public class FireballPredictorClient implements ClientModInitializer {
         ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
         ServerTrackingRulesReceiver.registerReceivers();
 
+        com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.register();
+
         net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
                 .registerReloadListener(new net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener() {
                     @Override
@@ -269,11 +271,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                                 double py = randomPos.getY() + 1.1;
                                 double pz = randomPos.getZ() + client.level.getRandom().nextDouble();
                                 
-                                int pType = client.level.getRandom().nextInt(3);
-                                net.minecraft.core.particles.ParticleOptions effect = ParticleTypes.FLAME;
-                                if (pType == 1) effect = ParticleTypes.LAVA;
-                                else if (pType == 2) effect = ParticleTypes.CAMPFIRE_COSY_SMOKE;
-                                
+                                net.minecraft.core.particles.ParticleOptions effect = getThematicParticle(ModConfig.instance().visualTheme, client.level.getRandom());
                                 client.level.addParticle(effect, px, py, pz, 0, 0.05, 0);
                             }
                         }
@@ -402,6 +400,15 @@ public class FireballPredictorClient implements ClientModInitializer {
         );
 
         LevelRenderEvents.END_MAIN.register(context -> {
+            if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
+                com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.render(
+                    context.poseStack(),
+                    context.submitNodeCollector(),
+                    net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera(),
+                    net.minecraft.client.Minecraft.getInstance().level
+                );
+            }
+
             if (activePredictions.isEmpty()) return;
 
             ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
@@ -449,6 +456,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         ClientOwnerCache.clear();
         FireballInferenceTracker.clear();
         ClientPowerLookup.resetInferredPower();
+        com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.disable(null);
         impactWarningVisible = false;
         impactWarningProgress = 0.0f;
         impactWarningType = WarningProjectileType.FIREBALL;
@@ -647,5 +655,30 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             return false;
         }
+    }
+
+    private static net.minecraft.core.particles.ParticleOptions getThematicParticle(
+            com.simonconrad.fireballpredictor.config.VisualTheme theme,
+            net.minecraft.util.RandomSource random
+    ) {
+        if (theme == null) {
+            theme = com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT;
+        }
+        return switch (theme) {
+            case SAKURA -> ParticleTypes.CHERRY_LEAVES;
+            case GHOST -> ParticleTypes.SOUL_FIRE_FLAME;
+            case ELECTRIC_ARC -> ParticleTypes.ELECTRIC_SPARK;
+            case SCULK_VOID -> ParticleTypes.SCULK_SOUL;
+            case AURORA, CRYSTAL, CELESTIAL -> ParticleTypes.END_ROD;
+            case MATRIX, CYBERPUNK -> ParticleTypes.ENCHANT;
+            case SINGULARITY -> ParticleTypes.PORTAL;
+            case ARCADE, RAINBOW -> ParticleTypes.GLOW;
+            default -> {
+                int pType = random.nextInt(3);
+                if (pType == 1) yield ParticleTypes.LAVA;
+                else if (pType == 2) yield ParticleTypes.CAMPFIRE_COSY_SMOKE;
+                else yield ParticleTypes.FLAME;
+            }
+        };
     }
 }

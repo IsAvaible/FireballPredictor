@@ -106,6 +106,11 @@ public final class RenderUtils {
                 | (Mth.clamp(b, 0, 255));
     }
 
+    /** Pack RGB and alpha into an ARGB int. */
+    static int pack(int rgb, int a) {
+        return ((Mth.clamp(a, 0, 255)) << 24) | (rgb & 0xFFFFFF);
+    }
+
     /** Desaturates a color using standard ITU-R luminance weighting. */
     static java.awt.Color desaturate(java.awt.Color color) {
         int r = color.getRed(), g = color.getGreen(), b = color.getBlue();
@@ -233,9 +238,9 @@ public final class RenderUtils {
 
     /** A single blit-able source region inside a vanilla texture. */
     private record IconTexture(Identifier texture,
-                               int u, int v,
-                               int srcW, int srcH,
-                               int texW, int texH) {
+                                int u, int v,
+                                int srcW, int srcH,
+                                int texW, int texH) {
 
         /** Whole 16x16 sprite (normal item/block texture). */
         static IconTexture sprite(Identifier texture) {
@@ -456,6 +461,36 @@ public final class RenderUtils {
                 if (a > 0) {
                     p.pixel(px, py, pack(r, g, b, a));
                 }
+            }
+        }
+    }
+
+    /**
+     * Crisp circular ring via horizontal spans (two per scanline).
+     */
+    static void ring(Painter p, float cx, float cy, float radius,
+                     float thickness, int argb) {
+        if ((argb >>> 24) == 0 || radius <= 0.0f) {
+            return;
+        }
+        float outer = radius + thickness * 0.5f;
+        float inner = Math.max(0.0f, radius - thickness * 0.5f);
+        int y0 = Mth.floor(cy - outer);
+        int y1 = Mth.ceil(cy + outer);
+        for (int py = y0; py <= y1; py++) {
+            float dy = py + 0.5f - cy;
+            float outSq = outer * outer - dy * dy;
+            if (outSq <= 0.0f) {
+                continue;
+            }
+            float dxo = (float) Math.sqrt(outSq);
+            float inSq = inner * inner - dy * dy;
+            if (inSq > 0.0f) {
+                float dxi = (float) Math.sqrt(inSq);
+                p.fillF(cx - dxo, py, cx - dxi, py + 1, argb);
+                p.fillF(cx + dxi, py, cx + dxo, py + 1, argb);
+            } else {
+                p.fillF(cx - dxo, py, cx + dxo, py + 1, argb);
             }
         }
     }

@@ -2,6 +2,7 @@ package com.simonconrad.fireballpredictor.client.render;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
+import com.simonconrad.fireballpredictor.config.VisualTheme;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 import net.minecraft.client.renderer.feature.FeatureFrameContext;
 import net.minecraft.client.renderer.feature.FeatureRendererType;
@@ -29,6 +30,11 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
     private static final int FRESNEL_POWER = 5;      // Schlick exponent
     private static final int FRESNEL_RIM_GLOW = 55;  // extra alpha added at grazing angles
 
+    static final Vec3 UP = new Vec3(0, 1, 0);
+    static final Vec3 DOWN = new Vec3(0, -1, 0);
+    static final Vec3 RIGHT = new Vec3(1, 0, 0);
+    static final Vec3 FORWARD = new Vec3(0, 0, 1);
+
     @Override
     protected void buildGroup(FeatureFrameContext context, List<PredictionSubmit> submits) {
         // One shared RenderType -> one buffer -> emission order == blend order.
@@ -48,7 +54,7 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         }
     }
 
-    private static Vec3 safeNormalize(Vec3 v, Vec3 fallback) {
+    static Vec3 safeNormalize(Vec3 v, Vec3 fallback) {
         double lenSq = v.lengthSqr();
         if (lenSq > 1e-7) {
             return v.scale(1.0 / Math.sqrt(lenSq));
@@ -75,15 +81,21 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         boolean drawShroud = !isCoreOnly;
 
         double animTime = state.animTime();
-        double pulseSpeed = 0.45;
+        // animTime is in seconds now (it used to be in ticks before the theme patch); the legacy
+        // ribbon pulse was tuned at 0.45 rad/tick, so scale by 20 tps to keep the DEFAULT theme
+        // visually identical to the pre-theme renderer.
+        double pulseSpeed = 0.45 * 20.0;
 
         float fade = state.fade();
         int maxAlpha = Math.round(PredictionRenderer.MAX_TRAIL_ALPHA * fade);
 
+        VisualTheme theme = state.theme() == null ? VisualTheme.DEFAULT : state.theme();
+        int fallbackRgb = VisualTheme.packRgb(r, g, b);
+
         for (int i = elapsedTicks; i < path.size() - 1; i++) {
             Vec3 p1 = path.get(i);
             Vec3 p2 = path.get(i + 1);
-            Vec3 dir = safeNormalize(p2.subtract(p1), new Vec3(0, 1, 0));
+            Vec3 dir = safeNormalize(p2.subtract(p1), UP);
 
             float blend1 = Math.min(1.0f, (float) (i - elapsedTicks) / startBlendSteps);
             float blend2 = Math.min(1.0f, (float) (i + 1 - elapsedTicks) / startBlendSteps);
@@ -95,6 +107,7 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
 
             float progress1 = (float) i / totalPathSteps;
             float progress2 = (float) (i + 1) / totalPathSteps;
+            float segProgress = (progress1 + progress2) * 0.5f;
 
             float endTaper1 = progress1 > 0.8f ? 1.0f - (progress1 - 0.8f) * 2.0f : 1.0f;
             float endTaper2 = progress2 > 0.8f ? 1.0f - (progress2 - 0.8f) * 2.0f : 1.0f;
@@ -111,35 +124,50 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
             int baseCenterAlpha1 = (int) (200 - (140 * Math.pow(progress1, 2)));
             int baseCenterAlpha2 = (int) (200 - (140 * Math.pow(progress2, 2)));
 
+            float themeAlphaMod = theme.getRibbonAlphaModulation(segProgress, animTime, i);
+
             // Clamped against MAX_TRAIL_ALPHA: with the translucent
             // (non-additive) pipeline a high alpha would paint over the cracking overlay of blocks the
             // ribbon crosses.
-            int centerAlpha1 = Mth.clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1 * fade), 0, maxAlpha);
-            int centerAlpha2 = Mth.clamp((int) (baseCenterAlpha2 * alphaBlend2 * pulse2 * dash2 * fade), 0, maxAlpha);
+            int centerAlpha1 = Mth.clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1 * fade * themeAlphaMod), 0, maxAlpha);
+            int centerAlpha2 = Mth.clamp((int) (baseCenterAlpha2 * alphaBlend2 * pulse2 * dash2 * fade * themeAlphaMod), 0, maxAlpha);
             int edgeAlpha = 0;
 
             Vec3 perp = dir.cross(camLook);
             if (perp.lengthSqr() < 0.001) {
-                perp = dir.cross(new Vec3(0, 1, 0));
+                perp = dir.cross(UP);
             }
             if (perp.lengthSqr() < 0.001) {
-                perp = dir.cross(new Vec3(1, 0, 0));
+                perp = dir.cross(RIGHT);
             }
-            Vec3 rightDir = safeNormalize(perp, new Vec3(1, 0, 0));
+            Vec3 rightDir = safeNormalize(perp, RIGHT);
+
+            // Camera up-basis for trail billboard overlays. Only themes that actually emit
+            // billboards need it — computing it unconditionally would allocate two Vec3s per
+            // segment for every tracked projectile even on the DEFAULT theme.
+            boolean needsBillboard = PredictionThemeRenderer.requiresTrailUpBasis(theme);
+            Vec3 trailUp = needsBillboard ? safeNormalize(camLook.cross(rightDir), UP) : null;
+
+            int segShroudRgb = theme.getRibbonColorPacked(segProgress, animTime, i, false, fallbackRgb);
+            int segCoreRgb = theme.getRibbonColorPacked(segProgress, animTime, i, true, fallbackRgb);
+
+            int sr = VisualTheme.extractR(segShroudRgb);
+            int sg = VisualTheme.extractG(segShroudRgb);
+            int sb = VisualTheme.extractB(segShroudRgb);
 
             // Pass 1: Outer Shroud
             if (drawShroud) {
                 emitRibbonQuad(consumer, positionMatrix, p1, p2,
                         rightDir.scale(width1), rightDir.scale(width2),
-                        r, g, b, edgeAlpha, edgeAlpha, centerAlpha1, centerAlpha2);
+                        sr, sg, sb, edgeAlpha, edgeAlpha, centerAlpha1, centerAlpha2);
             }
 
             // Pass 2: Inner Core Layer
             if (drawCore) {
                 float coreWidthRatio = isCoreOnly ? 0.6f : 0.35f;
-                int pass2R = isCoreOnly ? r : Math.min(255, r + (int) ((255 - r) * 0.35f));
-                int pass2G = isCoreOnly ? g : Math.min(255, g + (int) ((255 - g) * 0.35f));
-                int pass2B = isCoreOnly ? b : Math.min(255, b + (int) ((255 - b) * 0.35f));
+                int pass2R = isCoreOnly ? sr : VisualTheme.extractR(segCoreRgb);
+                int pass2G = isCoreOnly ? sg : VisualTheme.extractG(segCoreRgb);
+                int pass2B = isCoreOnly ? sb : VisualTheme.extractB(segCoreRgb);
 
                 int coreAlphaCenter1 = isCoreOnly ? centerAlpha1 : Mth.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
                 int coreAlphaCenter2 = isCoreOnly ? centerAlpha2 : Mth.clamp((int) (centerAlpha2 * 1.25f), 0, maxAlpha);
@@ -150,28 +178,89 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
                         rightDir.scale(width1 * coreWidthRatio), rightDir.scale(width2 * coreWidthRatio),
                         pass2R, pass2G, pass2B, coreAlphaEdge1, coreAlphaEdge2, coreAlphaCenter1, coreAlphaCenter2);
             }
+
+            // Thematic per-segment passes (Electric arcs, Sculk tendrils, Inferno flames, Ghost wisps, Matrix glyphs, etc.)
+            if (theme.isCustomTheme()) {
+                PredictionThemeRenderer.renderTrailThemeSegment(
+                        consumer, positionMatrix, theme, path, i, p1, p2, rightDir, trailUp,
+                        width1, width2, centerAlpha1, baseCenterAlpha1, alphaBlend1, pulse1,
+                        dash1, fade, maxAlpha, animTime);
+            }
+        }
+
+        // Thematic whole-path passes (Tactical HUD fighter jets, etc.)
+        if (theme.isCustomTheme()) {
+            PredictionThemeRenderer.renderTrailThemeGlobal(
+                    consumer, positionMatrix, theme, path, totalPathSteps, baseWidth, maxAlpha, animTime);
         }
     }
 
-    private static void emitRibbonQuad(
+    static void emitRibbonQuad(
             VertexConsumer consumer, Matrix4f pose,
             Vec3 p1, Vec3 p2, Vec3 right1, Vec3 right2,
             int r, int g, int b, int edgeAlpha1, int edgeAlpha2, int centerAlpha1, int centerAlpha2
     ) {
-        Vec3 p1L = p1.add(right1);
-        Vec3 p1R = p1.subtract(right1);
-        Vec3 p2L = p2.add(right2);
-        Vec3 p2R = p2.subtract(right2);
+        emitRibbonQuad(consumer, pose,
+                (float) p1.x, (float) p1.y, (float) p1.z,
+                (float) p2.x, (float) p2.y, (float) p2.z,
+                (float) right1.x, (float) right1.y, (float) right1.z,
+                (float) right2.x, (float) right2.y, (float) right2.z,
+                r, g, b, edgeAlpha1, edgeAlpha2, centerAlpha1, centerAlpha2);
+    }
 
-        consumer.addVertex(pose, (float) p1L.x, (float) p1L.y, (float) p1L.z).setColor(r, g, b, edgeAlpha1);
-        consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
-        consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
-        consumer.addVertex(pose, (float) p2L.x, (float) p2L.y, (float) p2L.z).setColor(r, g, b, edgeAlpha2);
+    static void emitRibbonQuad(
+            VertexConsumer consumer, Matrix4f pose,
+            float p1x, float p1y, float p1z, float p2x, float p2y, float p2z,
+            float r1x, float r1y, float r1z, float r2x, float r2y, float r2z,
+            int r, int g, int b, int edgeAlpha1, int edgeAlpha2, int centerAlpha1, int centerAlpha2
+    ) {
+        float p1Lx = p1x + r1x, p1Ly = p1y + r1y, p1Lz = p1z + r1z;
+        float p1Rx = p1x - r1x, p1Ry = p1y - r1y, p1Rz = p1z - r1z;
+        float p2Lx = p2x + r2x, p2Ly = p2y + r2y, p2Lz = p2z + r2z;
+        float p2Rx = p2x - r2x, p2Ry = p2y - r2y, p2Rz = p2z - r2z;
 
-        consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, centerAlpha1);
-        consumer.addVertex(pose, (float) p1R.x, (float) p1R.y, (float) p1R.z).setColor(r, g, b, edgeAlpha1);
-        consumer.addVertex(pose, (float) p2R.x, (float) p2R.y, (float) p2R.z).setColor(r, g, b, edgeAlpha2);
-        consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(r, g, b, centerAlpha2);
+        consumer.addVertex(pose, p1Lx, p1Ly, p1Lz).setColor(r, g, b, edgeAlpha1);
+        consumer.addVertex(pose, p1x, p1y, p1z).setColor(r, g, b, centerAlpha1);
+        consumer.addVertex(pose, p2x, p2y, p2z).setColor(r, g, b, centerAlpha2);
+        consumer.addVertex(pose, p2Lx, p2Ly, p2Lz).setColor(r, g, b, edgeAlpha2);
+
+        consumer.addVertex(pose, p1x, p1y, p1z).setColor(r, g, b, centerAlpha1);
+        consumer.addVertex(pose, p1Rx, p1Ry, p1Rz).setColor(r, g, b, edgeAlpha1);
+        consumer.addVertex(pose, p2Rx, p2Ry, p2Rz).setColor(r, g, b, edgeAlpha2);
+        consumer.addVertex(pose, p2x, p2y, p2z).setColor(r, g, b, centerAlpha2);
+    }
+
+    static void emitDoubleSidedQuad(
+            VertexConsumer consumer, Matrix4f pose,
+            float x1, float y1, float z1, int r1, int g1, int b1, int a1,
+            float x2, float y2, float z2, int r2, int g2, int b2, int a2,
+            float x3, float y3, float z3, int r3, int g3, int b3, int a3,
+            float x4, float y4, float z4, int r4, int g4, int b4, int a4
+    ) {
+        consumer.addVertex(pose, x1, y1, z1).setColor(r1, g1, b1, a1);
+        consumer.addVertex(pose, x2, y2, z2).setColor(r2, g2, b2, a2);
+        consumer.addVertex(pose, x3, y3, z3).setColor(r3, g3, b3, a3);
+        consumer.addVertex(pose, x4, y4, z4).setColor(r4, g4, b4, a4);
+
+        consumer.addVertex(pose, x4, y4, z4).setColor(r4, g4, b4, a4);
+        consumer.addVertex(pose, x3, y3, z3).setColor(r3, g3, b3, a3);
+        consumer.addVertex(pose, x2, y2, z2).setColor(r2, g2, b2, a2);
+        consumer.addVertex(pose, x1, y1, z1).setColor(r1, g1, b1, a1);
+    }
+
+    static void emitDoubleSidedQuad(
+            VertexConsumer consumer, Matrix4f pose,
+            float x1, float y1, float z1,
+            float x2, float y2, float z2,
+            float x3, float y3, float z3,
+            float x4, float y4, float z4,
+            int r, int g, int b, int a
+    ) {
+        emitDoubleSidedQuad(consumer, pose,
+                x1, y1, z1, r, g, b, a,
+                x2, y2, z2, r, g, b, a,
+                x3, y3, z3, r, g, b, a,
+                x4, y4, z4, r, g, b, a);
     }
 
     private void renderDome(VertexConsumer consumer, DomeRenderState state) {
@@ -188,23 +277,64 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         // a vertex is simply the (normalised) vertex position.
         Vec3 cameraLocal = state.cameraPos().subtract(state.hitPos());
         float fresnelStrength = state.fresnelStrength();
+        VisualTheme theme = state.theme() == null ? VisualTheme.DEFAULT : state.theme();
+        int fallbackRgb = VisualTheme.packRgb(r, g, b);
+        double animTime = state.animTime();
+        int totalQuads = state.domeQuads().size();
 
-        // Every dome quad uses the same RGB, so with a normal alpha blend the composite result stays
-        // order independent. Alpha is capped so the cracking overlay of the blocks inside the dome
-        // stays visible (the hemisphere is drawn twice per pixel: no culling). The Fresnel term is
-        // evaluated per vertex and baked into the alpha (see {@link #fresnelAlpha}).
-        for (PredictionRenderData.DomeQuad quad : state.domeQuads()) {
+        int longitudeBands = 24;
+        int latitudeBands = Math.max(1, totalQuads / longitudeBands);
+
+        // Decoration density scales with camera distance so far-away domes — or many simultaneously
+        // tracked projectiles (e.g. a ghast barrage) — don't emit thousands of billboard quads per
+        // frame. The base dome shell geometry is untouched; only particle/glyph/sprite passes LOD,
+        // fading to zero beyond ~60 blocks.
+        float camDist = (float) cameraLocal.length();
+        float density = Mth.clamp(60.0f / Math.max(1.0f, camDist), 0.0f, 1.0f);
+
+        // Camera basis vectors for dome particle/glyph billboarding
+        Vec3 camLook = safeNormalize(cameraLocal, FORWARD);
+        Vec3 camUpRef = Math.abs(camLook.y) > 0.99 ? FORWARD : UP;
+        Vec3 camRight = safeNormalize(camUpRef.cross(camLook), RIGHT);
+        Vec3 camUp = safeNormalize(camLook.cross(camRight), UP);
+
+        // Every dome quad uses the same RGB or theme-evaluated RGB, with a normal alpha blend.
+        for (int qIdx = 0; qIdx < totalQuads; qIdx++) {
+            PredictionRenderData.DomeQuad quad = state.domeQuads().get(qIdx);
             int base1 = Mth.clamp((int) (quad.alpha1() * pulseFactor * fade), 0, maxAlpha);
             int base2 = Mth.clamp((int) (quad.alpha2() * pulseFactor * fade), 0, maxAlpha);
 
-            consumer.addVertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z)
-                    .setColor(r, g, b, fresnelAlpha(quad.p1(), base1, cameraLocal, fresnelStrength, maxAlpha, fade));
-            consumer.addVertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z)
-                    .setColor(r, g, b, fresnelAlpha(quad.p2(), base1, cameraLocal, fresnelStrength, maxAlpha, fade));
-            consumer.addVertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z)
-                    .setColor(r, g, b, fresnelAlpha(quad.p3(), base2, cameraLocal, fresnelStrength, maxAlpha, fade));
-            consumer.addVertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z)
-                    .setColor(r, g, b, fresnelAlpha(quad.p4(), base2, cameraLocal, fresnelStrength, maxAlpha, fade));
+            int lat = qIdx / longitudeBands;
+            int lon = qIdx % longitudeBands;
+            float latProgress = (float) lat / (float) latitudeBands;
+            float lonProgress = (float) lon / (float) longitudeBands;
+
+            int qr = r, qg = g, qb = b;
+            float alphaMult = 1.0f;
+            if (theme.isCustomTheme()) {
+                int quadRgb = theme.getDomeColorPacked(quad.p1(), cameraLocal, latProgress, lonProgress, animTime, fallbackRgb);
+                qr = VisualTheme.extractR(quadRgb);
+                qg = VisualTheme.extractG(quadRgb);
+                qb = VisualTheme.extractB(quadRgb);
+                alphaMult = theme.getDomeAlphaModulation(latProgress, lonProgress, animTime);
+            }
+
+            int a1 = Mth.clamp((int) (fresnelAlpha(quad.p1(), base1, cameraLocal, fresnelStrength, maxAlpha, fade) * alphaMult), 0, maxAlpha);
+            int a2 = Mth.clamp((int) (fresnelAlpha(quad.p2(), base1, cameraLocal, fresnelStrength, maxAlpha, fade) * alphaMult), 0, maxAlpha);
+            int a3 = Mth.clamp((int) (fresnelAlpha(quad.p3(), base2, cameraLocal, fresnelStrength, maxAlpha, fade) * alphaMult), 0, maxAlpha);
+            int a4 = Mth.clamp((int) (fresnelAlpha(quad.p4(), base2, cameraLocal, fresnelStrength, maxAlpha, fade) * alphaMult), 0, maxAlpha);
+
+            consumer.addVertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).setColor(qr, qg, qb, a1);
+            consumer.addVertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).setColor(qr, qg, qb, a2);
+            consumer.addVertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).setColor(qr, qg, qb, a3);
+            consumer.addVertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).setColor(qr, qg, qb, a4);
+        }
+
+        // Theme-specific decorative overlays across the shockwave dome (Celestial stars, Matrix code rain, etc.)
+        if (theme.isCustomTheme()) {
+            PredictionThemeRenderer.renderDomeThemeDecorations(
+                    consumer, state, theme, positionMatrix, totalQuads, maxAlpha, density,
+                    animTime, cameraLocal, camLook, camRight, camUp);
         }
     }
 
@@ -234,10 +364,24 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
             return base;
         }
 
-        Vec3 normal = safeNormalize(vertex, new Vec3(0.0, 1.0, 0.0));
-        Vec3 view = safeNormalize(cameraLocal.subtract(vertex), new Vec3(0.0, 1.0, 0.0));
+        double vx = vertex.x, vy = vertex.y, vz = vertex.z;
+        double nLenSq = vx * vx + vy * vy + vz * vz;
+        double invNLen = nLenSq > 1e-7 ? 1.0 / Math.sqrt(nLenSq) : 0.0;
+        double nx = invNLen != 0.0 ? vx * invNLen : 0.0;
+        double ny = invNLen != 0.0 ? vy * invNLen : 1.0;
+        double nz = invNLen != 0.0 ? vz * invNLen : 0.0;
 
-        float ndv = (float) Math.max(0.0, Math.abs(normal.dot(view)));
+        double dx = cameraLocal.x - vx;
+        double dy = cameraLocal.y - vy;
+        double dz = cameraLocal.z - vz;
+        double vLenSq = dx * dx + dy * dy + dz * dz;
+        double invVLen = vLenSq > 1e-7 ? 1.0 / Math.sqrt(vLenSq) : 0.0;
+        double viewX = invVLen != 0.0 ? dx * invVLen : 0.0;
+        double viewY = invVLen != 0.0 ? dy * invVLen : 1.0;
+        double viewZ = invVLen != 0.0 ? dz * invVLen : 0.0;
+
+        double dot = nx * viewX + ny * viewY + nz * viewZ;
+        float ndv = (float) Math.max(0.0, Math.abs(dot));
         // Schlick: F = F0 + (1 - F0) * (1 - dot)^FRESNEL_POWER (expanded below, FRESNEL_POWER = 5).
         float t = 1.0f - ndv;
         float fresnel = FRESNEL_F0 + (1.0f - FRESNEL_F0) * t * t * t * t * t;
@@ -274,7 +418,8 @@ record TrailRenderState(
     boolean renderCoreGlow,
     boolean enableRibbonPulse,
     double animTime,
-    float fade
+    float fade,
+    VisualTheme theme
 ) {}
 
 record DomeRenderState(
@@ -287,5 +432,7 @@ record DomeRenderState(
     Matrix4f pose,
     float fade,
     Vec3 cameraPos,
-    float fresnelStrength
+    float fresnelStrength,
+    VisualTheme theme,
+    double animTime
 ) {}

@@ -9,9 +9,11 @@
     "ProjectileAccessor"
   ],
   "client": [
+    "ChatComponentAccessor",
     "ClientWorldEntityTracker",
     "FeatureRenderDispatcherMixin",
-    "ClientPacketListenerMixin"
+    "ClientPacketListenerMixin",
+    "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1

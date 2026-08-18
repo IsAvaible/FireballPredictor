@@ -12,8 +12,13 @@ import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
@@ -41,11 +46,11 @@ public class FireballPredictor implements ModInitializer {
         // Server-side fair-play switches (config/fireballpredictor-server.json)
         ServerConfig.load();
 
-        EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) -> {
-            if (trackedEntity instanceof AbstractHurtingProjectile fireball) {
-                float power = 1.0F;
-                if (fireball instanceof LargeFireball fe) {
-                    power = (float) ((FireballEntityAccessor) fe).getExplosionPower();
+        EntityTrackingEvents.START_TRACKING.register((entity, player) -> {
+            if (entity instanceof AbstractHurtingProjectile fireball) {
+                float power = -1.0f;
+                if (fireball instanceof LargeFireball largeFireball) {
+                    power = ((FireballEntityAccessor) largeFireball).getExplosionPower();
                 }
                 ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), power));
 
@@ -61,20 +66,37 @@ public class FireballPredictor implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 ServerPlayNetworking.send(handler.player, trackingRulesPayload()));
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                dispatcher.register(Commands.literal("fireballpredictor")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .then(Commands.literal("reload").executes(context -> {
-                            int mask = ServerConfig.reload();
-                            TrackingRulesPayload payload = new TrackingRulesPayload(mask);
-                            for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                                ServerPlayNetworking.send(player, payload);
-                            }
-                            context.getSource().sendSuccess(
-                                    () -> Component.literal("Reloaded Fireball Predictor server config and re-synced tracking restrictions to all players."),
-                                    true);
-                            return 1;
-                        }))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            dispatcher.register(Commands.literal("fireballpredictor")
+                    .then(Commands.literal("reload")
+                            .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                            .executes(context -> {
+                                int mask = ServerConfig.reload();
+                                TrackingRulesPayload payload = new TrackingRulesPayload(mask);
+                                for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
+                                    ServerPlayNetworking.send(player, payload);
+                                }
+                                context.getSource().sendSuccess(
+                                        () -> Component.literal("Reloaded Fireball Predictor server config and re-synced tracking restrictions to all players."),
+                                        true);
+                                return 1;
+                            }))
+                    .then(Commands.literal("preview")
+                            .executes(context -> {
+                                Component link = Component.literal("/fppreview").withStyle(Style.EMPTY
+                                        .withColor(ChatFormatting.YELLOW)
+                                        .withUnderlined(true)
+                                        .withClickEvent(new ClickEvent.RunCommand("/fppreview"))
+                                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to toggle Theme Preview Gallery"))));
+
+                                MutableComponent msg = Component.literal("§6[Fireball Predictor]§a Run ")
+                                        .append(link)
+                                        .append(" or use the config menu button to toggle the 3D circular theme preview gallery.");
+
+                                context.getSource().sendSuccess(() -> msg, false);
+                                return 1;
+                            })));
+        });
 
 		LOGGER.info("Hello Fabric world from FireballPredictor!");
 	}

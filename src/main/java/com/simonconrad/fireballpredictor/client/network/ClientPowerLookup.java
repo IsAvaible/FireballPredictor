@@ -1,7 +1,6 @@
 package com.simonconrad.fireballpredictor.client.network;
 
 import com.simonconrad.fireballpredictor.config.ModConfig;
-import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 
 import net.fabricmc.api.EnvType;
@@ -13,8 +12,9 @@ public class ClientPowerLookup {
     private static volatile Float inferredBlockEstimation = null;
 
     public static float getPower(AbstractHurtingProjectile fireball) {
-        if (ClientPowerCache.POWER_CACHE.containsKey(fireball.getId())) {
-            return ClientPowerCache.POWER_CACHE.get(fireball.getId());
+        Float cached = cachedPower(fireball.getId());
+        if (cached != null) {
+            return cached;
         }
 
         if (FireballInferenceTracker.isFireball(fireball)) {
@@ -42,6 +42,21 @@ public class ClientPowerLookup {
 
     public static void setInferredPacketRadius(float power) {
         inferredPacketRadius = power;
+    }
+
+    /**
+     * Returns the server-authoritative explosion power for an entity id, or {@code null} when the
+     * server sent no usable value.
+     *
+     * <p>The server sends {@code -1.0f} for hurting projectiles whose power is not statically known
+     * on the server side (e.g. wither skulls). Non-positive cached values are therefore treated as
+     * "no value" so the lookup falls through to the inference/fallback chain below instead of
+     * propagating an invalid power into the prediction pipeline (which would silently disable the
+     * shockwave dome, block-destruction overlay and damage estimates for those projectiles).
+     */
+    public static Float cachedPower(int entityId) {
+        Float cached = ClientPowerCache.POWER_CACHE.get(entityId);
+        return (cached != null && cached > 0.0f) ? cached : null;
     }
 
     public static Float getInferredPacketRadius() {

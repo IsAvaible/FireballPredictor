@@ -2,6 +2,7 @@ package com.simonconrad.fireballpredictor.client.gui.preview;
 
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
+import com.simonconrad.fireballpredictor.config.VisualTheme;
 import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.config.v2.api.ConfigField;
 import dev.isxander.yacl3.config.v2.api.autogen.CustomImage;
@@ -25,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 public final class ConfigPreviewRenderer implements ImageRenderer {
 
     public enum Mode {
+        /** Visual Theme preview (renders thematic trajectory arc and impact shockwave). */
+        THEME,
         /** Fireball / wither ribbon schematic. */
         TRAJECTORY,
         /** Wind-charge ribbon schematic (uses wind-charge color options). */
@@ -133,7 +136,7 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         Painter p = new Painter(graphics, innerX, innerY, innerX + innerW, innerY + innerH);
 
         switch (mode) {
-            case TRAJECTORY, TRAJECTORY_WIND -> renderTrajectory(p, innerX, innerY, innerW, innerH);
+            case THEME, TRAJECTORY, TRAJECTORY_WIND -> renderTrajectory(p, innerX, innerY, innerW, innerH);
             case SHOCKWAVE, SHOCKWAVE_WIND -> renderShockwave(p, innerX, innerY, innerW, innerH);
             case HUD -> renderHud(p, innerX, innerY, innerW, innerH);
             case TRACK_MASTER -> renderTrackMaster(p, innerX, innerY, innerW, innerH);
@@ -158,26 +161,37 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
 
     private void renderTrajectory(Painter p, int x, int y, int w, int h) {
         boolean wind = mode == Mode.TRAJECTORY_WIND;
+        boolean isThemeMode = mode == Mode.THEME;
+        VisualTheme theme = pendingEnum("visualTheme", VisualTheme.DEFAULT);
+        float animSpeed = pendingFloat("themeAnimationSpeed", 1.0f);
+
         TrajectoryRenderer.render(p, x, y, w, h, wind,
-                pendingBool("renderTrajectory", true),
+                isThemeMode || pendingBool("renderTrajectory", true),
                 wind
                         ? pendingColor("windChargeTrajectoryColor", new Color(255, 255, 255))
                         : pendingColor("trajectoryColor", new Color(255, 128, 0)),
                 pendingFloat("trajectoryWidth", 0.5f),
                 pendingEnum("trajectoryStyle", TrajectoryStyle.SOLID),
                 pendingBool("renderCoreGlow", true),
-                pendingBool("enableRibbonPulse", true));
+                pendingBool("enableRibbonPulse", true),
+                theme,
+                animSpeed);
     }
 
     private void renderShockwave(Painter p, int x, int y, int w, int h) {
         boolean wind = mode == Mode.SHOCKWAVE_WIND;
+        VisualTheme theme = pendingEnum("visualTheme", VisualTheme.DEFAULT);
+        float animSpeed = pendingFloat("themeAnimationSpeed", 1.0f);
+
         ShockwaveRenderer.render(p, x, y, w, h, wind,
                 pendingBool("renderShockwaveDome", true),
                 pendingBool("renderBlockHighlights", true),
                 wind
                         ? pendingColor("windChargeShockwaveColor", new Color(255, 255, 255))
                         : pendingColor("shockwaveColor", new Color(255, 128, 0)),
-                pendingFloat("domeFresnelStrength", 0.3f));
+                pendingFloat("domeFresnelStrength", 0.3f),
+                theme,
+                animSpeed);
     }
 
     private void renderHud(Painter p, int x, int y, int w, int h) {
@@ -298,6 +312,10 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
                 Object value, ConfigField<Object> field, OptionAccess access) {
             return CompletableFuture.completedFuture(ConfigPreviewRenderer.of(mode, access));
         }
+    }
+
+    public static final class VisualThemeFactory extends ModeFactory {
+        public VisualThemeFactory() { super(Mode.THEME); }
     }
 
     public static final class TrajectoryFactory extends ModeFactory {

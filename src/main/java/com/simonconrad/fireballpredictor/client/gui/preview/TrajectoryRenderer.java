@@ -1,6 +1,7 @@
 package com.simonconrad.fireballpredictor.client.gui.preview;
 
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
+import com.simonconrad.fireballpredictor.config.VisualTheme;
 import net.minecraft.util.Mth;
 
 import java.awt.Color;
@@ -29,7 +30,8 @@ final class TrajectoryRenderer {
 
     static void render(Painter p, int x, int y, int w, int h, boolean wind,
                        boolean show, Color color, float widthFactor,
-                       TrajectoryStyle style, boolean coreGlow, boolean pulsing) {
+                       TrajectoryStyle style, boolean coreGlow, boolean pulsing,
+                       VisualTheme theme, float animSpeed) {
 
         // Ground line + a whisper of floor shading beneath it
         int groundY = y + h - Math.max(4, h / 10);
@@ -53,14 +55,14 @@ final class TrajectoryRenderer {
 
         float halfWidth = Mth.clamp(1.1f + widthFactor * 7.0f, 1.1f, 9.0f);
 
+        int fallbackRgb = VisualTheme.packRgb(color.getRed(), color.getGreen(), color.getBlue());
+        VisualTheme activeTheme = theme == null ? VisualTheme.DEFAULT : theme;
+        // DEFAULT must stay pixel-identical to the pre-theme preview renderer.
         int r = color.getRed();
         int g = color.getGreen();
         int b = color.getBlue();
-        int cr = coreOnly ? r : lighten(r, 0.45f);
-        int cg = coreOnly ? g : lighten(g, 0.45f);
-        int cb = coreOnly ? b : lighten(b, 0.45f);
 
-        float time = seconds();
+        float time = seconds() * Math.max(0.0f, animSpeed);
         int dashScroll = (int) (time * 16.0f);
 
         // Column rasterisation: the arc is single-valued in x, so one soft slice per pixel column.
@@ -86,10 +88,29 @@ final class TrajectoryRenderer {
                 float wave = pulsing
                         ? 0.78f + 0.22f * (float) Math.sin(time * 2.6f - t * 7.0f)
                         : 1.0f;
-                float alpha = (1.0f - 0.28f * t) * wave;
+                float themeAlphaMod = activeTheme.getRibbonAlphaModulation(t, time, px);
+                float alpha = (1.0f - 0.28f * t) * wave * themeAlphaMod;
+
+                int sr, sg, sb, cr, cg, cb;
+                if (activeTheme.isCustomTheme()) {
+                    int segShroudRgb = activeTheme.getRibbonColorPacked(t, time, px, false, fallbackRgb);
+                    int segCoreRgb = activeTheme.getRibbonColorPacked(t, time, px, true, fallbackRgb);
+                    sr = VisualTheme.extractR(segShroudRgb);
+                    sg = VisualTheme.extractG(segShroudRgb);
+                    sb = VisualTheme.extractB(segShroudRgb);
+                    cr = coreOnly ? sr : VisualTheme.extractR(segCoreRgb);
+                    cg = coreOnly ? sg : VisualTheme.extractG(segCoreRgb);
+                    cb = coreOnly ? sb : VisualTheme.extractB(segCoreRgb);
+                } else {
+                    // DEFAULT: original formulas (core brightened by 0.45 white mix).
+                    sr = r; sg = g; sb = b;
+                    cr = coreOnly ? r : lighten(r, 0.45f);
+                    cg = coreOnly ? g : lighten(g, 0.45f);
+                    cb = coreOnly ? b : lighten(b, 0.45f);
+                }
 
                 if (drawShroud) {
-                    ribbonColumn(p, px, cy, half, r, g, b, 0.60f * alpha);
+                    ribbonColumn(p, px, cy, half, sr, sg, sb, 0.60f * alpha);
                 }
                 if (drawCore) {
                     float coreHalf = Math.max(0.45f, half * (coreOnly ? 0.50f : 0.30f));
@@ -97,18 +118,35 @@ final class TrajectoryRenderer {
                             (coreOnly ? 0.80f : 0.95f) * alpha);
                 }
             }
+
+            // Theme-specific decorative overlays along the trajectory path
+            if (activeTheme.isCustomTheme()) {
+                PreviewThemeDecorations.renderTrajectoryThemeDecorations(p, arc, activeTheme, time, left, right, groundY, halfWidth, fallbackRgb);
+            }
         }
 
-        float cycle = (time % CYCLE) / CYCLE;
+        float cycle = animSpeed <= 0.0f ? 0.45f : (time % CYCLE) / CYCLE;
         if (cycle < TRAVEL) {
             // Projectile head riding the arc
             float t = cycle / TRAVEL;
             float hx = arc.xAt(t);
             float hy = arc.yAt(t);
             float rad = Math.max(1.8f, halfWidth * 1.05f);
-            softDisc(p, hx, hy, rad * 2.0f, r, g, b, 0.30f);
-            softDisc(p, hx, hy, rad,
-                    lighten(r, 0.25f), lighten(g, 0.25f), lighten(b, 0.25f), 0.90f);
+
+            if (activeTheme.isCustomTheme()) {
+                int headRgb = activeTheme.getRibbonColorPacked(t, time, (int) hx, true, fallbackRgb);
+                int hr = VisualTheme.extractR(headRgb);
+                int hg = VisualTheme.extractG(headRgb);
+                int hb = VisualTheme.extractB(headRgb);
+                softDisc(p, hx, hy, rad * 2.0f, hr, hg, hb, 0.30f);
+                softDisc(p, hx, hy, rad,
+                        lighten(hr, 0.25f), lighten(hg, 0.25f), lighten(hb, 0.25f), 0.90f);
+            } else {
+                // DEFAULT: original head rendering.
+                softDisc(p, hx, hy, rad * 2.0f, r, g, b, 0.30f);
+                softDisc(p, hx, hy, rad,
+                        lighten(r, 0.25f), lighten(g, 0.25f), lighten(b, 0.25f), 0.90f);
+            }
             softDisc(p, hx, hy, Math.max(0.9f, rad * 0.45f), 255, 255, 255, 0.95f);
         } else {
             // Impact flash: expanding ground ring, no static marker left behind
@@ -116,12 +154,18 @@ final class TrajectoryRenderer {
             float fade = (1.0f - f) * (1.0f - f);
             float ix = arc.xAt(1.0f);
             float rx = 1.5f + f * Math.max(7.0f, w * 0.075f);
+
+            int impactRgb = activeTheme.getRibbonColorPacked(1.0f, time, (int) ix, false, fallbackRgb);
+            int ir = VisualTheme.extractR(impactRgb);
+            int ig = VisualTheme.extractG(impactRgb);
+            int ib = VisualTheme.extractB(impactRgb);
+
             softDisc(p, ix, groundY - 1f,
                     Math.max(1.5f, halfWidth * (1.0f - f) * 1.6f),
-                    lighten(r, 0.3f), lighten(g, 0.3f), lighten(b, 0.3f),
+                    lighten(ir, 0.3f), lighten(ig, 0.3f), lighten(ib, 0.3f),
                     0.85f * fade);
             ellipseRing(p, ix, groundY, rx, rx * 0.36f,
-                    pack(r, g, b, Math.round(210 * fade)));
+                    pack(impactRgb, Math.round(210 * fade)));
         }
     }
 

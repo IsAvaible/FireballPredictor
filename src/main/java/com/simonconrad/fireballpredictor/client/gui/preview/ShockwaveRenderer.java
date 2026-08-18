@@ -1,5 +1,6 @@
 package com.simonconrad.fireballpredictor.client.gui.preview;
 
+import com.simonconrad.fireballpredictor.config.VisualTheme;
 import net.minecraft.util.Mth;
 
 import java.awt.Color;
@@ -19,9 +20,10 @@ final class ShockwaveRenderer {
 
     static void render(Painter p, int x, int y, int w, int h, boolean wind,
                        boolean showDome, boolean showBlocks, Color color,
-                       float fresnelStrength) {
+                       float fresnelStrength, VisualTheme theme, float animSpeed) {
 
-        float time = seconds();
+        float time = seconds() * Math.max(0.0f, animSpeed);
+        VisualTheme activeTheme = theme == null ? VisualTheme.DEFAULT : theme;
 
         final int grid = 3;
         int cell = Math.max(6, Math.min(w, h) / (grid + 1));
@@ -60,9 +62,10 @@ final class ShockwaveRenderer {
 
         float cx = gx0 + gridW / 2.0f;
         float cy = gy0 + gridH / 2.0f;
-        float pulse = 0.82f + 0.18f * (float) Math.sin(time * 3.1f);
+        float pulse = animSpeed <= 0.0f ? 1.0f : (0.82f + 0.18f * (float) Math.sin(time * 3.1f));
         float radius = Math.min(gridW, gridH) * 0.58f * pulse;
 
+        int fallbackRgb = VisualTheme.packRgb(color.getRed(), color.getGreen(), color.getBlue());
         int r = color.getRed();
         int g = color.getGreen();
         int b = color.getBlue();
@@ -87,8 +90,11 @@ final class ShockwaveRenderer {
             float flatAlpha = 70.0f;
             float modulatedAlpha = Mth.lerp(fresnel, 20.0f, 135.0f);
             float baseAlpha = Mth.lerp(fresnelWeight, flatAlpha, modulatedAlpha);
-            int a = Mth.clamp((int) (baseAlpha * pulse), 0, 255);
-            bandColors[i] = pack(r, g, b, a);
+            float alphaMod = activeTheme.getDomeAlphaModulation(d, 0.0f, time);
+            int a = Mth.clamp((int) (baseAlpha * pulse * alphaMod), 0, 255);
+
+            int bandRgb = activeTheme.getDomeColorPacked(null, null, d, 0.0f, time, fallbackRgb);
+            bandColors[i] = pack(bandRgb, a);
         }
 
         for (int py = minY; py <= maxY; py++) {
@@ -118,45 +124,24 @@ final class ShockwaveRenderer {
         }
 
         // Rim + inner echo ring
+        int rimRgb = activeTheme.getDomeColorPacked(null, null, 1.0f, 0.0f, time, fallbackRgb);
         ring(p, cx, cy, radius, 1.6f,
-                pack(r, g, b, Mth.clamp((int) (200 * pulse), 0, 255)));
+                pack(rimRgb, Mth.clamp((int) (200 * pulse), 0, 255)));
         ring(p, cx, cy, radius * 0.72f, 1.0f,
-                pack(r, g, b, Mth.clamp((int) (70 * pulse), 0, 120)));
+                pack(rimRgb, Mth.clamp((int) (70 * pulse), 0, 120)));
 
         // Epicentre
+        int epiRgb = activeTheme.getDomeColorPacked(null, null, 0.0f, 0.0f, time, fallbackRgb);
+        int er = VisualTheme.extractR(epiRgb);
+        int eg = VisualTheme.extractG(epiRgb);
+        int eb = VisualTheme.extractB(epiRgb);
+
         softDisc(p, cx, cy, 2.2f,
-                lighten(r, 0.2f), lighten(g, 0.2f), lighten(b, 0.2f), 0.86f);
-    }
+                lighten(er, 0.2f), lighten(eg, 0.2f), lighten(eb, 0.2f), 0.86f);
 
-    // ---- Private helpers ----------------------------------------------------
-
-    /**
-     * Crisp circular ring via horizontal spans (two per scanline).
-     */
-    private static void ring(Painter p, float cx, float cy, float radius,
-                             float thickness, int argb) {
-        if ((argb >>> 24) == 0 || radius <= 0.0f) {
-            return;
-        }
-        float outer = radius + thickness * 0.5f;
-        float inner = Math.max(0.0f, radius - thickness * 0.5f);
-        int y0 = Mth.floor(cy - outer);
-        int y1 = Mth.ceil(cy + outer);
-        for (int py = y0; py <= y1; py++) {
-            float dy = py + 0.5f - cy;
-            float outSq = outer * outer - dy * dy;
-            if (outSq <= 0.0f) {
-                continue;
-            }
-            float dxo = (float) Math.sqrt(outSq);
-            float inSq = inner * inner - dy * dy;
-            if (inSq > 0.0f) {
-                float dxi = (float) Math.sqrt(inSq);
-                p.fillF(cx - dxo, py, cx - dxi, py + 1, argb);
-                p.fillF(cx + dxi, py, cx + dxo, py + 1, argb);
-            } else {
-                p.fillF(cx - dxo, py, cx + dxo, py + 1, argb);
-            }
+        // Theme-specific decorative overlays across the shockwave dome
+        if (activeTheme.isCustomTheme()) {
+            PreviewThemeDecorations.renderDomeThemeDecorations(p, activeTheme, cx, cy, radius, pulse, time, fallbackRgb);
         }
     }
 }
