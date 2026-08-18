@@ -2,10 +2,7 @@
 
 A client-side Fabric mod for Minecraft 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
 
-
-
-
-![Screenshot](docs/assets/Screenshot.png)
+[![Fireball Predictor Video](https://img.youtube.com/vi/_VXAXr188n0/maxresdefault.jpg)](https://www.youtube.com/watch?v=_VXAXr188n0)
 
 
 [![Modrinth Downloads](https://img.shields.io/modrinth/dt/fireball-predictor?logo=modrinth&logoColor=white&label=Modrinth)](https://modrinth.com/mod/fireball-predictor)
