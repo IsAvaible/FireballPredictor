@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "Werfer verfolgen",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Verfolge von Werfern abgefeuerte Projektile.\nStandard: Aktiviert",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Befehle / Nicht zugeordnete verfolgen",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Verfolge Projektile ohne passenden Besitzer in der Nähe (über Befehle beschworen oder nicht zugeordnete Spawns).\nStandard: Aktiviert"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Verfolge Projektile ohne passenden Besitzer in der Nähe (über Befehle beschworen oder nicht zugeordnete Spawns).\nStandard: Aktiviert",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "Klicken, um die Theme-Vorschau-Galerie umzuschalten",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Unbekanntes visuelles Design: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a Aktives visuelles Design auf %s§a gesetzt!",
+ "fireballpredictor.command.preview.confirm": "[Bestätigen]",
+ "fireballpredictor.command.preview.confirm_hover": "Klicken, um das aktive visuelle Design auf %s zu setzen",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f Aktives Design auf %s setzen? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a Theme-Vorschau-Galerie aktiviert! §f(Alle %s visuellen Designs im Kreis). Klicke ein Design an, um es auszuwählen. Führe %s aus, um sie auszuschalten.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 Theme-Vorschau-Galerie entfernt. Führe %s§7 aus, um sie wieder zu aktivieren.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a Führe %s aus oder nutze die Schaltfläche im Einstellungsmenü, um die kreisförmige 3D-Theme-Vorschau-Galerie umzuschalten."
 }

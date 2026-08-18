@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "ڈسپنسرز کو ٹریک کریں",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "ڈسپنسرز کے ذریعے چھوڑے گئے پروجیکٹائلز کو ٹریک کریں۔\nڈیفالٹ: فعال",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "کمانڈز / غیر مماثل ٹریک کریں",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "قریبی مماثل مالک کے بغیر پروجیکٹائلز کو ٹریک کریں (کمانڈز کے ذریعے طلب یا غیر مماثل سپان)۔\nڈیفالٹ: فعال"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "قریبی مماثل مالک کے بغیر پروجیکٹائلز کو ٹریک کریں (کمانڈز کے ذریعے طلب یا غیر مماثل سپان)۔\nڈیفالٹ: فعال",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "تھیم پیش منظر گیلری کو آن/آف کرنے کے لیے کلک کریں",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c نامعلوم بصری تھیم: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a فعال بصری تھیم %s§a پر سیٹ کر دی گئی!",
+ "fireballpredictor.command.preview.confirm": "[تصدیق کریں]",
+ "fireballpredictor.command.preview.confirm_hover": "فعال بصری تھیم کو %s پر سیٹ کرنے کے لیے کلک کریں",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f فعال تھیم کو %s پر سیٹ کریں؟ %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a تھیم پیش منظر گیلری فعال ہو گئی! §f(دائرے میں تمام %s بصری تھیمز)۔ منتخب کرنے کے لیے کسی تھیم پر کلک کریں۔ بند کرنے کے لیے %s چلائیں۔",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 تھیم پیش منظر گیلری ہٹا دی گئی۔ دوبارہ فعال کرنے کے لیے %s§7 چلائیں۔",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a دائروی 3D تھیم پیش منظر گیلری کو آن/آف کرنے کے لیے %s چلائیں یا کنفیگ مینو کا بٹن استعمال کریں۔"
 }

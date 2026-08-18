@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "डिस्पेंसर ट्रैक करें",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "डिस्पेंसर द्वारा छोड़े गए प्रोजेक्टाइल ट्रैक करें।\nडिफ़ॉल्ट: सक्षम",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "कमांड / बेमेल ट्रैक करें",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "आस-पास बिना मेल खाते मालिक के प्रोजेक्टाइल ट्रैक करें (कमांड द्वारा बुलाए गए या बेमेल स्पॉन)।\nडिफ़ॉल्ट: सक्षम"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "आस-पास बिना मेल खाते मालिक के प्रोजेक्टाइल ट्रैक करें (कमांड द्वारा बुलाए गए या बेमेल स्पॉन)।\nडिफ़ॉल्ट: सक्षम",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "थीम पूर्वावलोकन गैलरी चालू/बंद करने के लिए क्लिक करें",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c अज्ञात विज़ुअल थीम: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a सक्रिय विज़ुअल थीम %s§a पर सेट की गई!",
+ "fireballpredictor.command.preview.confirm": "[पुष्टि करें]",
+ "fireballpredictor.command.preview.confirm_hover": "सक्रिय विज़ुअल थीम को %s पर सेट करने के लिए क्लिक करें",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f सक्रिय थीम को %s पर सेट करें? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a थीम पूर्वावलोकन गैलरी चालू हो गई! §f(वृत्त में सभी %s विज़ुअल थीमें)। चुनने के लिए किसी थीम पर क्लिक करें। बंद करने के लिए %s चलाएँ।",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 थीम पूर्वावलोकन गैलरी हटा दी गई। फिर से चालू करने के लिए %s§7 चलाएँ।",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a गोलाकार 3D थीम पूर्वावलोकन गैलरी चालू/बंद करने के लिए %s चलाएँ या कॉन्फ़िग मेनू बटन का उपयोग करें।"
 }

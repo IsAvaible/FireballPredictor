@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "Track Dispensers",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Track projectiles fired by Dispensers.\nDefault: True",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Track Command / Unmatched",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Track projectiles with no matching owner nearby (summoned via commands or unmatched spawns).\nDefault: True"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Track projectiles with no matching owner nearby (summoned via commands or unmatched spawns).\nDefault: True",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "Click to toggle Theme Preview Gallery",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Unknown visual theme: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a Active visual theme set to %s§a!",
+ "fireballpredictor.command.preview.confirm": "[Confirm]",
+ "fireballpredictor.command.preview.confirm_hover": "Click to set active visual theme to %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f Set active theme to %s? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a Theme preview gallery enabled! §f(All %s visual themes in a circle). Click a theme to select it. Run %s to toggle off.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 Theme preview gallery cleared. Run %s§7 to re-enable.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a Run %s or use the config menu button to toggle the 3D circular theme preview gallery."
 }

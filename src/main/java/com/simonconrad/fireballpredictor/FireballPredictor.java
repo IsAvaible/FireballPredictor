@@ -87,11 +87,9 @@ public class FireballPredictor implements ModInitializer {
                                         .withColor(ChatFormatting.YELLOW)
                                         .withUnderlined(true)
                                         .withClickEvent(new ClickEvent.RunCommand("/fppreview"))
-                                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to toggle Theme Preview Gallery"))));
+                                        .withHoverEvent(new HoverEvent.ShowText(Component.translatable("fireballpredictor.command.preview.toggle_hover"))));
 
-                                MutableComponent msg = Component.literal("§6[Fireball Predictor]§a Run ")
-                                        .append(link)
-                                        .append(" or use the config menu button to toggle the 3D circular theme preview gallery.");
+                                MutableComponent msg = Component.translatable("fireballpredictor.command.preview.server_hint", link);
 
                                 context.getSource().sendSuccess(() -> msg, false);
                                 return 1;

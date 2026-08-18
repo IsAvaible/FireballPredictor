@@ -127,5 +127,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "Suivre les distributeurs",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Suivre les projectiles tirés par les distributeurs.\nPar défaut : Activé",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Suivre les commandes / Non correspondants",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Suivre les projectiles sans propriétaire correspondant à proximité (invoqués via des commandes ou des apparitions non correspondantes).\nPar défaut : Activé"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Suivre les projectiles sans propriétaire correspondant à proximité (invoqués via des commandes ou des apparitions non correspondantes).\nPar défaut : Activé",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "Cliquez pour activer/désactiver la galerie d'aperçu des thèmes",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Thème visuel inconnu : %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a Thème visuel actif défini sur %s§a !",
+ "fireballpredictor.command.preview.confirm": "[Confirmer]",
+ "fireballpredictor.command.preview.confirm_hover": "Cliquez pour définir le thème visuel actif sur %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f Définir le thème actif sur %s ? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a Galerie d'aperçu des thèmes activée ! §f(Les %s thèmes visuels en cercle). Cliquez sur un thème pour le sélectionner. Exécutez %s pour la désactiver.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 Galerie d'aperçu des thèmes désactivée. Exécutez %s§7 pour la réactiver.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a Exécutez %s ou utilisez le bouton du menu de configuration pour activer/désactiver la galerie circulaire 3D d'aperçu des thèmes."
 }

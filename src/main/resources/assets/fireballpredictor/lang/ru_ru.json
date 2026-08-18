@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "Отслеживать раздатчики",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Отслеживать снаряды, выпущенные раздатчиками.\nПо умолчанию: Включено",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Отслеживать команды / Нераспознанные",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Отслеживать снаряды без совпадающего владельца поблизости (вызванные командами или нераспознанные).\nПо умолчанию: Включено"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Отслеживать снаряды без совпадающего владельца поблизости (вызванные командами или нераспознанные).\nПо умолчанию: Включено",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "Нажмите, чтобы переключить галерею предпросмотра тем",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Неизвестная визуальная тема: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a Активная визуальная тема установлена: %s§a!",
+ "fireballpredictor.command.preview.confirm": "[Подтвердить]",
+ "fireballpredictor.command.preview.confirm_hover": "Нажмите, чтобы установить активную визуальную тему: %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f Установить активную тему %s? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a Галерея предпросмотра тем включена! §f(Все %s визуальных тем по кругу). Нажмите на тему, чтобы выбрать её. Выполните %s, чтобы выключить.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 Галерея предпросмотра тем отключена. Выполните %s§7, чтобы включить снова.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a Выполните %s или используйте кнопку в меню настроек, чтобы переключить круговую 3D-галерею предпросмотра тем."
 }

@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "تتبع الموزعات",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "تتبع المقذوفات التي تطلقها الموزعات.\nالافتراضي: مفعّل",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "تتبع الأوامر / غير المطابقة",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "تتبع المقذوفات بدون مالك مطابق قريب (مستدعاة عبر الأوامر أو ظهورات غير مطابقة).\nالافتراضي: مفعّل"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "تتبع المقذوفات بدون مالك مطابق قريب (مستدعاة عبر الأوامر أو ظهورات غير مطابقة).\nالافتراضي: مفعّل",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "انقر لتبديل معرض معاينة السمات",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c سمة بصرية غير معروفة: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a تم تعيين السمة البصرية النشطة إلى %s§a!",
+ "fireballpredictor.command.preview.confirm": "[تأكيد]",
+ "fireballpredictor.command.preview.confirm_hover": "انقر لتعيين السمة البصرية النشطة إلى %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f تعيين السمة النشطة إلى %s؟ %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a تم تفعيل معرض معاينة السمات! §f(جميع السمات البصرية البالغ عددها %s في دائرة). انقر على سمة لتحديدها. نفّذ %s لإيقافه.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 تم إيقاف معرض معاينة السمات. نفّذ %s§7 لإعادة تفعيله.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a نفّذ %s أو استخدم زر قائمة الإعدادات لتبديل معرض المعاينة الدائري ثلاثي الأبعاد للسمات."
 }

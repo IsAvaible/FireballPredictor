@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "追踪发射器",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "追踪发射器发射的弹射物。\n默认值：开启",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "追踪命令 / 未匹配的",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "追踪附近没有匹配所有者的弹射物（通过命令召唤或未匹配的生成）。\n默认值：开启"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "追踪附近没有匹配所有者的弹射物（通过命令召唤或未匹配的生成）。\n默认值：开启",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "点击以开关主题预览画廊",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c 未知视觉主题：%s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a 已将活动视觉主题设为 %s§a！",
+ "fireballpredictor.command.preview.confirm": "[确认]",
+ "fireballpredictor.command.preview.confirm_hover": "点击将活动视觉主题设为 %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f 将活动主题设为 %s？%s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a 主题预览画廊已启用！§f（共 %s 个视觉主题环绕展示）。点击主题即可选择。运行 %s 可关闭。",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 主题预览画廊已清除。运行 %s§7 可重新启用。",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a 运行 %s 或使用配置菜单中的按钮来开关环形 3D 主题预览画廊。"
 }

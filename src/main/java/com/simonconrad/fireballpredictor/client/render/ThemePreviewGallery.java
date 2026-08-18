@@ -26,6 +26,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MessageSignature;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -61,12 +62,22 @@ public final class ThemePreviewGallery {
         return active;
     }
 
+    public static final String KEY_TOGGLE_HOVER = "fireballpredictor.command.preview.toggle_hover";
+    public static final String KEY_UNKNOWN_THEME = "fireballpredictor.command.preview.unknown_theme";
+    public static final String KEY_THEME_SET = "fireballpredictor.command.preview.theme_set";
+    public static final String KEY_CONFIRM = "fireballpredictor.command.preview.confirm";
+    public static final String KEY_CONFIRM_HOVER = "fireballpredictor.command.preview.confirm_hover";
+    public static final String KEY_CONFIRM_PROMPT = "fireballpredictor.command.preview.confirm_prompt";
+    public static final String KEY_ENABLED = "fireballpredictor.command.preview.enabled";
+    public static final String KEY_CLEARED = "fireballpredictor.command.preview.cleared";
+    public static final String KEY_SERVER_HINT = "fireballpredictor.command.preview.server_hint";
+
     public static Component previewCommandLink() {
         return Component.literal("/fppreview").withStyle(Style.EMPTY
                 .withColor(ChatFormatting.YELLOW)
                 .withUnderlined(true)
                 .withClickEvent(new ClickEvent.RunCommand("/fppreview"))
-                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to toggle Theme Preview Gallery"))));
+                .withHoverEvent(new HoverEvent.ShowText(Component.translatable(KEY_TOGGLE_HOVER))));
     }
 
     public static void register() {
@@ -136,7 +147,7 @@ public final class ThemePreviewGallery {
             }
         }
         if (player != null) {
-            player.sendSystemMessage(Component.literal("§6[Fireball Predictor]§c Unknown visual theme: " + key));
+            player.sendSystemMessage(Component.translatable(KEY_UNKNOWN_THEME, key));
         }
     }
 
@@ -147,9 +158,8 @@ public final class ThemePreviewGallery {
         config.visualTheme = theme;
         ModConfig.save();
         if (player != null) {
-            player.sendSystemMessage(Component.literal("§6[Fireball Predictor]§a Active visual theme set to ")
-                    .append(theme.getDisplayName().copy().withStyle(ChatFormatting.GOLD))
-                    .append("§a!"));
+            player.sendSystemMessage(Component.translatable(KEY_THEME_SET,
+                    theme.getDisplayName().copy().withStyle(ChatFormatting.GOLD)));
         }
     }
 
@@ -207,20 +217,19 @@ public final class ThemePreviewGallery {
         }
         lastPromptSignature = new MessageSignature(sigBytes);
 
-        Component confirmButton = Component.literal("[Confirm]")
+        Component confirmButton = Component.translatable(KEY_CONFIRM)
                 .withStyle(Style.EMPTY
                         .withColor(ChatFormatting.GREEN)
                         .withBold(true)
                         .withUnderlined(true)
                         .withClickEvent(new ClickEvent.RunCommand("/fppreview set " + targeted.theme().getKey()))
                         .withHoverEvent(new HoverEvent.ShowText(
-                                Component.literal("Click to set active visual theme to ").append(targeted.displayName())
+                                Component.translatable(KEY_CONFIRM_HOVER, targeted.displayName())
                         )));
 
-        MutableComponent msg = Component.literal("§6[Fireball Predictor]§f Set active theme to ")
-                .append(targeted.displayName().copy().withStyle(ChatFormatting.YELLOW))
-                .append("? ")
-                .append(confirmButton);
+        MutableComponent msg = Component.translatable(KEY_CONFIRM_PROMPT,
+                targeted.displayName().copy().withStyle(ChatFormatting.YELLOW),
+                confirmButton);
 
         if (client.gui != null && client.gui.hud != null) {
             client.gui.hud.getChat().addPlayerMessage(msg, lastPromptSignature, null);
@@ -314,11 +323,9 @@ public final class ThemePreviewGallery {
             }
         }
 
-        MutableComponent msg = Component.literal("§6[Fireball Predictor]§a Theme preview gallery enabled! §f(All ")
-                .append(Component.literal(String.valueOf(TRACKS.size())).withStyle(ChatFormatting.GOLD))
-                .append(" visual themes in a circle). Click a theme to select it. Run ")
-                .append(previewCommandLink())
-                .append(" to toggle off.");
+        MutableComponent msg = Component.translatable(KEY_ENABLED,
+                Component.literal(String.valueOf(TRACKS.size())).withStyle(ChatFormatting.GOLD),
+                previewCommandLink());
 
         player.sendSystemMessage(msg);
     }
@@ -341,24 +348,33 @@ public final class ThemePreviewGallery {
         }
 
         if (player != null) {
-            MutableComponent msg = Component.literal("§6[Fireball Predictor]§7 Theme preview gallery cleared. Run ")
-                    .append(previewCommandLink())
-                    .append("§7 to re-enable.");
+            MutableComponent msg = Component.translatable(KEY_CLEARED, previewCommandLink());
 
             player.sendSystemMessage(msg);
         }
     }
 
     private static boolean isEnabledMessage(Component component) {
-        if (component == null) return false;
-        String text = component.getString();
-        return text.contains("[Fireball Predictor]") && text.contains("Theme preview gallery enabled!");
+        return hasTranslationKey(component, KEY_ENABLED);
     }
 
     private static boolean isClearedMessage(Component component) {
-        if (component == null) return false;
-        String text = component.getString();
-        return text.contains("[Fireball Predictor]") && text.contains("Theme preview gallery cleared.");
+        return hasTranslationKey(component, KEY_CLEARED);
+    }
+
+    private static boolean hasTranslationKey(Component component, String key) {
+        if (component == null || key == null) {
+            return false;
+        }
+        if (component.getContents() instanceof TranslatableContents contents && key.equals(contents.getKey())) {
+            return true;
+        }
+        for (Component sibling : component.getSiblings()) {
+            if (hasTranslationKey(sibling, key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void rebuildTracks(Player player) {

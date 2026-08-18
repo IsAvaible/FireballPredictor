@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "Rastrear Ejetores",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Rastrear projéteis disparados por Ejetores.\nPadrão: Ativado",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Rastrear Comandos / Não Correspondidos",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Rastrear projéteis sem dono correspondente por perto (invocados via comandos ou spawns não correspondidos).\nPadrão: Ativado"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Rastrear projéteis sem dono correspondente por perto (invocados via comandos ou spawns não correspondidos).\nPadrão: Ativado",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "Clique para alternar a Galeria de Prévia de Temas",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Tema visual desconhecido: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a Tema visual ativo definido para %s§a!",
+ "fireballpredictor.command.preview.confirm": "[Confirmar]",
+ "fireballpredictor.command.preview.confirm_hover": "Clique para definir o tema visual ativo como %s",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f Definir o tema ativo como %s? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a Galeria de prévia de temas ativada! §f(Todos os %s temas visuais em um círculo). Clique em um tema para selecioná-lo. Execute %s para desativar.",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 Galeria de prévia de temas removida. Execute %s§7 para reativar.",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a Execute %s ou use o botão do menu de configuração para alternar a galeria circular 3D de prévia de temas."
 }

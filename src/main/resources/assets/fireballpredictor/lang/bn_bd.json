@@ -128,5 +128,16 @@
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles": "ডিসপেন্সার ট্র্যাক করুন",
  "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "ডিসপেন্সারদের দ্বারা নিক্ষিপ্ত প্রোজেক্টাইল ট্র্যাক করুন।\nডিফল্ট: চালু",
  "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "কমান্ড / অমিল ট্র্যাক করুন",
- "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "কাছে কোনো মিলতে থাকা মালিক ছাড়া প্রোজেক্টাইল ট্র্যাক করুন (কমান্ডের মাধ্যমে আহ্বান বা অমিল স্পন)।\nডিফল্ট: চালু"
+ "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "কাছে কোনো মিলতে থাকা মালিক ছাড়া প্রোজেক্টাইল ট্র্যাক করুন (কমান্ডের মাধ্যমে আহ্বান বা অমিল স্পন)।\nডিফল্ট: চালু",
+
+
+ "fireballpredictor.command.preview.toggle_hover": "থিম প্রিভিউ গ্যালারি চালু/বন্ধ করতে ক্লিক করুন",
+ "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c অজানা ভিজ্যুয়াল থিম: %s",
+ "fireballpredictor.command.preview.theme_set": "§6[Fireball Predictor]§a সক্রিয় ভিজ্যুয়াল থিম সেট করা হয়েছে %s§a!",
+ "fireballpredictor.command.preview.confirm": "[নিশ্চিত করুন]",
+ "fireballpredictor.command.preview.confirm_hover": "সক্রিয় ভিজ্যুয়াল থিম %s করতে ক্লিক করুন",
+ "fireballpredictor.command.preview.confirm_prompt": "§6[Fireball Predictor]§f সক্রিয় থিম %s করবেন? %s",
+ "fireballpredictor.command.preview.enabled": "§6[Fireball Predictor]§a থিম প্রিভিউ গ্যালারি চালু হয়েছে! §f(বৃত্তাকারে সব %sটি ভিজ্যুয়াল থিম)। নির্বাচন করতে একটি থিমে ক্লিক করুন। বন্ধ করতে %s চালান।",
+ "fireballpredictor.command.preview.cleared": "§6[Fireball Predictor]§7 থিম প্রিভিউ গ্যালারি মুছে ফেলা হয়েছে। আবার চালু করতে %s§7 চালান।",
+ "fireballpredictor.command.preview.server_hint": "§6[Fireball Predictor]§a বৃত্তাকার ৩ডি থিম প্রিভিউ গ্যালারি চালু/বন্ধ করতে %s চালান অথবা কনফিগ মেনু বাটন ব্যবহার করুন।"
 }
