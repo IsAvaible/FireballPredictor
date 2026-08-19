@@ -9,7 +9,7 @@ iris = "1.11.2+26.2-fabric"
 jcpp = "1.4.14"
 glslTransformer = "3.0.0-pre3"
 loom = "1.17-SNAPSHOT"
-mod-publish = "0.8.0"
+mod-publish = "2.2.0"
 complementary-reimagined = "r5.8.1"
 
 [libraries]

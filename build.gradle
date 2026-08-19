@@ -145,12 +145,15 @@ publishMods {
 		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
 		projectId = "LpgQ68pt" // fireball-predictor
 		minecraftVersions.add(project.minecraft_version)
+		environment = CLIENT_ONLY_SERVER_OPTIONAL
 
 		requires {
 			slug = "fabric-api"
+			version = libs.versions.fabric.api.get()
 		}
 		requires {
 			slug = "yacl"
+			version = libs.versions.yacl.get()
 		}
 		optional {
 			slug = "modmenu"
@@ -161,8 +164,9 @@ publishMods {
 		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
 		projectId = "1613094"
 		minecraftVersions.add(project.minecraft_version)
-		clientRequired = true
-		serverRequired = true
+		javaVersions.add(JavaVersion.VERSION_25)
+		client = true
+		server = true
 
 		requires {
 			slug = "fabric-api"
