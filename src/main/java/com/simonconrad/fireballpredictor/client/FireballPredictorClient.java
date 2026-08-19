@@ -271,7 +271,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                                 double py = randomPos.getY() + 1.1;
                                 double pz = randomPos.getZ() + client.level.getRandom().nextDouble();
                                 
-                                net.minecraft.core.particles.ParticleOptions effect = getThematicParticle(ModConfig.instance().visualTheme, client.level.getRandom());
+                                net.minecraft.core.particles.ParticleOptions effect = getThematicParticle(ModConfig.instance().getThemeFor(fireball), client.level.getRandom());
                                 client.level.addParticle(effect, px, py, pz, 0, 0.05, 0);
                             }
                         }
@@ -381,6 +381,10 @@ public class FireballPredictorClient implements ClientModInitializer {
             currentDamageEstimate = estimateFound ? bestEstimate : DamageEstimate.NONE;
             currentDamageEstimateType = estimateFound ? bestEstimateType : WarningProjectileType.FIREBALL;
             damageOverlayActive = estimateFound;
+
+            if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
+                com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.tick(client);
+            }
         });
 
         HudElementRegistry.attachElementBefore(
@@ -657,7 +661,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
     }
 
-    private static net.minecraft.core.particles.ParticleOptions getThematicParticle(
+    public static net.minecraft.core.particles.ParticleOptions getThematicParticle(
             com.simonconrad.fireballpredictor.config.VisualTheme theme,
             net.minecraft.util.RandomSource random
     ) {

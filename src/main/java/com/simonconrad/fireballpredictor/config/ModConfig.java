@@ -16,6 +16,10 @@ import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 
 import java.awt.Color;
 
@@ -168,19 +172,7 @@ public class ModConfig {
     @TickBox
     public boolean trackCommandProjectiles = true;
 
-    // ---- Visuals ------------------------------------------------------------
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "themes")
-    @CustomImage(factory = ConfigPreviewRenderer.VisualThemeFactory.class)
-    @EnumCycler
-    public VisualTheme visualTheme = VisualTheme.DEFAULT;
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "themes")
-    @CustomImage(factory = ConfigPreviewRenderer.VisualThemeFactory.class)
-    @FloatField(min = 0.0f, max = 3.0f)
-    public float themeAnimationSpeed = 1.0f;
+    // ---- Display & Effects --------------------------------------------------
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
@@ -208,18 +200,6 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
-    @ColorField
-    public Color trajectoryColor = new Color(255, 128, 0);
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "trajectory")
-    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryWindFactory.class)
-    @ColorField
-    public Color windChargeTrajectoryColor = new Color(255, 255, 255);
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "trajectory")
-    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @FloatField(min = 0.1f, max = 2.0f)
     public float trajectoryWidth = 0.5f;
 
@@ -240,18 +220,6 @@ public class ModConfig {
     @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     @TickBox
     public boolean enableRibbonPulse = true;
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "shockwave")
-    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
-    @ColorField
-    public Color shockwaveColor = new Color(255, 128, 0);
-
-    @SerialEntry
-    @AutoGen(category = "visuals", group = "shockwave")
-    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveWindFactory.class)
-    @ColorField
-    public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "shockwave")
@@ -305,7 +273,95 @@ public class ModConfig {
     @TickBox
     public boolean showKnockbackEstimator = true;
 
+    // ---- Themes & Colors ----------------------------------------------------
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "global_theme")
+    @CustomImage(factory = ConfigPreviewRenderer.VisualThemeFactory.class)
+    @EnumCycler
+    public VisualTheme visualTheme = VisualTheme.DEFAULT;
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "global_theme")
+    @CustomImage(factory = ConfigPreviewRenderer.VisualThemeFactory.class)
+    @FloatField(min = 0.0f, max = 3.0f)
+    public float themeAnimationSpeed = 1.0f;
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "fireball") @CustomImage(factory = ConfigPreviewRenderer.FireballThemeFactory.class) @EnumCycler
+    public ProjectileVisualTheme fireballVisualTheme = ProjectileVisualTheme.GLOBAL;
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "fireball")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
+    @ColorField
+    public Color trajectoryColor = new Color(255, 128, 0);
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "fireball")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
+    @ColorField
+    public Color shockwaveColor = new Color(255, 128, 0);
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "wind_charge") @CustomImage(factory = ConfigPreviewRenderer.WindThemeFactory.class) @EnumCycler
+    public ProjectileVisualTheme windChargeVisualTheme = ProjectileVisualTheme.GLOBAL;
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "wind_charge")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryWindFactory.class)
+    @ColorField
+    public Color windChargeTrajectoryColor = new Color(255, 255, 255);
+
+    @SerialEntry
+    @AutoGen(category = "projectile_themes", group = "wind_charge")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveWindFactory.class)
+    @ColorField
+    public Color windChargeShockwaveColor = new Color(255, 255, 255);
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "wither_skull") @CustomImage(factory = ConfigPreviewRenderer.WitherThemeFactory.class) @EnumCycler
+    public ProjectileVisualTheme witherSkullVisualTheme = ProjectileVisualTheme.GLOBAL;
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "wither_skull")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryWitherFactory.class) @ColorField
+    public Color witherSkullTrajectoryColor = new Color(255, 128, 0);
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "wither_skull")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveWitherFactory.class) @ColorField
+    public Color witherSkullShockwaveColor = new Color(255, 128, 0);
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "dragon_fireball") @CustomImage(factory = ConfigPreviewRenderer.DragonThemeFactory.class) @EnumCycler
+    public ProjectileVisualTheme dragonFireballVisualTheme = ProjectileVisualTheme.GLOBAL;
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "dragon_fireball")
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryDragonFactory.class) @ColorField
+    public Color dragonFireballTrajectoryColor = new Color(200, 50, 212);
+
+    @SerialEntry @AutoGen(category = "projectile_themes", group = "dragon_fireball")
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveDragonFactory.class) @ColorField
+    public Color dragonFireballShockwaveColor = new Color(200, 50, 212);
+
     // 3. Helper methods to match your existing client initialization calls
+    public VisualTheme getThemeFor(AbstractHurtingProjectile projectile) {
+        ProjectileVisualTheme selection = projectile instanceof AbstractWindCharge ? windChargeVisualTheme
+                : projectile instanceof WitherSkull ? witherSkullVisualTheme
+                : projectile instanceof DragonFireball ? dragonFireballVisualTheme
+                : fireballVisualTheme;
+        return (selection == null ? ProjectileVisualTheme.GLOBAL : selection).resolve(this.visualTheme);
+    }
+
+    public Color getTrajectoryColorFor(AbstractHurtingProjectile projectile) {
+        if (projectile instanceof AbstractWindCharge) return windChargeTrajectoryColor;
+        if (projectile instanceof WitherSkull) return witherSkullTrajectoryColor;
+        if (projectile instanceof DragonFireball) return dragonFireballTrajectoryColor;
+        return trajectoryColor;
+    }
+
+    public Color getShockwaveColorFor(AbstractHurtingProjectile projectile) {
+        if (projectile instanceof AbstractWindCharge) return windChargeShockwaveColor;
+        if (projectile instanceof WitherSkull) return witherSkullShockwaveColor;
+        if (projectile instanceof DragonFireball) return dragonFireballShockwaveColor;
+        return shockwaveColor;
+    }
+
     public static Screen createScreen(Screen parentScreen) {
         return ModConfigGui.createScreen(parentScreen);
     }

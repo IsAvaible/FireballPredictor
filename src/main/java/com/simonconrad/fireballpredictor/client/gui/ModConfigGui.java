@@ -45,17 +45,8 @@ public final class ModConfigGui {
         String otherKey = prefix + "trackOtherOwnerProjectiles";
         String visualThemeKey = prefix + "visualTheme";
 
-        String trajectoryColorKey = prefix + "trajectoryColor";
-        String windTrajectoryColorKey = prefix + "windChargeTrajectoryColor";
-        String shockwaveColorKey = prefix + "shockwaveColor";
-        String windShockwaveColorKey = prefix + "windChargeShockwaveColor";
-
-        java.util.Set<String> themeOverriddenKeys = java.util.Set.of(
-                trajectoryColorKey,
-                windTrajectoryColorKey,
-                shockwaveColorKey,
-                windShockwaveColorKey
-        );
+        java.util.Map<String, java.util.List<Option<?>>> projectileColorOptions = new java.util.HashMap<>();
+        java.util.Map<String, Option<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme>> projectileThemeOptions = new java.util.HashMap<>();
 
         YetAnotherConfigLib baseGui = ModConfig.HANDLER.generateGui();
         Minecraft client = Minecraft.getInstance();
@@ -100,13 +91,23 @@ public final class ModConfigGui {
                         .min(0.0f)
                         .max(100.0f)
                         .formatValue(v -> v <= 0.0f
-                                ? Component.literal("0.00 (Auto / None)")
+                                 ? Component.literal("0.00 (Auto / None)")
                                 : Component.literal(String.format(java.util.Locale.ROOT, "%.2f", v))))
                 .build();
         }
 
-        Option<com.simonconrad.fireballpredictor.config.VisualTheme> themeOption = null;
-        java.util.List<Option<?>> themeOverriddenOptions = new java.util.ArrayList<>();
+        final java.util.concurrent.atomic.AtomicReference<Option<com.simonconrad.fireballpredictor.config.VisualTheme>> themeOption =
+                new java.util.concurrent.atomic.AtomicReference<>();
+
+        java.util.function.Function<String, com.simonconrad.fireballpredictor.config.VisualTheme> resolvePendingTheme = pGroup -> {
+            Option<com.simonconrad.fireballpredictor.config.VisualTheme> configuredThemeOpt = themeOption.get();
+            com.simonconrad.fireballpredictor.config.VisualTheme global =
+                    configuredThemeOpt == null || configuredThemeOpt.pendingValue() == null
+                            ? com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT : configuredThemeOpt.pendingValue();
+            var typeTheme = projectileThemeOptions.get(pGroup);
+            return (typeTheme == null || typeTheme.pendingValue() == null)
+                    ? global : typeTheme.pendingValue().resolve(global);
+        };
 
         YetAnotherConfigLib.Builder builder = YetAnotherConfigLib.createBuilder()
                 .title(baseGui.title())
@@ -151,15 +152,74 @@ public final class ModConfigGui {
                 for (Option<?> opt : group.options()) {
                     if (opt != null && opt.name() != null && opt.name().getContents() instanceof TranslatableContents tc) {
                         String key = tc.getKey();
+                        String field = key.substring(key.lastIndexOf('.') + 1);
+                        String projectileGroup = switch (field) {
+                            case "trajectoryColor", "shockwaveColor", "fireballVisualTheme" -> "fireball";
+                            case "windChargeTrajectoryColor", "windChargeShockwaveColor", "windChargeVisualTheme" -> "wind_charge";
+                            case "witherSkullTrajectoryColor", "witherSkullShockwaveColor", "witherSkullVisualTheme" -> "wither_skull";
+                            case "dragonFireballTrajectoryColor", "dragonFireballShockwaveColor", "dragonFireballVisualTheme" -> "dragon_fireball";
+                            default -> null;
+                        };
+
+                        if (projectileGroup != null && field.endsWith("VisualTheme") && !field.equals("visualTheme")) {
+                            @SuppressWarnings("unchecked")
+                            Option<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme> origThemeOpt =
+                                    (Option<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme>) opt;
+                            Option<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme> dropdownProjThemeOpt = Option.<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme>createBuilder()
+                                    .name(origThemeOpt.name())
+                                    .description(origThemeOpt.description())
+                                    .binding(origThemeOpt.binding())
+                                    .controller(dev.isxander.yacl3.api.controller.EnumDropdownControllerBuilder::create)
+                                    .flags(origThemeOpt.flags())
+                                    .listener((o, val) -> origThemeOpt.requestSet(val))
+                                    .build();
+                            projectileThemeOptions.put(projectileGroup, dropdownProjThemeOpt);
+                            groupBuilder.option(dropdownProjThemeOpt);
+                            continue;
+                        }
+
+                        if (projectileGroup != null && field.endsWith("Color")) {
+                            @SuppressWarnings("unchecked")
+                            Option<java.awt.Color> colorOpt = (Option<java.awt.Color>) opt;
+                            OptionDescription origDesc = colorOpt.description();
+                            final String pGroup = projectileGroup;
+
+                            Option<java.awt.Color> colorOptionWithDynamicDesc = Option.<java.awt.Color>createBuilder()
+                                    .name(colorOpt.name())
+                                    .description(new OptionDescription() {
+                                        @Override
+                                        public Component text() {
+                                            com.simonconrad.fireballpredictor.config.VisualTheme resolved = resolvePendingTheme.apply(pGroup);
+                                            if (resolved != com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT) {
+                                                return Component.translatable(
+                                                        "yacl3.config.fireballpredictor:config.colorOption.lockedByTheme",
+                                                        resolved.getDisplayName()
+                                                ).append("\n\n").append(origDesc.text());
+                                            }
+                                            return origDesc.text();
+                                        }
+
+                                        @Override
+                                        public java.util.concurrent.CompletableFuture<java.util.Optional<dev.isxander.yacl3.gui.image.ImageRenderer>> image() {
+                                            return origDesc.image();
+                                        }
+                                    })
+                                    .binding(colorOpt.binding())
+                                    .controller(dev.isxander.yacl3.api.controller.ColorControllerBuilder::create)
+                                    .flags(colorOpt.flags())
+                                    .listener((o, val) -> colorOpt.requestSet(val))
+                                    .build();
+
+                            projectileColorOptions.computeIfAbsent(projectileGroup, ignored -> new java.util.ArrayList<>()).add(colorOptionWithDynamicDesc);
+                            groupBuilder.option(colorOptionWithDynamicDesc);
+                            continue;
+                        }
+
                         if ((key.equals(playerKey) && !playerAvailable)
                                 || (key.equals(dispenserKey) && !dispenserAvailable)
                                 || (key.equals(commandKey) && !commandAvailable)
                                 || (key.equals(otherKey) && !otherGroupAvailable)) {
                             opt.setAvailable(false);
-                        }
-
-                        if (themeOverriddenKeys.contains(key)) {
-                            themeOverriddenOptions.add(opt);
                         }
 
                         if (key.equals(visualThemeKey)) {
@@ -173,7 +233,7 @@ public final class ModConfigGui {
                                     .flags(themeOpt.flags())
                                     .listener((o, val) -> themeOpt.requestSet(val))
                                     .build();
-                            themeOption = dropdownThemeOpt;
+                            themeOption.set(dropdownThemeOpt);
                             groupBuilder.option(dropdownThemeOpt);
                             groupBuilder.option(galleryButton);
                             continue;
@@ -195,18 +255,21 @@ public final class ModConfigGui {
             builder.category(categoryBuilder.build());
         }
 
-        if (themeOption != null) {
-            boolean isDefaultTheme = (themeOption.pendingValue() == com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT);
-            for (Option<?> opt : themeOverriddenOptions) {
-                opt.setAvailable(isDefaultTheme);
-            }
-
-            themeOption.addEventListener((opt, event) -> {
-                boolean isDefault = (opt.pendingValue() == com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT);
-                for (Option<?> colorOpt : themeOverriddenOptions) {
-                    colorOpt.setAvailable(isDefault);
+        Runnable refreshProjectileColorAvailability = () -> {
+            for (var entry : projectileColorOptions.entrySet()) {
+                boolean useCustomColors = resolvePendingTheme.apply(entry.getKey()) == com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT;
+                for (Option<?> color : entry.getValue()) {
+                    color.setAvailable(useCustomColors);
                 }
-            });
+            }
+        };
+        refreshProjectileColorAvailability.run();
+        Option<com.simonconrad.fireballpredictor.config.VisualTheme> configuredThemeOpt = themeOption.get();
+        if (configuredThemeOpt != null) {
+            configuredThemeOpt.addListener((opt, val) -> refreshProjectileColorAvailability.run());
+        }
+        for (Option<com.simonconrad.fireballpredictor.config.ProjectileVisualTheme> opt : projectileThemeOptions.values()) {
+            opt.addListener((changed, val) -> refreshProjectileColorAvailability.run());
         }
 
         return builder.build();

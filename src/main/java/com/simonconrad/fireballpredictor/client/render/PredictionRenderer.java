@@ -128,12 +128,11 @@ public class PredictionRenderer {
         int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
 
         com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
-        com.simonconrad.fireballpredictor.config.VisualTheme theme = config.visualTheme == null ? com.simonconrad.fireballpredictor.config.VisualTheme.DEFAULT : config.visualTheme;
+        com.simonconrad.fireballpredictor.config.VisualTheme theme = config.getThemeFor(fireball);
         float animSpeed = config.themeAnimationSpeed;
 
-        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
-        java.awt.Color trajectoryColor = isWindCharge ? config.windChargeTrajectoryColor : config.trajectoryColor;
-        java.awt.Color shockwaveColor = isWindCharge ? config.windChargeShockwaveColor : config.shockwaveColor;
+        java.awt.Color trajectoryColor = config.getTrajectoryColorFor(fireball);
+        java.awt.Color shockwaveColor = config.getShockwaveColorFor(fireball);
 
         float fade = 1.0f;
         Matrix4f basePose = matrices.last().pose();

@@ -28,14 +28,23 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
     public enum Mode {
         /** Visual Theme preview (renders thematic trajectory arc and impact shockwave). */
         THEME,
-        /** Fireball / wither ribbon schematic. */
+        THEME_FIREBALL, THEME_WITHER, THEME_WIND, THEME_DRAGON,
+        /** Fireball trajectory schematic. */
         TRAJECTORY,
-        /** Wind-charge ribbon schematic (uses wind-charge color options). */
+        /** Wither skull trajectory schematic. */
+        TRAJECTORY_WITHER,
+        /** Wind-charge trajectory schematic. */
         TRAJECTORY_WIND,
+        /** Dragon fireball trajectory schematic. */
+        TRAJECTORY_DRAGON,
         /** Shockwave dome + optional block-highlight grid. */
         SHOCKWAVE,
+        /** Wither skull shockwave schematic. */
+        SHOCKWAVE_WITHER,
         /** Wind-charge shockwave schematic. */
         SHOCKWAVE_WIND,
+        /** Dragon fireball shockwave schematic. */
+        SHOCKWAVE_DRAGON,
         /** Miniature HUD frame with impact-warning badge placement. */
         HUD,
         /** Global tracking master overview. */
@@ -136,8 +145,11 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         Painter p = new Painter(graphics, innerX, innerY, innerX + innerW, innerY + innerH);
 
         switch (mode) {
-            case THEME, TRAJECTORY, TRAJECTORY_WIND -> renderTrajectory(p, innerX, innerY, innerW, innerH);
-            case SHOCKWAVE, SHOCKWAVE_WIND -> renderShockwave(p, innerX, innerY, innerW, innerH);
+            case THEME, THEME_FIREBALL, THEME_WITHER, THEME_WIND, THEME_DRAGON,
+                 TRAJECTORY, TRAJECTORY_WITHER, TRAJECTORY_WIND, TRAJECTORY_DRAGON
+                    -> renderTrajectory(p, innerX, innerY, innerW, innerH);
+            case SHOCKWAVE, SHOCKWAVE_WITHER, SHOCKWAVE_WIND, SHOCKWAVE_DRAGON
+                    -> renderShockwave(p, innerX, innerY, innerW, innerH);
             case HUD -> renderHud(p, innerX, innerY, innerW, innerH);
             case TRACK_MASTER -> renderTrackMaster(p, innerX, innerY, innerW, innerH);
             case TRACK_MOB_MASTER -> renderTrackMobMaster(p, innerX, innerY, innerW, innerH);
@@ -160,16 +172,22 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
     // ---- Mode dispatchers ---------------------------------------------------
 
     private void renderTrajectory(Painter p, int x, int y, int w, int h) {
-        boolean wind = mode == Mode.TRAJECTORY_WIND;
-        boolean isThemeMode = mode == Mode.THEME;
-        VisualTheme theme = pendingEnum("visualTheme", VisualTheme.DEFAULT);
+        boolean wind = mode == Mode.TRAJECTORY_WIND || mode == Mode.THEME_WIND;
+        boolean isThemeMode = mode == Mode.THEME || mode == Mode.THEME_FIREBALL || mode == Mode.THEME_WITHER
+                || mode == Mode.THEME_WIND || mode == Mode.THEME_DRAGON;
+        VisualTheme theme = themeForPreview();
         float animSpeed = pendingFloat("themeAnimationSpeed", 1.0f);
+
+        Color trajColor = switch (mode) {
+            case TRAJECTORY_WIND, THEME_WIND -> pendingColor("windChargeTrajectoryColor", new Color(255, 255, 255));
+            case TRAJECTORY_WITHER, THEME_WITHER -> pendingColor("witherSkullTrajectoryColor", new Color(255, 128, 0));
+            case TRAJECTORY_DRAGON, THEME_DRAGON -> pendingColor("dragonFireballTrajectoryColor", new Color(200, 50, 212));
+            default -> pendingColor("trajectoryColor", new Color(255, 128, 0));
+        };
 
         TrajectoryRenderer.render(p, x, y, w, h, wind,
                 isThemeMode || pendingBool("renderTrajectory", true),
-                wind
-                        ? pendingColor("windChargeTrajectoryColor", new Color(255, 255, 255))
-                        : pendingColor("trajectoryColor", new Color(255, 128, 0)),
+                trajColor,
                 pendingFloat("trajectoryWidth", 0.5f),
                 pendingEnum("trajectoryStyle", TrajectoryStyle.SOLID),
                 pendingBool("renderCoreGlow", true),
@@ -180,18 +198,39 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
 
     private void renderShockwave(Painter p, int x, int y, int w, int h) {
         boolean wind = mode == Mode.SHOCKWAVE_WIND;
-        VisualTheme theme = pendingEnum("visualTheme", VisualTheme.DEFAULT);
+        VisualTheme theme = themeForPreview();
         float animSpeed = pendingFloat("themeAnimationSpeed", 1.0f);
+
+        Color shockColor = switch (mode) {
+            case SHOCKWAVE_WIND -> pendingColor("windChargeShockwaveColor", new Color(255, 255, 255));
+            case SHOCKWAVE_WITHER -> pendingColor("witherSkullShockwaveColor", new Color(255, 128, 0));
+            case SHOCKWAVE_DRAGON -> pendingColor("dragonFireballShockwaveColor", new Color(200, 50, 212));
+            default -> pendingColor("shockwaveColor", new Color(255, 128, 0));
+        };
 
         ShockwaveRenderer.render(p, x, y, w, h, wind,
                 pendingBool("renderShockwaveDome", true),
                 pendingBool("renderBlockHighlights", true),
-                wind
-                        ? pendingColor("windChargeShockwaveColor", new Color(255, 255, 255))
-                        : pendingColor("shockwaveColor", new Color(255, 128, 0)),
+                shockColor,
                 pendingFloat("domeFresnelStrength", 0.3f),
                 theme,
                 animSpeed);
+    }
+
+    /** Keeps projectile colour previews honest when they have their own theme. */
+    private VisualTheme themeForPreview() {
+        VisualTheme global = pendingEnum("visualTheme", VisualTheme.DEFAULT);
+        String field = switch (mode) {
+            case THEME_FIREBALL -> "fireballVisualTheme";
+            case THEME_WITHER, TRAJECTORY_WITHER, SHOCKWAVE_WITHER -> "witherSkullVisualTheme";
+            case THEME_WIND, TRAJECTORY_WIND, SHOCKWAVE_WIND -> "windChargeVisualTheme";
+            case THEME_DRAGON, TRAJECTORY_DRAGON, SHOCKWAVE_DRAGON -> "dragonFireballVisualTheme";
+            default -> null;
+        };
+        if (field == null) return global;
+        com.simonconrad.fireballpredictor.config.ProjectileVisualTheme selected =
+                pendingEnum(field, com.simonconrad.fireballpredictor.config.ProjectileVisualTheme.GLOBAL);
+        return selected.resolve(global);
     }
 
     private void renderHud(Painter p, int x, int y, int w, int h) {
@@ -318,20 +357,41 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         public VisualThemeFactory() { super(Mode.THEME); }
     }
 
+    public static final class FireballThemeFactory extends ModeFactory { public FireballThemeFactory() { super(Mode.THEME_FIREBALL); } }
+    public static final class WitherThemeFactory extends ModeFactory { public WitherThemeFactory() { super(Mode.THEME_WITHER); } }
+    public static final class WindThemeFactory extends ModeFactory { public WindThemeFactory() { super(Mode.THEME_WIND); } }
+    public static final class DragonThemeFactory extends ModeFactory { public DragonThemeFactory() { super(Mode.THEME_DRAGON); } }
+
     public static final class TrajectoryFactory extends ModeFactory {
         public TrajectoryFactory() { super(Mode.TRAJECTORY); }
+    }
+
+    public static final class TrajectoryWitherFactory extends ModeFactory {
+        public TrajectoryWitherFactory() { super(Mode.TRAJECTORY_WITHER); }
     }
 
     public static final class TrajectoryWindFactory extends ModeFactory {
         public TrajectoryWindFactory() { super(Mode.TRAJECTORY_WIND); }
     }
 
+    public static final class TrajectoryDragonFactory extends ModeFactory {
+        public TrajectoryDragonFactory() { super(Mode.TRAJECTORY_DRAGON); }
+    }
+
     public static final class ShockwaveFactory extends ModeFactory {
         public ShockwaveFactory() { super(Mode.SHOCKWAVE); }
     }
 
+    public static final class ShockwaveWitherFactory extends ModeFactory {
+        public ShockwaveWitherFactory() { super(Mode.SHOCKWAVE_WITHER); }
+    }
+
     public static final class ShockwaveWindFactory extends ModeFactory {
         public ShockwaveWindFactory() { super(Mode.SHOCKWAVE_WIND); }
+    }
+
+    public static final class ShockwaveDragonFactory extends ModeFactory {
+        public ShockwaveDragonFactory() { super(Mode.SHOCKWAVE_DRAGON); }
     }
 
     public static final class HudFactory extends ModeFactory {

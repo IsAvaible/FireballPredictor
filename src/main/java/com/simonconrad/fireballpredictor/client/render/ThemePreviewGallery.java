@@ -2,9 +2,12 @@ package com.simonconrad.fireballpredictor.client.render;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.simonconrad.fireballpredictor.client.FireballPredictorClient;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.config.ProjectileVisualTheme;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.config.VisualTheme;
+import com.simonconrad.fireballpredictor.math.ImpactPredictor;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.mixin.ChatComponentAccessor;
@@ -20,6 +23,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -28,6 +33,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -55,8 +61,80 @@ public final class ThemePreviewGallery {
         Vec3 startPos,
         Vec3 hitPos,
         List<Vec3> path,
-        PredictionRenderData renderData
+        PredictionRenderData renderData,
+        List<BlockPos> brokenBlocks
     ) {}
+
+    public enum ThemeTarget {
+        GLOBAL("global", "fireballpredictor.command.preview.target.global", "fireballpredictor.command.preview.target.global_hover", "fireballpredictor.command.preview.target_name.global", ChatFormatting.GREEN),
+        FIREBALL("fireball", "fireballpredictor.command.preview.target.fireball", "fireballpredictor.command.preview.target.fireball_hover", "fireballpredictor.command.preview.target_name.fireball", ChatFormatting.GOLD),
+        WIND_CHARGE("wind_charge", "fireballpredictor.command.preview.target.wind_charge", "fireballpredictor.command.preview.target.wind_charge_hover", "fireballpredictor.command.preview.target_name.wind_charge", ChatFormatting.AQUA),
+        WITHER_SKULL("wither_skull", "fireballpredictor.command.preview.target.wither_skull", "fireballpredictor.command.preview.target.wither_skull_hover", "fireballpredictor.command.preview.target_name.wither_skull", ChatFormatting.GRAY),
+        DRAGON_FIREBALL("dragon_fireball", "fireballpredictor.command.preview.target.dragon_fireball", "fireballpredictor.command.preview.target.dragon_fireball_hover", "fireballpredictor.command.preview.target_name.dragon_fireball", ChatFormatting.LIGHT_PURPLE);
+
+        private final String key;
+        private final String buttonKey;
+        private final String hoverKey;
+        private final String nameKey;
+        private final ChatFormatting color;
+
+        ThemeTarget(String key, String buttonKey, String hoverKey, String nameKey, ChatFormatting color) {
+            this.key = key;
+            this.buttonKey = buttonKey;
+            this.hoverKey = hoverKey;
+            this.nameKey = nameKey;
+            this.color = color;
+        }
+
+        public String getKey() { return key; }
+        public String getButtonKey() { return buttonKey; }
+        public String getHoverKey() { return hoverKey; }
+        public String getNameKey() { return nameKey; }
+        public ChatFormatting getColor() { return color; }
+
+        public static ThemeTarget fromKey(String key) {
+            if (key == null || key.isEmpty()) return null;
+            for (ThemeTarget target : values()) {
+                if (target.key.equalsIgnoreCase(key) || target.name().equalsIgnoreCase(key)) {
+                    return target;
+                }
+            }
+            return null;
+        }
+
+        public void apply(VisualTheme theme, Player player) {
+            if (theme == null) return;
+            deleteLastPromptMessage();
+            ModConfig config = ModConfig.instance();
+            ProjectileVisualTheme pTheme = ProjectileVisualTheme.fromVisualTheme(theme);
+
+            switch (this) {
+                case GLOBAL -> config.visualTheme = theme;
+                case FIREBALL -> config.fireballVisualTheme = pTheme;
+                case WIND_CHARGE -> config.windChargeVisualTheme = pTheme;
+                case WITHER_SKULL -> config.witherSkullVisualTheme = pTheme;
+                case DRAGON_FIREBALL -> config.dragonFireballVisualTheme = pTheme;
+            }
+            ModConfig.save();
+
+            if (player != null) {
+                Component targetName = Component.translatable(nameKey).withStyle(color);
+                Component themeName = theme.getDisplayName().copy().withStyle(ChatFormatting.GOLD);
+                player.sendSystemMessage(Component.translatable(KEY_THEME_SET_TARGET, targetName, themeName));
+            }
+        }
+
+        public Component buildButton(VisualTheme theme, Component themeDisplayName) {
+            return Component.translatable(buttonKey)
+                    .withStyle(Style.EMPTY
+                            .withColor(color)
+                            .withUnderlined(true)
+                            .withClickEvent(new ClickEvent.RunCommand("/fppreview set " + theme.getKey() + " " + key))
+                            .withHoverEvent(new HoverEvent.ShowText(
+                                    Component.translatable(hoverKey, themeDisplayName)
+                            )));
+        }
+    }
 
     public static boolean isActive() {
         return active;
@@ -64,10 +142,13 @@ public final class ThemePreviewGallery {
 
     public static final String KEY_TOGGLE_HOVER = "fireballpredictor.command.preview.toggle_hover";
     public static final String KEY_UNKNOWN_THEME = "fireballpredictor.command.preview.unknown_theme";
+    public static final String KEY_UNKNOWN_TARGET = "fireballpredictor.command.preview.unknown_target";
     public static final String KEY_THEME_SET = "fireballpredictor.command.preview.theme_set";
+    public static final String KEY_THEME_SET_TARGET = "fireballpredictor.command.preview.theme_set_target";
     public static final String KEY_CONFIRM = "fireballpredictor.command.preview.confirm";
     public static final String KEY_CONFIRM_HOVER = "fireballpredictor.command.preview.confirm_hover";
     public static final String KEY_CONFIRM_PROMPT = "fireballpredictor.command.preview.confirm_prompt";
+    public static final String KEY_PROMPT_HEADER = "fireballpredictor.command.preview.prompt_header";
     public static final String KEY_ENABLED = "fireballpredictor.command.preview.enabled";
     public static final String KEY_CLEARED = "fireballpredictor.command.preview.cleared";
     public static final String KEY_SERVER_HINT = "fireballpredictor.command.preview.server_hint";
@@ -82,7 +163,7 @@ public final class ThemePreviewGallery {
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            var themeArg = ClientCommands.argument("theme", StringArgumentType.word())
+            var themeArg = ClientCommands.argument("theme", StringArgumentType.greedyString())
                 .suggests((context, builder) -> {
                     for (VisualTheme theme : VisualTheme.values()) {
                         builder.suggest(theme.getKey());
@@ -90,8 +171,8 @@ public final class ThemePreviewGallery {
                     return builder.buildFuture();
                 })
                 .executes(context -> {
-                    String themeKey = StringArgumentType.getString(context, "theme");
-                    applyThemeByKey(themeKey, context.getSource().getClient().player);
+                    String input = StringArgumentType.getString(context, "theme");
+                    applyThemeByCommandInput(input, context.getSource().getClient().player);
                     return 1;
                 });
 
@@ -138,29 +219,48 @@ public final class ThemePreviewGallery {
      */
     private static int promptSerial = 0;
 
+    public static void applyThemeByCommandInput(String input, Player player) {
+        if (input == null || input.trim().isEmpty()) return;
+        String[] parts = input.trim().split("\\s+");
+        String themeKey = parts[0];
+        String targetKey = parts.length > 1 ? parts[1] : "global";
+        applyThemeByKeyAndTarget(themeKey, targetKey, player);
+    }
+
     public static void applyThemeByKey(String key, Player player) {
-        if (key == null || key.isEmpty()) return;
+        applyThemeByKeyAndTarget(key, "global", player);
+    }
+
+    public static void applyThemeByKeyAndTarget(String themeKey, String targetKey, Player player) {
+        if (themeKey == null || themeKey.isEmpty()) return;
+        VisualTheme selectedTheme = null;
         for (VisualTheme theme : VisualTheme.values()) {
-            if (theme.getKey().equalsIgnoreCase(key) || theme.name().equalsIgnoreCase(key)) {
-                setTheme(theme, player);
-                return;
+            if (theme.getKey().equalsIgnoreCase(themeKey) || theme.name().equalsIgnoreCase(themeKey)) {
+                selectedTheme = theme;
+                break;
             }
         }
-        if (player != null) {
-            player.sendSystemMessage(Component.translatable(KEY_UNKNOWN_THEME, key));
+        if (selectedTheme == null) {
+            if (player != null) {
+                player.sendSystemMessage(Component.translatable(KEY_UNKNOWN_THEME, themeKey));
+            }
+            return;
         }
+
+        ThemeTarget target = ThemeTarget.fromKey(targetKey);
+        if (target == null) {
+            if (player != null) {
+                player.sendSystemMessage(Component.translatable(KEY_UNKNOWN_TARGET, targetKey));
+            }
+            return;
+        }
+
+        target.apply(selectedTheme, player);
     }
 
     public static void setTheme(VisualTheme theme, Player player) {
         if (theme == null) return;
-        deleteLastPromptMessage();
-        ModConfig config = ModConfig.instance();
-        config.visualTheme = theme;
-        ModConfig.save();
-        if (player != null) {
-            player.sendSystemMessage(Component.translatable(KEY_THEME_SET,
-                    theme.getDisplayName().copy().withStyle(ChatFormatting.GOLD)));
-        }
+        ThemeTarget.GLOBAL.apply(theme, player);
     }
 
     public static void deleteLastPromptMessage() {
@@ -183,10 +283,10 @@ public final class ThemePreviewGallery {
 
     /**
      * Intercepts player left-click interactions when the preview gallery is active.
-     * If the player is looking at a theme's dome, trajectory, or nameplate, sends a confirmation
-     * chat message with a clickable [Confirm] link to set that theme.
+     * If the player is looking at a theme's dome, trajectory, or nameplate, sends a multi-target
+     * prompt message with clickable buttons to set that theme globally or for a specific projectile.
      *
-     * @return true if a theme was targeted and confirmation prompt was sent
+     * @return true if a theme was targeted and prompt was sent
      */
     public static boolean handleLeftClick() {
         if (!isActive() || TRACKS.isEmpty()) {
@@ -217,19 +317,12 @@ public final class ThemePreviewGallery {
         }
         lastPromptSignature = new MessageSignature(sigBytes);
 
-        Component confirmButton = Component.translatable(KEY_CONFIRM)
-                .withStyle(Style.EMPTY
-                        .withColor(ChatFormatting.GREEN)
-                        .withBold(true)
-                        .withUnderlined(true)
-                        .withClickEvent(new ClickEvent.RunCommand("/fppreview set " + targeted.theme().getKey()))
-                        .withHoverEvent(new HoverEvent.ShowText(
-                                Component.translatable(KEY_CONFIRM_HOVER, targeted.displayName())
-                        )));
+        MutableComponent msg = Component.translatable(KEY_PROMPT_HEADER,
+                targeted.displayName().copy().withStyle(ChatFormatting.YELLOW));
 
-        MutableComponent msg = Component.translatable(KEY_CONFIRM_PROMPT,
-                targeted.displayName().copy().withStyle(ChatFormatting.YELLOW),
-                confirmButton);
+        for (ThemeTarget target : ThemeTarget.values()) {
+            msg.append(" ").append(target.buildButton(targeted.theme(), targeted.displayName()));
+        }
 
         if (client.gui != null && client.gui.hud != null) {
             client.gui.hud.getChat().addPlayerMessage(msg, lastPromptSignature, null);
@@ -422,7 +515,57 @@ public final class ThemePreviewGallery {
                 path.add(new Vec3(px, py, pz));
             }
 
-            TRACKS.add(new Track(theme, theme.getDisplayName(), startPos, hitPos, path, domeMesh));
+            List<BlockPos> brokenBlocks = null;
+            if (player.level() != null) {
+                brokenBlocks = ImpactPredictor.predictBrokenBlocks(1.3f, false, false, hitPos, player.level());
+            }
+
+            TRACKS.add(new Track(theme, theme.getDisplayName(), startPos, hitPos, path, domeMesh, brokenBlocks));
+        }
+    }
+
+    public static void tick(Minecraft client) {
+        if (!isActive() || TRACKS.isEmpty() || client == null || client.level == null || client.isPaused()) {
+            return;
+        }
+
+        if (!ModConfig.instance().renderParticleAccents) {
+            return;
+        }
+
+        RandomSource random = client.level.getRandom();
+        ClientLevel level = client.level;
+
+        for (Track track : TRACKS) {
+            if (random.nextInt(3) == 0) {
+                spawnBottomParticle(level, track, random);
+            }
+        }
+    }
+
+    private static void spawnBottomParticle(ClientLevel level, Track track, RandomSource random) {
+        List<BlockPos> brokenBlocks = track.brokenBlocks();
+        boolean spawnedOnBlock = false;
+        if (brokenBlocks != null && !brokenBlocks.isEmpty()) {
+            BlockPos randomPos = brokenBlocks.get(random.nextInt(brokenBlocks.size()));
+            if (!level.getBlockState(randomPos).isAir()) {
+                double px = randomPos.getX() + random.nextDouble();
+                double py = randomPos.getY() + 1.1;
+                double pz = randomPos.getZ() + random.nextDouble();
+                ParticleOptions effect = FireballPredictorClient.getThematicParticle(track.theme(), random);
+                level.addParticle(effect, px, py, pz, 0, 0.05, 0);
+                spawnedOnBlock = true;
+            }
+        }
+
+        if (!spawnedOnBlock) {
+            double r = Math.sqrt(random.nextDouble()) * 2.6;
+            double theta = random.nextDouble() * 2 * Math.PI;
+            double px = track.hitPos().x + r * Math.cos(theta);
+            double py = track.hitPos().y + 0.05;
+            double pz = track.hitPos().z + r * Math.sin(theta);
+            ParticleOptions effect = FireballPredictorClient.getThematicParticle(track.theme(), random);
+            level.addParticle(effect, px, py, pz, 0, 0.05, 0);
         }
     }
 
