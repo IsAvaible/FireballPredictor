@@ -101,7 +101,8 @@ processResources {
 		expand "version": project.version
 	}
 
-	exclude "**/icon-512px.png"
+	exclude "**/icon-256px.png"
+	exclude "**/icon.pxo"
 }
 
 tasks.withType(JavaCompile).configureEach {

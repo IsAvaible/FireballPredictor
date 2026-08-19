@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.1
+- **Update Icon**: The icon was replaced with a new hand drawn pixel art. This also reduces the jar size.
+
 ## 1.8.0
 
 ### Visual Render Themes
