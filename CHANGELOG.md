@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.0
+
+### Per-Projectile Themes & Colors
+- **Individual Themes & Colors:** Assign distinct visual themes or custom RGB trajectory and shockwave colors independently to Fireballs, Wind Charges, Wither Skulls, and Dragon Fireballs.
+- **Themed Impact Particles:** Ground accent particles now adapt to each projectile's active visual theme.
+
+### Theme Preview Gallery & UI
+- **Multi-Target Selection:** Click any theme in `/fppreview` to apply it globally or to a specific projectile type via interactive chat buttons.
+- **Config Menu Polish:** Reorganized "Themes & Colors" settings with dropdown selectors, smart option locking, and live per-projectile schematic previews.
+
 ## 1.8.1
 - **Update Icon**: The icon was replaced with a new hand drawn pixel art. This also reduces the jar size.
 
