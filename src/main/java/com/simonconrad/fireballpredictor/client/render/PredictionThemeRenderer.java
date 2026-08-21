@@ -408,6 +408,13 @@ public final class PredictionThemeRenderer {
             int arcAlpha = Mth.clamp((int) (maxAlpha * 1.35f), 0, maxAlpha);
             float arcWidth = domeRadius * 0.035f;
 
+            Vec3 interceptDir = safeNormalize(state.trajectoryIntercept(), UP);
+            Vec3 interceptRef = Math.abs(interceptDir.y) > 0.99 ? FORWARD : UP;
+            Vec3 interceptRight = safeNormalize(interceptRef.cross(interceptDir), RIGHT);
+            Vec3 interceptUp = safeNormalize(interceptDir.cross(interceptRight), UP);
+
+            float shellRadius = domeRadius * 1.015f;
+
             for (int a = 0; a < numLightningArcs; a++) {
                 int arcSeed = (a * 31 + timeStep * 17) % 7;
                 if (arcSeed > 3) continue;
@@ -415,7 +422,9 @@ public final class PredictionThemeRenderer {
                 float baseAzimuth = (float) ((a * 2.0 * Math.PI / numLightningArcs) + ((arcSeed * 13) % 100) / 100.0f * 0.5f);
 
                 int segments = 4;
-                float prevX = 0.0f, prevY = domeRadius * 1.015f, prevZ = 0.0f;
+                float prevX = (float) (interceptDir.x * shellRadius);
+                float prevY = (float) Math.max(0.0, interceptDir.y * shellRadius);
+                float prevZ = (float) (interceptDir.z * shellRadius);
 
                 for (int s = 1; s <= segments; s++) {
                     float sFrac = (float) s / segments;
@@ -428,10 +437,18 @@ public final class PredictionThemeRenderer {
                     float curTheta = Mth.clamp(theta + thJitter, 0.02f * (float) Math.PI, 0.48f * (float) Math.PI);
                     float curAz = baseAzimuth + azJitter;
 
-                    float rDist = domeRadius * 1.015f * (float) Math.sin(curTheta);
-                    float curX = (float) (Math.cos(curAz) * rDist);
-                    float curY = domeRadius * 1.015f * (float) Math.cos(curTheta);
-                    float curZ = (float) (Math.sin(curAz) * rDist);
+                    float cosTheta = (float) Math.cos(curTheta);
+                    float sinTheta = (float) Math.sin(curTheta);
+                    float cosAz = (float) Math.cos(curAz);
+                    float sinAz = (float) Math.sin(curAz);
+
+                    double dirX = interceptDir.x * cosTheta + (interceptRight.x * cosAz + interceptUp.x * sinAz) * sinTheta;
+                    double dirY = interceptDir.y * cosTheta + (interceptRight.y * cosAz + interceptUp.y * sinAz) * sinTheta;
+                    double dirZ = interceptDir.z * cosTheta + (interceptRight.z * cosAz + interceptUp.z * sinAz) * sinTheta;
+
+                    float curX = (float) (dirX * shellRadius);
+                    float curY = (float) Math.max(0.0, dirY * shellRadius);
+                    float curZ = (float) (dirZ * shellRadius);
 
                     double dx = curX - prevX, dy = curY - prevY, dz = curZ - prevZ;
                     double lenSq = dx * dx + dy * dy + dz * dz;

@@ -637,6 +637,9 @@ public final class ThemePreviewGallery {
                 (float) (hitPos.z - cameraPos.z)
             );
 
+            float domeRadius = (float) track.renderData().domeQuads().get(0).p1().length();
+            Vec3 trajectoryIntercept = TrajectoryPredictor.computeTrajectoryDomeIntercept(track.path(), hitPos, domeRadius);
+
             DomeRenderState domeState = new DomeRenderState(
                 hitPos,
                 track.renderData().domeQuads(),
@@ -647,7 +650,8 @@ public final class ThemePreviewGallery {
                 cameraPos,
                 fresnel,
                 track.theme(),
-                animTime
+                animTime,
+                trajectoryIntercept
             );
 
             float distSq = (float) cameraPos.distanceToSqr(hitPos);

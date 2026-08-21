@@ -434,5 +434,6 @@ record DomeRenderState(
     Vec3 cameraPos,
     float fresnelStrength,
     VisualTheme theme,
-    double animTime
+    double animTime,
+    Vec3 trajectoryIntercept
 ) {}

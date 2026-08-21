@@ -1761,4 +1761,64 @@ public class FireballPredictorGameTest {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testComputeTrajectoryDomeIntercept_Geometry(GameTestHelper context) {
+        resetGlobalState();
+
+        Vec3 hitPos = new Vec3(10.0, 5.0, 10.0);
+        float radius = 2.6f;
+
+        // 1. Vertical incoming path
+        List<Vec3> verticalPath = List.of(
+                new Vec3(10.0, 15.0, 10.0),
+                new Vec3(10.0, 10.0, 10.0),
+                new Vec3(10.0, 5.0, 10.0)
+        );
+        Vec3 vIntercept = TrajectoryPredictor.computeTrajectoryDomeIntercept(verticalPath, hitPos, radius);
+        if (Math.abs(vIntercept.x) > 1e-4 || Math.abs(vIntercept.y - 1.0) > 1e-4 || Math.abs(vIntercept.z) > 1e-4) {
+            throw fail("Expected vertical intercept (0, 1, 0), got: " + vIntercept);
+        }
+
+        // 2. Horizontal incoming path from negative X
+        List<Vec3> horizPath = List.of(
+                new Vec3(0.0, 5.0, 10.0),
+                new Vec3(5.0, 5.0, 10.0),
+                new Vec3(10.0, 5.0, 10.0)
+        );
+        Vec3 hIntercept = TrajectoryPredictor.computeTrajectoryDomeIntercept(horizPath, hitPos, radius);
+        if (Math.abs(hIntercept.x - (-1.0)) > 1e-4 || Math.abs(hIntercept.y) > 1e-4 || Math.abs(hIntercept.z) > 1e-4) {
+            throw fail("Expected horizontal intercept (-1, 0, 0), got: " + hIntercept);
+        }
+
+        // 3. Diagonal multi-segment path
+        List<Vec3> diagPath = List.of(
+                new Vec3(10.0 + 10.0, 5.0 + 10.0, 10.0 + 10.0),
+                new Vec3(10.0 + 5.0, 5.0 + 5.0, 10.0 + 5.0),
+                new Vec3(10.0 + 1.0, 5.0 + 1.0, 10.0 + 1.0),
+                hitPos
+        );
+        Vec3 dIntercept = TrajectoryPredictor.computeTrajectoryDomeIntercept(diagPath, hitPos, radius);
+        double len = dIntercept.length();
+        if (Math.abs(len - 1.0) > 1e-4) {
+            throw fail("Expected normalized intercept vector of length 1.0, got length " + len);
+        }
+        double expectedComponent = 1.0 / Math.sqrt(3.0);
+        if (Math.abs(dIntercept.x - expectedComponent) > 1e-3 || Math.abs(dIntercept.y - expectedComponent) > 1e-3 || Math.abs(dIntercept.z - expectedComponent) > 1e-3) {
+            throw fail("Expected diagonal intercept (" + expectedComponent + ", " + expectedComponent + ", " + expectedComponent + "), got: " + dIntercept);
+        }
+
+        // 4. Degenerate and null fallbacks
+        Vec3 fallbackNull = TrajectoryPredictor.computeTrajectoryDomeIntercept(null, hitPos, radius);
+        Vec3 fallbackEmpty = TrajectoryPredictor.computeTrajectoryDomeIntercept(List.of(), hitPos, radius);
+        Vec3 fallbackSingle = TrajectoryPredictor.computeTrajectoryDomeIntercept(List.of(hitPos), hitPos, radius);
+        Vec3 fallbackZeroR = TrajectoryPredictor.computeTrajectoryDomeIntercept(verticalPath, hitPos, 0.0f);
+
+        if (Math.abs(fallbackNull.y - 1.0) > 1e-4 || Math.abs(fallbackEmpty.y - 1.0) > 1e-4 ||
+            Math.abs(fallbackSingle.y - 1.0) > 1e-4 || Math.abs(fallbackZeroR.y - 1.0) > 1e-4) {
+            throw fail("Degenerate inputs did not fallback to (0, 1, 0)");
+        }
+
+        context.succeed();
+    }
 }

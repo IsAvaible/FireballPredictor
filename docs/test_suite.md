@@ -210,6 +210,27 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 * **Entities**: `LargeFireball`, `SmallFireball`, `DragonFireball`, `WitherSkull`, `WindCharge`
 * **Details**: Validates that all projectile types resolve to their correct `WarningProjectileType` enum constants, custom icons, dragon fireball textures, and progress bar color themes.
 
+### 40. Visual Themes Roster & Zero-Allocation Math (`testVisualThemesRosterAndColorMath`)
+* **Details**: Validates that all 16 `VisualTheme` enum constants evaluate non-null display names, valid 24-bit RGB packed colors, fast LUT math, and deterministic alpha modulations without throwing exceptions or generating invalid color values.
+
+### 41. Circular Theme Preview Gallery (`testThemePreviewGallery`)
+* **Details**: Tests enabling and disabling the 3D `/fppreview` exhibition gallery, raycasting track targeting, chat confirmation prompt generation, and dynamic radius calculations.
+
+### 42. Visual Theme Config Option Disabling (`testVisualThemeConfigOptionDisabling`)
+* **Details**: Verifies that color options in `ModConfigGui` dynamically disable availability when non-default visual themes are active.
+
+### 43. Negative Power Sentinel Fallthrough (`testNegativePowerSentinelFallsThrough`)
+* **Details**: Tests that server `-1.0f` power cache entries correctly fall through to inferred power estimation.
+
+### 44. Theme Time and Color Pins (`testThemeTimeAndColorPins`)
+* **Details**: Verifies that theme animations freeze at zero speed and that `DEFAULT` core color brightening preserves pixel-identical parity.
+
+### 45. Visual Themes Preview Representation (`testVisualThemesPreviewRepresentation`)
+* **Details**: Validates that all visual themes evaluate correctly across the entire 0.0–1.0 progress and time spectrum for description panel previews.
+
+### 46. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
+* **Details**: Asserts that `TrajectoryPredictor.computeTrajectoryDomeIntercept` accurately computes the entry unit vector on the shockwave dome boundary for vertical, horizontal, diagonal, and degenerate trajectory paths.
+
 ---
 
 ## Key Technical Solutions
@@ -251,10 +272,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 41 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (41 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 41 GAME TESTS COMPLETE IN 1.814 s ======================
-[Server thread/INFO] (Minecraft) All 41 required tests passed :)
+[Server thread/INFO] (Minecraft) 48 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (48 tests)...
+[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 48 GAME TESTS COMPLETE IN 1.305 s ======================
+[Server thread/INFO] (Minecraft) All 48 required tests passed :)
 BUILD SUCCESSFUL
 ```

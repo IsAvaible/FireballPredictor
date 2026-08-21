@@ -278,4 +278,70 @@ public class TrajectoryPredictor {
 
         return data.hitResult();
     }
+
+    /**
+     * Computes the normalized direction in dome-local coordinates from the dome center (hitPos)
+     * to the point where the incoming trajectory enters / intercepts the shockwave dome sphere of the given radius.
+     *
+     * @param path       trajectory flight path in world coordinates
+     * @param hitPos     impact location / dome center in world coordinates
+     * @param domeRadius shockwave dome sphere radius
+     * @return normalized unit vector pointing to the entry intercept on the dome shell, or (0, 1, 0) as fallback.
+     */
+    public static Vec3 computeTrajectoryDomeIntercept(List<Vec3> path, Vec3 hitPos, float domeRadius) {
+        if (path == null || path.size() < 2 || hitPos == null || domeRadius <= 1e-4f) {
+            return new Vec3(0, 1, 0);
+        }
+
+        // Iterate backwards from the end of the path to find where the incoming trajectory enters the sphere
+        for (int i = path.size() - 2; i >= 0; i--) {
+            Vec3 p1 = path.get(i);
+            Vec3 p2 = path.get(i + 1);
+
+            Vec3 r1 = p1.subtract(hitPos);
+            Vec3 r2 = p2.subtract(hitPos);
+
+            double d1Sq = r1.lengthSqr();
+            double d2Sq = r2.lengthSqr();
+            double radiusSq = (double) domeRadius * domeRadius;
+
+            // Check if this segment crosses the radius sphere boundary (p1 outside/on, p2 inside/on)
+            if (d1Sq >= radiusSq && d2Sq <= radiusSq) {
+                Vec3 seg = p2.subtract(p1);
+                double segLenSq = seg.lengthSqr();
+                if (segLenSq > 1e-7) {
+                    // Exact line-sphere intersection for segment p1 + t*(p2-p1) relative to hitPos
+                    // ||r1 + t*seg||^2 = radiusSq  =>  t^2 * |seg|^2 + 2*t*(r1.seg) + |r1|^2 - radiusSq = 0
+                    double a = segLenSq;
+                    double b = 2.0 * r1.dot(seg);
+                    double c = d1Sq - radiusSq;
+                    double disc = b * b - 4.0 * a * c;
+                    if (disc >= 0.0) {
+                        double sqrtDisc = Math.sqrt(disc);
+                        double t = (-b - sqrtDisc) / (2.0 * a);
+                        if (t >= 0.0 && t <= 1.0) {
+                            Vec3 interceptPos = r1.add(seg.scale(t));
+                            double lenSq = interceptPos.lengthSqr();
+                            if (lenSq > 1e-7) {
+                                return interceptPos.scale(1.0 / Math.sqrt(lenSq));
+                            }
+                        }
+                    }
+                }
+                // Fallback: segment start direction relative to hitPos
+                if (d1Sq > 1e-7) {
+                    return r1.scale(1.0 / Math.sqrt(d1Sq));
+                }
+            }
+        }
+
+        // Fallback: reverse direction of the incoming segment leading into the hit
+        Vec3 lastSeg = path.get(path.size() - 1).subtract(path.get(path.size() - 2));
+        double lenSq = lastSeg.lengthSqr();
+        if (lenSq > 1e-7) {
+            return lastSeg.scale(-1.0 / Math.sqrt(lenSq));
+        }
+
+        return new Vec3(0, 1, 0);
+    }
 }

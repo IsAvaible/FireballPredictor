@@ -176,6 +176,8 @@ public class PredictionRenderer {
             );
 
             float pulseFactor = computePulseFactor(animSeconds);
+            float domeRadius = (float) data.renderData().domeQuads().get(0).p1().length();
+            Vec3 trajectoryIntercept = com.simonconrad.fireballpredictor.math.TrajectoryPredictor.computeTrajectoryDomeIntercept(data.path(), hitPos, domeRadius);
 
             domeState = new DomeRenderState(
                 hitPos,
@@ -189,7 +191,8 @@ public class PredictionRenderer {
                 cameraPos,
                 config.domeFresnelStrength,
                 theme,
-                animSeconds
+                animSeconds,
+                trajectoryIntercept
             );
         }
 
