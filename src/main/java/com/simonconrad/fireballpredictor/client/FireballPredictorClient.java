@@ -27,6 +27,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -346,6 +347,18 @@ public class FireballPredictorClient implements ClientModInitializer {
                     }
                     Vec3 hitPos = damageHit.getLocation();
                     Vec3 playerPos = player.position();
+
+                    float power = ImpactPredictor.resolveExplosionPower(fireball);
+                    float radius = power * DamageCalculator.BLAST_RADIUS_MULTIPLIER;
+                    boolean isDirectHit = damageHit.getType() == HitResult.Type.ENTITY
+                            && damageHit instanceof EntityHitResult entityHit
+                            && entityHit.getEntity() == player;
+
+                    // Skip 27 world raycasts if the player is safely out of blast range
+                    if (!isDirectHit && (radius <= 0.0f || playerPos.distanceToSqr(hitPos) > (radius * radius))) {
+                        continue;
+                    }
+
                     float seenPercent;
                     if (trackedPrediction.cachedSeenPercent >= 0.0f
                             && trackedPrediction.lastEstimatePlayerPos != null
@@ -360,14 +373,11 @@ public class FireballPredictorClient implements ClientModInitializer {
                         trackedPrediction.lastEstimateHitPos = hitPos;
                     }
 
-                    float power = ImpactPredictor.resolveExplosionPower(fireball);
                     TrackedProjectile tracked = trackedOwners.get(entry.getKey());
                     Entity owner = tracked != null ? tracked.ownerEntity() : null;
 
                     DamageEstimate estimate;
-                    if (damageHit.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY
-                            && damageHit instanceof net.minecraft.world.phys.EntityHitResult entityHit
-                            && entityHit.getEntity() == player) {
+                    if (isDirectHit) {
                         estimate = DamageCalculator.calculateDirectHitFromSeenPercent(
                                 hitPos, power, player, client.level, fireball, owner, seenPercent);
                     } else {

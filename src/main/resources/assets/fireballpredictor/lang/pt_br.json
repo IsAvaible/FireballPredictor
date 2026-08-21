@@ -162,7 +162,6 @@
   "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor": "Cor do domo da bola de dragão",
   "yacl3.config.fireballpredictor:config.projectileVisualTheme.default": "Cores RGB personalizadas",
   "yacl3.config.fireballpredictor:config.category.projectile_themes.group.global_theme": "Predefinição de tema",
-  "yacl3.config.visualTheme.default": "Por projétil (Personalizado)",
   "yacl3.config.fireballpredictor:config.colorOption.lockedByTheme": "Bloqueado pelo tema ativo: %s.\nDefina o tema como 'Cores RGB personalizadas' (ou a predefinição global como 'Por projétil') para personalizar esta cor.",
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "A cor da trajetória de voo prevista para crânios de Wither.\nPadrão: Preto cinzento (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "A cor do domo do raio de explosão para crânios de Wither.\nPadrão: Preto cinzento (255, 128, 0)",

@@ -21,7 +21,7 @@ public class BlockStateSnapshot implements BlockGetter {
     private final int ySize;
     private final int zSize;
     private final BlockState[] states;
-    private final FluidState[] fluids;
+    private final @Nullable FluidState[] fluids;
     private final int bottomY;
     private final int height;
 
@@ -73,13 +73,13 @@ public class BlockStateSnapshot implements BlockGetter {
         long volume = (long) xSize * ySize * zSize;
         if (volume > MAX_SNAPSHOT_BLOCKS || volume <= 0) {
             this.states = new BlockState[0];
-            this.fluids = new FluidState[0];
+            this.fluids = null;
             return;
         }
 
         int size = (int) volume;
         this.states = new BlockState[size];
-        this.fluids = new FluidState[size];
+        FluidState[] fluidArray = null;
 
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         for (int x = 0; x < xSize; x++) {
@@ -93,11 +93,15 @@ public class BlockStateSnapshot implements BlockGetter {
                     }
                     FluidState fluid = world.getFluidState(mutable);
                     if (!fluid.isEmpty()) {
-                        fluids[index] = fluid;
+                        if (fluidArray == null) {
+                            fluidArray = new FluidState[size];
+                        }
+                        fluidArray[index] = fluid;
                     }
                 }
             }
         }
+        this.fluids = fluidArray;
     }
 
     private int getIndex(int x, int y, int z) {
@@ -123,10 +127,13 @@ public class BlockStateSnapshot implements BlockGetter {
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
+        if (fluids == null) {
+            return Fluids.EMPTY.defaultFluidState();
+        }
         int x = pos.getX() - min.getX();
         int y = pos.getY() - min.getY();
         int z = pos.getZ() - min.getZ();
-        if (x < 0 || x >= xSize || y < 0 || y >= ySize || z < 0 || z >= zSize || fluids.length == 0) {
+        if (x < 0 || x >= xSize || y < 0 || y >= ySize || z < 0 || z >= zSize) {
             return Fluids.EMPTY.defaultFluidState();
         }
         FluidState fluid = fluids[getIndex(x, y, z)];
