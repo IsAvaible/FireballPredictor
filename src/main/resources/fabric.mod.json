@@ -11,7 +11,7 @@
     "homepage": "https://modrinth.com/mod/fireball-predictor",
     "sources": "https://github.com/IsAvaible/FireballPredictor"
   },
-  "license": "GNU LGPLv3",
+  "license": "LGPL-3.0-only",
   "icon": "assets/fireballpredictor/icon.png",
   "environment": "*",
   "entrypoints": {

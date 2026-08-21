@@ -152,132 +152,140 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Entities**: `LargeFireball`
 * **Details**: Asserts that server restriction masks (`ServerTrackingRules`) override local client config settings (including deflection bypass) for player, dispenser, command, or group restrictions, and that clearing restrictions restores local settings immediately.
 
-### 23. Server Mask Sanitization (`testPacketSanitization`)
+### 24. Server Mask Sanitization (`testPacketSanitization`)
 * **Details**: Verifies bitmask sanitization, ensuring unsupported or out-of-range bit values in network payloads are stripped cleanly.
 
-### 24. Disconnect Mask Clearing (`testDisconnectReset`)
+### 25. Disconnect Mask Clearing (`testDisconnectReset`)
 * **Details**: Asserts that server tracking restrictions are cleared (`mask = 0`) on server disconnect to prevent cross-server rule contamination.
 
-### 25. GUI Option Server Availability (`testGuiOptionAvailability`)
+### 26. GUI Option Server Availability (`testGuiOptionAvailability`)
 * **Details**: Verifies GUI option lock state calculations under active server restriction bitmasks.
 
-### 26. Wind Charge Zero Damage Estimate (`testWindChargeZeroDamageEstimate`)
+### 27. Wind Charge Zero Damage Estimate (`testWindChargeZeroDamageEstimate`)
 * **Entity**: `WindCharge`
 * **Details**: Asserts that wind charges calculate a damage estimate of `DamageEstimate.NONE`, predicting 0.0 hearts lost and 0.0 final damage upon impact.
 
-### 27. Zero-Power Explosion Damage Bypass (`testDamageCalculatorZeroPowerNoDamage`)
+### 28. Breeze Wind Charge Knockback & Damage Estimate (`testBreezeWindChargeKnockbackAndDamageEstimate`)
+* **Entity**: `BreezeWindCharge`
+* **Details**: Asserts that Breeze Wind Charges resolve an explosion power of `3.0F`, evaluate a direct-hit damage estimate as in-range with `0.0` final damage (since wind charges inflict zero explosion/heart damage), and produce positive knockback impulse (`knockbackBlocksPerSecond() > 0.0`).
+
+### 29. Zero-Power Explosion Damage Bypass (`testDamageCalculatorZeroPowerNoDamage`)
 * **Entities**: `SmallFireball`, `DragonFireball`
 * **Details**: Verifies that explosive projectiles with power $\le 0$ evaluate immediately to `DamageEstimate.NONE` mirroring vanilla's early exit for zero-radius explosions.
 
-### 28. Out-of-Range Blast Estimate (`testDamageCalculatorOutOfRange`)
+### 30. Out-of-Range Blast Estimate (`testDamageCalculatorOutOfRange`)
 * **Entity**: `LargeFireball` (power 1.0, blast radius 2.0 blocks)
 * **Details**: Spawns a mock player 5.0 blocks away from the detonation point, asserting that `DamageCalculator.calculate` returns `DamageEstimate.NONE` with `inRange() == false`.
 
-### 29. Unarmored Blast Damage Accuracy (`testDamageCalculatorMatchesRealExplosionNoArmor`)
+### 31. Unarmored Blast Damage Accuracy (`testDamageCalculatorMatchesRealExplosionNoArmor`)
 * **Entity**: `LargeFireball` (power 1.0)
 * **Details**: Places an unarmored mock player 1.0 block away from a detonation point. Runs `DamageCalculator.calculate`, creates an actual in-game explosion, and asserts that predicted damage matches the real damage inflicted within a 0.01 threshold.
 
-### 30. Armor & Blast Protection Mitigation (`testDamageCalculatorWithArmorAndBlastProtection`)
+### 32. Armor & Blast Protection Mitigation (`testDamageCalculatorWithArmorAndBlastProtection`)
 * **Entity**: `LargeFireball` (power 1.0)
 * **Details**: Equips a mock player with full diamond armor enchanted with Protection IV and Blast Protection IV. Asserts that `DamageCalculator.getEnchantmentProtection` correctly evaluates EPF and matches the reduced damage taken in a real explosion.
 
-### 31. Line-of-Sight Cover Reduction (`testDamageCalculatorCoverReducesDamage`)
+### 33. Line-of-Sight Cover Reduction (`testDamageCalculatorCoverReducesDamage`)
 * **Entity**: `LargeFireball` (power 1.0)
 * **Details**: Places a stone cover barrier partially obscuring line-of-sight between the explosion center and the player. Asserts that `DamageCalculator.getSeenPercent` detects partial exposure ($0 < \text{seenPercent} < 1$) and reduces predicted damage compared to unobstructed exposure.
 
-### 32. Large Fireball Direct Hit (`testDamageCalculatorDirectHit`)
+### 34. Large Fireball Direct Hit (`testDamageCalculatorDirectHit`)
 * **Entity**: `LargeFireball`
 * **Details**: Asserts that `DamageCalculator.calculateDirectHit` correctly combines 6.0 direct impact damage with the detonation blast damage.
 
-### 33. Wither Skull Direct Hit (`testDamageCalculatorWitherSkullDirectHit`)
+### 35. Wither Skull Direct Hit (`testDamageCalculatorWitherSkullDirectHit`)
 * **Entity**: `WitherSkull`
 * **Details**: Asserts that `DamageCalculator.calculateDirectHit` accounts for 8.0 direct impact damage combined with wither skull blast damage.
 
-### 34. Direct-Hit Collision In-Game Accuracy (`testDamageCalculatorDirectHitRealCollision`)
+### 36. Direct-Hit Collision In-Game Accuracy (`testDamageCalculatorDirectHitRealCollision`)
 * **Entity**: `LargeFireball`
 * **Details**: Spawns a live fireball moving directly into a mock player's hitbox, asserting that predicted direct-hit damage matches the exact health loss observed upon real collision.
 
-### 35. Absorption Hearts Clamping (`testDamageCalculatorAbsorptionClamp`)
+### 37. Absorption Hearts Clamping (`testDamageCalculatorAbsorptionClamp`)
 * **Entity**: `LargeFireball` (power 4.0)
 * **Details**: Gives a player 20 health and 10 absorption points. Verifies that `DamageEstimate.heartsLost` correctly includes absorption and clamps to $(20 + 10) / 2 = 15.0$ hearts without overflowing.
 
-### 36. Trajectory vs Damage Hit Result Separation (`testTrajectorySimulationEntityCollision`)
+### 38. Trajectory vs Damage Hit Result Separation (`testTrajectorySimulationEntityCollision`)
 * **Entities**: `LargeFireball`, mock `Player`, stone wall at $x = 10$
 * **Details**: Spawns a player at $x = 5$ in front of a wall at $x = 10$. Asserts that trajectory simulation produces a visual `hitResult` continuing to the wall at $x = 10$ (for ribbon/dome rendering), while `damageHitResult` captures the intercepted player at $x = 5$ and `collision().kind()` evaluates to `CollisionKind.ENTITY`.
 
-### 37. Entity-in-Front Collision Precedence (`testEntityInFrontOfBlockPrecedence`)
+### 39. Entity-in-Front Collision Precedence (`testEntityInFrontOfBlockPrecedence`)
 * **Entities**: `LargeFireball`, mock `Player` at $x = 3$, stone wall at $x = 5$
 * **Details**: Verifies that when an entity stands in front of a block wall along the trajectory segment, `firstCollision` evaluates to `CollisionKind.ENTITY`, `damageHitResult` targets the player, and visual `hitResult` anchors at the block wall.
 
-### 38. Block-in-Front Collision Precedence (`testBlockInFrontOfEntityPrecedence`)
+### 40. Block-in-Front Collision Precedence (`testBlockInFrontOfEntityPrecedence`)
 * **Entities**: `LargeFireball`, stone wall at $x = 3$, mock `Player` at $x = 5$
 * **Details**: Verifies that when a block wall stands in front of an entity, the wall occludes the entity: `firstCollision` evaluates to `CollisionKind.BLOCK`, and both visual `hitResult` and `damageHitResult` anchor at the block wall.
 
-### 39. CanHitEntity Projectile Accessor Fallback (`testCanHitEntityFallback`)
+### 41. CanHitEntity Projectile Accessor Fallback (`testCanHitEntityFallback`)
 * **Entities**: `LargeFireball`, mock `Player`
 * **Details**: Verifies that `TrajectoryPredictor.canHitEntity` successfully invokes `ProjectileAccessor.fireballpredictor$canHitEntity` to check valid entity targeting.
 
-### 40. Dynamic Entity Movement Damage Prediction (`testDynamicEntityMovementDamagePrediction`)
+### 42. Dynamic Entity Movement Damage Prediction (`testDynamicEntityMovementDamagePrediction`)
 * **Entities**: `LargeFireball`, mock `Player`, stone wall
 * **Details**: Asserts that `TrajectoryPredictor.findDamageHitResult` dynamically updates as players move into, step out of, and return to the projectile's remaining path segments without requiring full trajectory recalculation.
 
-### 41. Warning Projectile Type Resolution (`testWarningProjectileTypeResolution`)
+### 43. Warning Projectile Type Resolution (`testWarningProjectileTypeResolution`)
 * **Entities**: `LargeFireball`, `SmallFireball`, `DragonFireball`, `WitherSkull`, `WindCharge`
 * **Details**: Validates that all projectile types resolve to their correct `WarningProjectileType` enum constants, custom icons, dragon fireball textures, and progress bar color themes.
 
-### 42. Visual Themes Roster & Zero-Allocation Math (`testVisualThemesRosterAndColorMath`)
+### 44. Visual Themes Roster & Zero-Allocation Math (`testVisualThemesRosterAndColorMath`)
 * **Details**: Validates that all 16 `VisualTheme` enum constants evaluate non-null display names, valid 24-bit RGB packed colors, fast LUT math, and deterministic alpha modulations without throwing exceptions or generating invalid color values.
 
-### 43. Circular Theme Preview Gallery (`testThemePreviewGallery`)
+### 45. Circular Theme Preview Gallery (`testThemePreviewGallery`)
 * **Details**: Tests enabling and disabling the 3D `/fppreview` exhibition gallery, raycasting track targeting, chat confirmation prompt generation, and dynamic radius calculations.
 
-### 44. Visual Theme Config Option Disabling (`testVisualThemeConfigOptionDisabling`)
+### 46. Visual Theme Config Option Disabling (`testVisualThemeConfigOptionDisabling`)
 * **Details**: Verifies that color options in `ModConfigGui` dynamically disable availability when non-default visual themes are active.
 
-### 45. Negative Power Sentinel Fallthrough (`testNegativePowerSentinelFallsThrough`)
+### 47. Negative Power Sentinel Fallthrough (`testNegativePowerSentinelFallsThrough`)
 * **Details**: Tests that server `-1.0f` power cache entries correctly fall through to inferred power estimation.
 
-### 46. Theme Time and Color Pins (`testThemeTimeAndColorPins`)
+### 48. Theme Time and Color Pins (`testThemeTimeAndColorPins`)
 * **Details**: Verifies that theme animations freeze at zero speed and that `DEFAULT` core color brightening preserves pixel-identical parity.
 
-### 47. Visual Themes Preview Representation (`testVisualThemesPreviewRepresentation`)
+### 49. Visual Themes Preview Representation (`testVisualThemesPreviewRepresentation`)
 * **Details**: Validates that all visual themes evaluate correctly across the entire 0.0–1.0 progress and time spectrum for description panel previews.
 
-### 48. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
+### 50. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
 * **Details**: Asserts that `TrajectoryPredictor.computeTrajectoryDomeIntercept` accurately computes the entry unit vector on the shockwave dome boundary for vertical, horizontal, diagonal, and degenerate trajectory paths.
 
-### 49. Per-Owner Power Inference Isolation (`testPerOwnerPowerInferenceIsolation`)
+### 51. Per-Owner Power Inference Isolation (`testPerOwnerPowerInferenceIsolation`)
 * **Details**: Validates that custom power 3.0 player explosions do not poison standard power 1.0 ghast fireball predictions, isolating mob owner types from player blasts.
 
-### 50. Per-Owner Power Inference Multi-Upgrade (`testPerOwnerPowerInferenceUpgrade`)
+### 52. Per-Owner Power Inference Multi-Upgrade (`testPerOwnerPowerInferenceUpgrade`)
 * **Details**: Asserts that independent power inferences for `GHAST` (e.g. 2.0) and `PLAYER` (e.g. 3.5) coexist simultaneously and resolve correctly for subsequent fireballs.
 
-### 51. Inference TTL Expiration (`testInferenceTtlExpiration`)
+### 53. Inference TTL Expiration (`testInferenceTtlExpiration`)
 * **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold.
 
-### 52. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
+### 54. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
 * **Details**: Asserts that observing a new active shot of an owner type refreshes the TTL timestamp of that owner's active inferred power.
 
-### 53. Stable Enum Serialization (`testFireballOwnerPayloadStableEnumSerialization`)
+### 55. Stable Enum Serialization (`testFireballOwnerPayloadStableEnumSerialization`)
 * **Details**: Validates UTF-8 string encoding and decoding of `ProjectileOwner` enum names in `FireballOwnerPayload`, verifying fallback to `UNKNOWN` for invalid/unrecognized strings.
 
-### 54. ClientPowerCache Encapsulation (`testClientPowerCacheEncapsulation`)
+### 56. ClientPowerCache Encapsulation (`testClientPowerCacheEncapsulation`)
 * **Details**: Tests accessor methods (`get`, `put`, `remove`, `clear`, `containsKey`) on `ClientPowerCache`.
 
-### 55. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
+### 57. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
 * **Details**: Verifies that un-inferred dispenser fireballs resolve to vanilla `1.0F` default and are protected against cross-pollution from previous power 3.5 player explosions.
 
-### 56. Extreme Power Snapshot Safety & Degradation (`testExtremePowerSnapshotSafetyAndDegradation`)
+### 58. Extreme Power Snapshot Safety & Degradation (`testExtremePowerSnapshotSafetyAndDegradation`)
 * **Entity**: `LargeFireball` (configured with extreme explosion power 100)
 * **Details**: Asserts that `TrajectoryPredictor.simulateTrajectory` returns `snapshot() == null` when bounding box volume exceeds `MAX_SNAPSHOT_BLOCKS = 65_536`, avoiding cubic memory allocation and main-thread freezes. Confirms that flight path ribbon and visual hit results remain preserved while predicted broken blocks degrade gracefully to an empty list.
 
-### 57. Non-Breaking Projectile Snapshot Bypass (`testNonBreakingProjectileSnapshotBypass`)
+### 59. Non-Breaking Projectile Snapshot Bypass (`testNonBreakingProjectileSnapshotBypass`)
 * **Entities**: `WindCharge`, `SmallFireball`
 * **Details**: Asserts that non-destructive projectiles (`profile.breaksBlocks() == false`) bypass `BlockStateSnapshot` creation entirely on the main thread (`snapshot() == null`).
 
-### 58. Sparse BlockStateSnapshot Air Retrieval (`testSparseBlockStateSnapshotAirRetrieval`)
+### 60. Sparse BlockStateSnapshot Air Retrieval (`testSparseBlockStateSnapshotAirRetrieval`)
 * **Environment**: Headless mock snapshot simulation.
 * **Details**: Validates sparse null-coalescing state retrieval in `BlockStateSnapshot`: returns `Blocks.STONE` for solid blocks, non-empty `Fluids.WATER` for fluid blocks, default `Blocks.AIR` / empty fluids for air positions and out-of-bounds queries, and tests safe fallback on oversized constructor requests.
+
+### 61. Path Bounding Box Calculation (`testPathBoundingBoxCalculation`)
+* **Environment**: Headless mock trajectory path simulation.
+* **Details**: Validates bounding box (`AABB`) calculation for trajectory paths in `TrajectoryPredictor.calculatePathBoundingBox`: verifies that null and empty paths return `null`, single-point paths expand by the default 1.5 margin, and multi-point paths correctly encompass all trajectory vertices expanded by the explosion dome radius margin.
 
 ---
 
@@ -320,11 +328,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 60 tests are now running...
+[Server thread/INFO] (Minecraft) 61 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (10 tests)...
-[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 60 GAME TESTS COMPLETE IN 1.102 s ======================
-[Server thread/INFO] (Minecraft) All 60 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (11 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 61 GAME TESTS COMPLETE IN 1.102 s ======================
+[Server thread/INFO] (Minecraft) All 61 required tests passed :)
 BUILD SUCCESSFUL
 ```
