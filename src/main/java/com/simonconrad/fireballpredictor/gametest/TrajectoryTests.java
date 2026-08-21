@@ -665,4 +665,104 @@ public class TrajectoryTests extends GameTestBase {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testExtremePowerSnapshotSafetyAndDegradation(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ((FireballEntityAccessor) fireball).setExplosionPower(100);
+
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(fireball, context.getLevel());
+        if (trajResult.snapshot() != null) {
+            throw fail("Expected snapshot to be null for extreme power 100 to prevent OOM/freeze, but got non-null");
+        }
+
+        PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, fireball.tickCount);
+        if (prediction.path().isEmpty()) {
+            throw fail("Expected flight path to be preserved during extreme power graceful degradation");
+        }
+        if (prediction.hitResult() == null) {
+            throw fail("Expected visual hit result to be preserved during extreme power graceful degradation");
+        }
+        if (!prediction.brokenBlocks().isEmpty()) {
+            throw fail("Expected broken blocks to degrade to empty list for extreme power, but got " + prediction.brokenBlocks().size());
+        }
+
+        fireball.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testNonBreakingProjectileSnapshotBypass(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+
+        WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
+        TrajectoryPredictor.TrajectoryResult windResult = TrajectoryPredictor.simulateTrajectory(windCharge, context.getLevel());
+        if (windResult.snapshot() != null) {
+            throw fail("Expected WindCharge snapshot to be bypassed (null)");
+        }
+        windCharge.discard();
+
+        SmallFireball smallFb = spawnProjectile(context, EntityTypes.SMALL_FIREBALL, 0.0, false);
+        TrajectoryPredictor.TrajectoryResult smallResult = TrajectoryPredictor.simulateTrajectory(smallFb, context.getLevel());
+        if (smallResult.snapshot() != null) {
+            throw fail("Expected SmallFireball snapshot to be bypassed (null)");
+        }
+        smallFb.discard();
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testSparseBlockStateSnapshotAirRetrieval(GameTestHelper context) {
+        resetGlobalState();
+        BlockPos stonePos = context.absolutePos(new BlockPos(2, 2, 2));
+        BlockPos waterPos = context.absolutePos(new BlockPos(3, 2, 2));
+        context.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
+        context.setBlock(new BlockPos(3, 2, 2), Blocks.WATER);
+
+        com.simonconrad.fireballpredictor.math.BlockStateSnapshot snapshot =
+            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
+                context.getLevel(), stonePos.offset(-1, -1, -1), waterPos.offset(1, 1, 1)
+            );
+
+        // Solid block test
+        if (!snapshot.getBlockState(stonePos).is(Blocks.STONE)) {
+            throw fail("Expected snapshot to return STONE at stonePos, got: " + snapshot.getBlockState(stonePos));
+        }
+
+        // Water fluid test
+        if (snapshot.getFluidState(waterPos).isEmpty()) {
+            throw fail("Expected snapshot to return non-empty water fluid at waterPos");
+        }
+
+        // Sparse air retrieval test
+        BlockPos airPos = stonePos.above();
+        if (!snapshot.getBlockState(airPos).isAir()) {
+            throw fail("Expected sparse snapshot to return default AIR for air position, got: " + snapshot.getBlockState(airPos));
+        }
+        if (!snapshot.getFluidState(airPos).isEmpty()) {
+            throw fail("Expected sparse snapshot to return default EMPTY fluid for air position");
+        }
+
+        // Out-of-bounds test
+        BlockPos oobPos = stonePos.offset(100, 100, 100);
+        if (!snapshot.getBlockState(oobPos).isAir()) {
+            throw fail("Expected snapshot to return AIR for out-of-bounds pos");
+        }
+
+        // Oversized bounds test (should gracefully produce empty arrays and safe defaults)
+        com.simonconrad.fireballpredictor.math.BlockStateSnapshot oversized =
+            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
+                context.getLevel(), new BlockPos(-500, -500, -500), new BlockPos(500, 500, 500)
+            );
+        if (!oversized.getBlockState(stonePos).isAir()) {
+            throw fail("Expected oversized snapshot to safely return AIR default");
+        }
+
+        context.succeed();
+    }
 }

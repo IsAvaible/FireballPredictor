@@ -178,12 +178,8 @@ public class TrajectoryPredictor {
         float explosionPower = (visualHitResult != null || damageHitResult != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
         BlockStateSnapshot snapshot = null;
         HitResult snapshotHit = visualHitResult;
-        if (snapshotHit != null && explosionPower > 0.0f) {
-            Vec3 hitPos = snapshotHit.getLocation();
-            float radius = explosionPower * 2.0f;
-            BlockPos minPos = BlockPos.containing(hitPos.x - radius - 2, hitPos.y - radius - 2, hitPos.z - radius - 2);
-            BlockPos maxPos = BlockPos.containing(hitPos.x + radius + 2, hitPos.y + radius + 2, hitPos.z + radius + 2);
-            snapshot = new BlockStateSnapshot(world, minPos, maxPos);
+        if (snapshotHit != null && explosionPower > 0.0f && profile.breaksBlocks()) {
+            snapshot = BlockStateSnapshot.create(world, snapshotHit.getLocation(), explosionPower);
         }
         
         if (firstCollision == null) {

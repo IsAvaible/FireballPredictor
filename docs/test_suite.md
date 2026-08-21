@@ -260,6 +260,18 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 ### 55. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
 * **Details**: Verifies that un-inferred dispenser fireballs resolve to vanilla `1.0F` default and are protected against cross-pollution from previous power 3.5 player explosions.
 
+### 56. Extreme Power Snapshot Safety & Degradation (`testExtremePowerSnapshotSafetyAndDegradation`)
+* **Entity**: `LargeFireball` (configured with extreme explosion power 100)
+* **Details**: Asserts that `TrajectoryPredictor.simulateTrajectory` returns `snapshot() == null` when bounding box volume exceeds `MAX_SNAPSHOT_BLOCKS = 65_536`, avoiding cubic memory allocation and main-thread freezes. Confirms that flight path ribbon and visual hit results remain preserved while predicted broken blocks degrade gracefully to an empty list.
+
+### 57. Non-Breaking Projectile Snapshot Bypass (`testNonBreakingProjectileSnapshotBypass`)
+* **Entities**: `WindCharge`, `SmallFireball`
+* **Details**: Asserts that non-destructive projectiles (`profile.breaksBlocks() == false`) bypass `BlockStateSnapshot` creation entirely on the main thread (`snapshot() == null`).
+
+### 58. Sparse BlockStateSnapshot Air Retrieval (`testSparseBlockStateSnapshotAirRetrieval`)
+* **Environment**: Headless mock snapshot simulation.
+* **Details**: Validates sparse null-coalescing state retrieval in `BlockStateSnapshot`: returns `Blocks.STONE` for solid blocks, non-empty `Fluids.WATER` for fluid blocks, default `Blocks.AIR` / empty fluids for air positions and out-of-bounds queries, and tests safe fallback on oversized constructor requests.
+
 ---
 
 ## Key Technical Solutions
@@ -301,11 +313,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 57 tests are now running...
+[Server thread/INFO] (Minecraft) 60 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (7 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 57 GAME TESTS COMPLETE IN 1.281 s ======================
-[Server thread/INFO] (Minecraft) All 57 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (10 tests)...
+[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 60 GAME TESTS COMPLETE IN 1.102 s ======================
+[Server thread/INFO] (Minecraft) All 60 required tests passed :)
 BUILD SUCCESSFUL
 ```
