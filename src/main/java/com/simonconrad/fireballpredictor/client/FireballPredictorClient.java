@@ -129,6 +129,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     ClientPowerCache.remove(entityId);
                     ClientOwnerCache.remove(entityId);
                     trackedOwners.remove(entityId);
+                    entry.getValue().cancelActiveTask();
                     it.remove();
                     continue;
                 }
@@ -145,6 +146,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 if (filteredOut) {
                     ClientPowerCache.remove(entityId);
                     // Keep owner attribution so re-enabling a filter can restore tracking without re-inferring
+                    entry.getValue().cancelActiveTask();
                     it.remove();
                 }
             }
@@ -179,41 +181,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
                 TrackedPrediction trackedPrediction = entry.getValue();
 
-                if (!trackedPrediction.isCalculating && trackedPrediction.shouldRefresh(fireball, client.level)) {
-                    trackedPrediction.isCalculating = true;
-                    float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
-                    boolean currentDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-                    TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, client.level);
-                    int predictionAge = fireball.tickCount;
-
-                    // Immediately update prediction data to preliminary prediction so new trajectory ribbon renders on frame 0 of deflection / drift
-                    trackedPrediction.predictionData = TrajectoryPredictor.createPreliminaryPrediction(result, predictionAge);
-                    trackedPrediction.calculatedPower = currentPower;
-                    trackedPrediction.calculatedDangerous = currentDangerous;
-                    trackedPrediction.cachedDamageHitTick = -1;
-
-                    Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
-                    FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
-                    
-                    PREDICTION_EXECUTOR.submit(() -> {
-                        try {
-                            PredictionData data = TrajectoryPredictor.computePrediction(result, predictionAge);
-                            client.execute(() -> {
-                                if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction) {
-                                    trackedPrediction.predictionData = data;
-                                    trackedPrediction.calculatedPower = currentPower;
-                                    trackedPrediction.calculatedDangerous = currentDangerous;
-                                    trackedPrediction.cachedDamageHitTick = -1;
-                                    trackedPrediction.isCalculating = false;
-                                }
-                            });
-                        } catch (Exception e) {
-                            FireballPredictor.LOGGER.error("Failed to calculate fireball prediction", e);
-                            client.execute(() -> {
-                                trackedPrediction.isCalculating = false;
-                            });
-                        }
-                    });
+                if (trackedPrediction.shouldRefresh(fireball, client.level)) {
+                    schedulePrediction(entityId, trackedPrediction, fireball, client.level);
                 }
             }
 
@@ -457,12 +426,13 @@ public class FireballPredictorClient implements ClientModInitializer {
         return entity instanceof AbstractHurtingProjectile projectile ? projectile : null;
     }
 
-    private void createAndRegisterPrediction(AbstractHurtingProjectile fireball, ClientLevel world) {
-        int entityId = fireball.getId();
-        TrackedPrediction trackedPrediction = new TrackedPrediction();
+    private void schedulePrediction(int entityId, TrackedPrediction trackedPrediction, AbstractHurtingProjectile fireball, ClientLevel world) {
+        trackedPrediction.cancelActiveTask();
+        trackedPrediction.isCalculating = true;
+        long taskId = ++trackedPrediction.currentTaskId;
+
         float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
         boolean currentDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-        
         TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, world);
         int predictionAge = fireball.tickCount;
 
@@ -471,36 +441,62 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedPrediction.calculatedPower = currentPower;
         trackedPrediction.calculatedDangerous = currentDangerous;
         trackedPrediction.cachedDamageHitTick = -1;
-        trackedPrediction.isCalculating = true;
-        activePredictions.put(entityId, trackedPrediction);
 
         Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
         FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
 
-        // Offload heavy explosion raycasting (1,352 rays) and procedural dome mesh generation to worker
-        PREDICTION_EXECUTOR.submit(() -> {
+        Minecraft client = Minecraft.getInstance();
+
+        java.util.concurrent.Future<?> future = PREDICTION_EXECUTOR.submit(() -> {
             try {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 PredictionData data = TrajectoryPredictor.computePrediction(result, predictionAge);
-                Minecraft.getInstance().execute(() -> {
-                    if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+                client.execute(() -> {
+                    if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction && trackedPrediction.isCurrentTask(taskId)) {
                         trackedPrediction.predictionData = data;
                         trackedPrediction.calculatedPower = currentPower;
                         trackedPrediction.calculatedDangerous = currentDangerous;
                         trackedPrediction.cachedDamageHitTick = -1;
                         trackedPrediction.isCalculating = false;
+                        trackedPrediction.activeTask = null;
                     }
                 });
             } catch (Exception e) {
-                FireballPredictor.LOGGER.error("Failed to calculate initial fireball prediction", e);
-                Minecraft.getInstance().execute(() -> {
-                    trackedPrediction.isCalculating = false;
+                if (!(e instanceof java.util.concurrent.CancellationException) && !Thread.currentThread().isInterrupted()) {
+                    FireballPredictor.LOGGER.error("Failed to calculate fireball prediction", e);
+                }
+                client.execute(() -> {
+                    if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction && trackedPrediction.isCurrentTask(taskId)) {
+                        trackedPrediction.isCalculating = false;
+                        trackedPrediction.activeTask = null;
+                    }
                 });
             }
         });
+
+        trackedPrediction.activeTask = future;
+    }
+
+    private void createAndRegisterPrediction(AbstractHurtingProjectile fireball, ClientLevel world) {
+        int entityId = fireball.getId();
+        TrackedPrediction trackedPrediction = new TrackedPrediction();
+        TrackedPrediction existing = activePredictions.put(entityId, trackedPrediction);
+        if (existing != null) {
+            existing.cancelActiveTask();
+        }
+        schedulePrediction(entityId, trackedPrediction, fireball, world);
     }
 
     private void resetClientState(ClientLevel world) {
         trackedWorld = world;
+        for (TrackedPrediction tracked : activePredictions.values()) {
+            tracked.cancelActiveTask();
+        }
         activePredictions.clear();
         trackedOwners.clear();
         highlightedBlocks.clear();
@@ -589,7 +585,10 @@ public class FireballPredictorClient implements ClientModInitializer {
         if (entity instanceof AbstractHurtingProjectile fireball) {
             FireballInferenceTracker.recordFinalFireballLocation(fireball);
             int entityId = fireball.getId();
-            activePredictions.remove(entityId);
+            TrackedPrediction tracked = activePredictions.remove(entityId);
+            if (tracked != null) {
+                tracked.cancelActiveTask();
+            }
             trackedOwners.remove(entityId);
             ClientPowerCache.remove(entityId);
             ClientOwnerCache.remove(entityId);
@@ -652,6 +651,8 @@ public class FireballPredictorClient implements ClientModInitializer {
     private static final class TrackedPrediction {
         private PredictionData predictionData;
         private boolean isCalculating = false;
+        private java.util.concurrent.Future<?> activeTask = null;
+        private long currentTaskId = 0L;
         private float calculatedPower = -1.0f;
         private boolean calculatedDangerous = false;
         private float cachedSeenPercent = -1.0f;
@@ -659,6 +660,18 @@ public class FireballPredictorClient implements ClientModInitializer {
         private Vec3 lastEstimateHitPos;
         private HitResult cachedDamageHit;
         private int cachedDamageHitTick = -1;
+
+        public void cancelActiveTask() {
+            if (activeTask != null) {
+                activeTask.cancel(true);
+                activeTask = null;
+            }
+            isCalculating = false;
+        }
+
+        public boolean isCurrentTask(long taskId) {
+            return isCalculating && this.currentTaskId == taskId;
+        }
 
         public HitResult getOrComputeDamageHit(net.minecraft.world.level.Level world, AbstractHurtingProjectile fireball, int tick) {
             if (cachedDamageHitTick == tick) {

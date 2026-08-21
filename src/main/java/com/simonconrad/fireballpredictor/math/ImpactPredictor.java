@@ -89,6 +89,9 @@ public class ImpactPredictor {
         float rayPowerMultiplier = com.simonconrad.fireballpredictor.config.ModConfig.instance().rayPowerMultiplier;
 
         for (int i = 0; i < 1352; i++) {
+            if ((i & 63) == 0 && Thread.currentThread().isInterrupted()) {
+                return List.of();
+            }
             float d = RAY_DX[i];
             float e = RAY_DY[i];
             float f = RAY_DZ[i];
