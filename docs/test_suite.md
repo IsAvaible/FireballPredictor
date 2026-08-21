@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 41 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is organized across four domain-scoped test classes ([`TrajectoryTests.java`](../src/main/java/com/simonconrad/fireballpredictor/gametest/TrajectoryTests.java), [`DamageTests.java`](../src/main/java/com/simonconrad/fireballpredictor/gametest/DamageTests.java), [`OwnerTests.java`](../src/main/java/com/simonconrad/fireballpredictor/gametest/OwnerTests.java), and [`ThemeTests.java`](../src/main/java/com/simonconrad/fireballpredictor/gametest/ThemeTests.java), inheriting from [`GameTestBase.java`](../src/main/java/com/simonconrad/fireballpredictor/gametest/GameTestBase.java)) using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`

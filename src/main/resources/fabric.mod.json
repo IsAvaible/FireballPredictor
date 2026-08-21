@@ -25,7 +25,10 @@
       "com.simonconrad.fireballpredictor.client.compat.ModMenuIntegration"
     ],
     "fabric-gametest": [
-      "com.simonconrad.fireballpredictor.gametest.FireballPredictorGameTest"
+      "com.simonconrad.fireballpredictor.gametest.TrajectoryTests",
+      "com.simonconrad.fireballpredictor.gametest.DamageTests",
+      "com.simonconrad.fireballpredictor.gametest.OwnerTests",
+      "com.simonconrad.fireballpredictor.gametest.ThemeTests"
     ]
   },
   "mixins": [
