@@ -388,6 +388,17 @@ public class DamageTests extends GameTestBase {
             throw fail("Expected damage hit position near player " + playerAbsPos + ", but got " + entityHitPos);
         }
 
+        // 3. Collision record verification
+        if (trajResult.collision() == null) {
+            throw fail("Expected trajResult.collision() to be present, but was null");
+        }
+        if (trajResult.collision().kind() != TrajectoryPredictor.CollisionKind.ENTITY) {
+            throw fail("Expected collision kind ENTITY, but got " + trajResult.collision().kind());
+        }
+        if (trajResult.collision().result() != entityHit) {
+            throw fail("Expected collision result to match entityHit");
+        }
+
         // Test damage prediction using the entity hit position
         DamageEstimate estimate = DamageCalculator.calculateDirectHit(entityHitPos, trajResult.explosionPower(), player, level, fireball, null);
         if (!estimate.inRange()) {
@@ -395,6 +406,62 @@ public class DamageTests extends GameTestBase {
         }
         if (estimate.finalDamage() <= 0.0F) {
             throw fail("Direct hit damage should be positive, got " + estimate.finalDamage());
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testEntityInFrontOfBlockPrecedence(GameTestHelper context) {
+        resetGlobalState();
+        ServerLevel level = context.getLevel();
+
+        // Entity in front of block: Player at x = 3, Block wall at x = 5
+        for (int y = 1; y <= 5; y++) {
+            for (int z = 1; z <= 5; z++) {
+                context.setBlock(new BlockPos(5, y, z), Blocks.STONE);
+            }
+        }
+        Player frontPlayer = spawnMockPlayer(context, new Vec3(3.0, 3.0, 3.5));
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult entityFirstResult = TrajectoryPredictor.simulateTrajectory(fireball, level);
+        if (entityFirstResult.collision() == null || entityFirstResult.collision().kind() != TrajectoryPredictor.CollisionKind.ENTITY) {
+            throw fail("Expected entity to win when in front of block, got: " + (entityFirstResult.collision() != null ? entityFirstResult.collision().kind() : "null"));
+        }
+        if (entityFirstResult.hitResult().getType() != HitResult.Type.BLOCK) {
+            throw fail("Expected visual hitResult to anchor at the block wall at x = 5");
+        }
+        if (entityFirstResult.damageHitResult().getType() != HitResult.Type.ENTITY) {
+            throw fail("Expected damageHitResult to anchor at frontPlayer");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBlockInFrontOfEntityPrecedence(GameTestHelper context) {
+        resetGlobalState();
+        ServerLevel level = context.getLevel();
+
+        // Block in front of entity: Block wall at x = 3, Player behind at x = 5
+        for (int y = 1; y <= 5; y++) {
+            for (int z = 1; z <= 5; z++) {
+                context.setBlock(new BlockPos(3, y, z), Blocks.STONE);
+            }
+        }
+        Player behindPlayer = spawnMockPlayer(context, new Vec3(5.0, 3.0, 3.5));
+        LargeFireball fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult blockFirstResult = TrajectoryPredictor.simulateTrajectory(fireball, level);
+        if (blockFirstResult.collision() == null || blockFirstResult.collision().kind() != TrajectoryPredictor.CollisionKind.BLOCK) {
+            throw fail("Expected block to win when in front of entity, got: " + (blockFirstResult.collision() != null ? blockFirstResult.collision().kind() : "null"));
+        }
+        if (blockFirstResult.hitResult().getType() != HitResult.Type.BLOCK) {
+            throw fail("Expected visual hitResult to be BLOCK at wall x = 3");
+        }
+        if (blockFirstResult.damageHitResult().getType() != HitResult.Type.BLOCK) {
+            throw fail("Expected damageHitResult to be BLOCK at wall x = 3 when player is occluded");
         }
 
         context.succeed();

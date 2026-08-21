@@ -23,6 +23,19 @@ import net.minecraft.world.phys.Vec3;
 
 public class TrajectoryPredictor {
 
+    public enum CollisionKind {
+        BLOCK,
+        ENTITY,
+        NONE
+    }
+
+    public record Collision(
+        HitResult result,
+        CollisionKind kind,
+        int tick,
+        Vec3 position
+    ) {}
+
     public record TrajectoryResult(
         List<Vec3> path,
         List<Vec3> velocities,
@@ -31,8 +44,22 @@ public class TrajectoryPredictor {
         float explosionPower,
         BlockStateSnapshot snapshot,
         ProjectileProfile profile,
-        boolean isDangerous
+        boolean isDangerous,
+        Collision collision
     ) {
+        public TrajectoryResult(
+            List<Vec3> path,
+            List<Vec3> velocities,
+            HitResult hitResult,
+            HitResult damageHitResult,
+            float explosionPower,
+            BlockStateSnapshot snapshot,
+            ProjectileProfile profile,
+            boolean isDangerous
+        ) {
+            this(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous, null);
+        }
+
         public TrajectoryResult(
             List<Vec3> path,
             List<Vec3> velocities,
@@ -42,7 +69,7 @@ public class TrajectoryPredictor {
             ProjectileProfile profile,
             boolean isDangerous
         ) {
-            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, profile, isDangerous);
+            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, profile, isDangerous, null);
         }
     }
 
@@ -66,6 +93,7 @@ public class TrajectoryPredictor {
         path.add(currentPos);
         velocities.add(velocity);
         
+        Collision firstCollision = null;
         HitResult blockHit = null;
         HitResult firstEntityHit = null;
         
@@ -96,23 +124,43 @@ public class TrajectoryPredictor {
                 fireball
             ));
             
-            Vec3 entityRayEnd = hitResult.getType() != HitResult.Type.MISS ? hitResult.getLocation() : nextPos;
+            boolean hasBlockHit = hitResult.getType() != HitResult.Type.MISS;
+            Vec3 blockHitPos = hasBlockHit ? hitResult.getLocation() : null;
+            Vec3 entityRayEnd = hasBlockHit ? blockHitPos : nextPos;
 
             // Raycast for entities along this step (only before any block collision)
-            if (firstEntityHit == null) {
-                AABB box = currentBox.expandTowards(velocity).inflate(1.0);
+            AABB box = currentBox.expandTowards(velocity).inflate(1.0);
+            EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(
+                world, fireball, currentPos, entityRayEnd, box, 
+                entity -> canHitEntity(fireball, entity)
+            );
 
-                EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(
-                    world, fireball, currentPos, entityRayEnd, box, 
-                    entity -> canHitEntity(fireball, entity)
-                );
-                
-                if (entityHitResult != null) {
-                    firstEntityHit = entityHitResult;
+            // Determine first physical collision along trajectory with step distance comparison
+            if (firstCollision == null) {
+                if (entityHitResult != null && hasBlockHit) {
+                    double entityDistSqr = currentPos.distanceToSqr(entityHitResult.getLocation());
+                    double blockDistSqr = currentPos.distanceToSqr(blockHitPos);
+                    if (entityDistSqr <= blockDistSqr) {
+                        firstCollision = new Collision(entityHitResult, CollisionKind.ENTITY, i + 1, entityHitResult.getLocation());
+                        if (firstEntityHit == null) {
+                            firstEntityHit = entityHitResult;
+                        }
+                    } else {
+                        firstCollision = new Collision(hitResult, CollisionKind.BLOCK, i + 1, blockHitPos);
+                    }
+                } else if (entityHitResult != null) {
+                    firstCollision = new Collision(entityHitResult, CollisionKind.ENTITY, i + 1, entityHitResult.getLocation());
+                    if (firstEntityHit == null) {
+                        firstEntityHit = entityHitResult;
+                    }
+                } else if (hasBlockHit) {
+                    firstCollision = new Collision(hitResult, CollisionKind.BLOCK, i + 1, blockHitPos);
                 }
+            } else if (firstEntityHit == null && entityHitResult != null) {
+                firstEntityHit = entityHitResult;
             }
             
-            if (hitResult.getType() != HitResult.Type.MISS) {
+            if (hasBlockHit) {
                 path.add(hitResult.getLocation());
                 velocities.add(velocity);
                 blockHit = hitResult;
@@ -124,12 +172,12 @@ public class TrajectoryPredictor {
             velocities.add(velocity);
         }
         
-        HitResult hitResult = blockHit != null ? blockHit : firstEntityHit;
-        HitResult damageHitResult = firstEntityHit != null ? firstEntityHit : blockHit;
+        HitResult visualHitResult = blockHit != null ? blockHit : (firstCollision != null ? firstCollision.result() : null);
+        HitResult damageHitResult = firstCollision != null ? firstCollision.result() : blockHit;
 
-        float explosionPower = (blockHit != null || firstEntityHit != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
+        float explosionPower = (visualHitResult != null || damageHitResult != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
         BlockStateSnapshot snapshot = null;
-        HitResult snapshotHit = blockHit != null ? blockHit : firstEntityHit;
+        HitResult snapshotHit = visualHitResult;
         if (snapshotHit != null && explosionPower > 0.0f) {
             Vec3 hitPos = snapshotHit.getLocation();
             float radius = explosionPower * 2.0f;
@@ -138,7 +186,11 @@ public class TrajectoryPredictor {
             snapshot = new BlockStateSnapshot(world, minPos, maxPos);
         }
         
-        return new TrajectoryResult(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous);
+        if (firstCollision == null) {
+            firstCollision = new Collision(null, CollisionKind.NONE, maxTicks, currentPos);
+        }
+        
+        return new TrajectoryResult(path, velocities, visualHitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous, firstCollision);
     }
 
     public static PredictionData computePrediction(TrajectoryResult result, int predictionAge) {

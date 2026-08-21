@@ -196,60 +196,68 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 
 ### 36. Trajectory vs Damage Hit Result Separation (`testTrajectorySimulationEntityCollision`)
 * **Entities**: `LargeFireball`, mock `Player`, stone wall at $x = 10$
-* **Details**: Spawns a player at $x = 5$ in front of a wall at $x = 10$. Asserts that trajectory simulation produces a visual `hitResult` continuing to the wall at $x = 10$ (for ribbon/dome rendering), while `damageHitResult` captures the intercepted player at $x = 5$.
+* **Details**: Spawns a player at $x = 5$ in front of a wall at $x = 10$. Asserts that trajectory simulation produces a visual `hitResult` continuing to the wall at $x = 10$ (for ribbon/dome rendering), while `damageHitResult` captures the intercepted player at $x = 5$ and `collision().kind()` evaluates to `CollisionKind.ENTITY`.
 
-### 37. CanHitEntity Projectile Accessor Fallback (`testCanHitEntityFallback`)
+### 37. Entity-in-Front Collision Precedence (`testEntityInFrontOfBlockPrecedence`)
+* **Entities**: `LargeFireball`, mock `Player` at $x = 3$, stone wall at $x = 5$
+* **Details**: Verifies that when an entity stands in front of a block wall along the trajectory segment, `firstCollision` evaluates to `CollisionKind.ENTITY`, `damageHitResult` targets the player, and visual `hitResult` anchors at the block wall.
+
+### 38. Block-in-Front Collision Precedence (`testBlockInFrontOfEntityPrecedence`)
+* **Entities**: `LargeFireball`, stone wall at $x = 3$, mock `Player` at $x = 5$
+* **Details**: Verifies that when a block wall stands in front of an entity, the wall occludes the entity: `firstCollision` evaluates to `CollisionKind.BLOCK`, and both visual `hitResult` and `damageHitResult` anchor at the block wall.
+
+### 39. CanHitEntity Projectile Accessor Fallback (`testCanHitEntityFallback`)
 * **Entities**: `LargeFireball`, mock `Player`
 * **Details**: Verifies that `TrajectoryPredictor.canHitEntity` successfully invokes `ProjectileAccessor.fireballpredictor$canHitEntity` to check valid entity targeting.
 
-### 38. Dynamic Entity Movement Damage Prediction (`testDynamicEntityMovementDamagePrediction`)
+### 40. Dynamic Entity Movement Damage Prediction (`testDynamicEntityMovementDamagePrediction`)
 * **Entities**: `LargeFireball`, mock `Player`, stone wall
 * **Details**: Asserts that `TrajectoryPredictor.findDamageHitResult` dynamically updates as players move into, step out of, and return to the projectile's remaining path segments without requiring full trajectory recalculation.
 
-### 39. Warning Projectile Type Resolution (`testWarningProjectileTypeResolution`)
+### 41. Warning Projectile Type Resolution (`testWarningProjectileTypeResolution`)
 * **Entities**: `LargeFireball`, `SmallFireball`, `DragonFireball`, `WitherSkull`, `WindCharge`
 * **Details**: Validates that all projectile types resolve to their correct `WarningProjectileType` enum constants, custom icons, dragon fireball textures, and progress bar color themes.
 
-### 40. Visual Themes Roster & Zero-Allocation Math (`testVisualThemesRosterAndColorMath`)
+### 42. Visual Themes Roster & Zero-Allocation Math (`testVisualThemesRosterAndColorMath`)
 * **Details**: Validates that all 16 `VisualTheme` enum constants evaluate non-null display names, valid 24-bit RGB packed colors, fast LUT math, and deterministic alpha modulations without throwing exceptions or generating invalid color values.
 
-### 41. Circular Theme Preview Gallery (`testThemePreviewGallery`)
+### 43. Circular Theme Preview Gallery (`testThemePreviewGallery`)
 * **Details**: Tests enabling and disabling the 3D `/fppreview` exhibition gallery, raycasting track targeting, chat confirmation prompt generation, and dynamic radius calculations.
 
-### 42. Visual Theme Config Option Disabling (`testVisualThemeConfigOptionDisabling`)
+### 44. Visual Theme Config Option Disabling (`testVisualThemeConfigOptionDisabling`)
 * **Details**: Verifies that color options in `ModConfigGui` dynamically disable availability when non-default visual themes are active.
 
-### 43. Negative Power Sentinel Fallthrough (`testNegativePowerSentinelFallsThrough`)
+### 45. Negative Power Sentinel Fallthrough (`testNegativePowerSentinelFallsThrough`)
 * **Details**: Tests that server `-1.0f` power cache entries correctly fall through to inferred power estimation.
 
-### 44. Theme Time and Color Pins (`testThemeTimeAndColorPins`)
+### 46. Theme Time and Color Pins (`testThemeTimeAndColorPins`)
 * **Details**: Verifies that theme animations freeze at zero speed and that `DEFAULT` core color brightening preserves pixel-identical parity.
 
-### 45. Visual Themes Preview Representation (`testVisualThemesPreviewRepresentation`)
+### 47. Visual Themes Preview Representation (`testVisualThemesPreviewRepresentation`)
 * **Details**: Validates that all visual themes evaluate correctly across the entire 0.0–1.0 progress and time spectrum for description panel previews.
 
-### 46. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
+### 48. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
 * **Details**: Asserts that `TrajectoryPredictor.computeTrajectoryDomeIntercept` accurately computes the entry unit vector on the shockwave dome boundary for vertical, horizontal, diagonal, and degenerate trajectory paths.
 
-### 47. Per-Owner Power Inference Isolation (`testPerOwnerPowerInferenceIsolation`)
+### 49. Per-Owner Power Inference Isolation (`testPerOwnerPowerInferenceIsolation`)
 * **Details**: Validates that custom power 3.0 player explosions do not poison standard power 1.0 ghast fireball predictions, isolating mob owner types from player blasts.
 
-### 48. Per-Owner Power Inference Multi-Upgrade (`testPerOwnerPowerInferenceUpgrade`)
+### 50. Per-Owner Power Inference Multi-Upgrade (`testPerOwnerPowerInferenceUpgrade`)
 * **Details**: Asserts that independent power inferences for `GHAST` (e.g. 2.0) and `PLAYER` (e.g. 3.5) coexist simultaneously and resolve correctly for subsequent fireballs.
 
-### 49. Inference TTL Expiration (`testInferenceTtlExpiration`)
+### 51. Inference TTL Expiration (`testInferenceTtlExpiration`)
 * **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold.
 
-### 50. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
+### 52. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
 * **Details**: Asserts that observing a new active shot of an owner type refreshes the TTL timestamp of that owner's active inferred power.
 
-### 51. Stable Enum Serialization (`testFireballOwnerPayloadStableEnumSerialization`)
+### 53. Stable Enum Serialization (`testFireballOwnerPayloadStableEnumSerialization`)
 * **Details**: Validates UTF-8 string encoding and decoding of `ProjectileOwner` enum names in `FireballOwnerPayload`, verifying fallback to `UNKNOWN` for invalid/unrecognized strings.
 
-### 52. ClientPowerCache Encapsulation (`testClientPowerCacheEncapsulation`)
+### 54. ClientPowerCache Encapsulation (`testClientPowerCacheEncapsulation`)
 * **Details**: Tests accessor methods (`get`, `put`, `remove`, `clear`, `containsKey`) on `ClientPowerCache`.
 
-### 53. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
+### 55. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
 * **Details**: Verifies that un-inferred dispenser fireballs resolve to vanilla `1.0F` default and are protected against cross-pollution from previous power 3.5 player explosions.
 
 ---
@@ -293,11 +301,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 55 tests are now running...
+[Server thread/INFO] (Minecraft) 57 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (5 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 55 GAME TESTS COMPLETE IN 1.582 s ======================
-[Server thread/INFO] (Minecraft) All 55 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (7 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 57 GAME TESTS COMPLETE IN 1.281 s ======================
+[Server thread/INFO] (Minecraft) All 57 required tests passed :)
 BUILD SUCCESSFUL
 ```
