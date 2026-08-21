@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "Die Farbe der vorhergesagten Flugbahn für Witherschädel.\nStandard: Aschschwarz (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "Die Farbe der vorhergesagten Druckwellenkuppel für Witherschädel.\nStandard: Aschschwarz (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "Die Farbe der vorhergesagten Flugbahn für Drachenfeuerbälle.\nStandard: Drachenviolett (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "Die Farbe der vorhergesagten Druckwellenkuppel für Drachenfeuerbälle.\nStandard: Drachenviolett (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "Die Farbe der vorhergesagten Druckwellenkuppel für Drachenfeuerbälle.\nStandard: Drachenviolett (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Mod umschalten (Hauptverfolgung)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Verfolgung aktiviert",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Verfolgung deaktiviert"
 }

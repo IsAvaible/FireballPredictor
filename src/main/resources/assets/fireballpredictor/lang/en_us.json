@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "The color of the predicted flight trajectory for wither skulls.\nDefault: Ash Black (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "The color of the predicted blast radius dome for wither skulls.\nDefault: Ash Black (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "The color of the predicted flight trajectory for dragon fireballs.\nDefault: Dragon Purple (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "The color of the predicted blast radius dome for dragon fireballs.\nDefault: Dragon Purple (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "The color of the predicted blast radius dome for dragon fireballs.\nDefault: Dragon Purple (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Toggle Mod (Master Tracking)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Tracking Enabled",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Tracking Disabled"
 }

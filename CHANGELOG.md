@@ -1,8 +1,10 @@
 # Changelog
 
-## 1.9.2
+## 1.10.0
 
-### Tracking & Bug Fixes
+### Tracking & Controls
+- **Toggle Mod Keybinding:** Added a configurable keybinding (`Toggle Mod (Master Tracking)`) under the "Fireball Predictor" category to quickly enable or disable master projectile tracking in real-time, unbound by default.
+- **In-Game Action Bar Feedback:** Toggling tracking via keybinding displays a real-time action bar overlay status message (`Tracking Enabled` / `Tracking Disabled`) and immediately persists the setting to configuration.
 - **Breeze Mob Classification:** Correctly classified Breezes as hostile mob sources so Breeze wind charges respect mob tracking filters instead of falling back to command/other source filters.
 - **Breeze Config Toggle:** Added a dedicated `Track Breezes` toggle under Mob Sources with schematic preview support and full localization across all 11 languages.
 

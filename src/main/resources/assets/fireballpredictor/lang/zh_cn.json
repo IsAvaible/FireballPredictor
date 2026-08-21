@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "凋灵之首的飞行预测轨迹颜色。\n默认：灰烬黑 (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "凋灵之首的爆炸半径光幕颜色。\n默认：灰烬黑 (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "龙息火球的飞行预测轨迹颜色。\n默认：巨龙紫 (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "龙息火球的爆炸半径光幕颜色。\n默认：巨龙紫 (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "龙息火球的爆炸半径光幕颜色。\n默认：巨龙紫 (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "切换 Mod（总追踪开关）",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a 弹射物追踪已开启",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c 弹射物追踪已关闭"
 }

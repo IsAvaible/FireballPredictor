@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "উইদার স্কালের ট্র্যাজেক্টরি রঙ।\nডিফল্ট: ছাই কালো (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "উইদার স্কালের বিস্ফোরণ শকওয়েভ ডোম রঙ।\nডিফল্ট: ছাই কালো (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "ড্রাগন ফায়ারবলের ট্র্যাজেক্টরি রঙ।\nডিফল্ট: ড্রাগন পার্পল (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ড্রাগন ফায়ারবলের বিস্ফোরণ শকওয়েভ ডোম রঙ।\nডিফল্ট: ড্রাগন পার্পল (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ড্রাগন ফায়ারবলের বিস্ফোরণ শকওয়েভ ডোম রঙ।\nডিফল্ট: ড্রাগন পার্পল (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "মড টগল করুন (মাস্টার ট্র্যাকিং)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a ট্র্যাকিং সক্রিয়",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c ট্র্যাকিং নিষ্ক্রিয়"
 }

@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "ودر اسکلز کے لیے پرواز کی ٹریجیکٹری کا رنگ۔\nڈیفالٹ: راکھ سیاہ (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "ودر اسکلز کے لیے دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: راکھ سیاہ (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "ڈریگن فائر بالز کے لیے پرواز کی ٹریجیکٹری کا رنگ۔\nڈیفالٹ: ڈریگن جامنی (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ڈریگن فائر بالز کے لیے دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: ڈریگن جامنی (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ڈریگن فائر بالز کے لیے دھماکے کے دائرے کے گنبد کا رنگ۔\nڈیفالٹ: ڈریگن جامنی (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "موڈ ٹوگل کریں (ماسٹر ٹریکنگ)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a ٹریکنگ فعال ہو گئی",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c ٹریکنگ غیر فعال ہو گئی"
 }

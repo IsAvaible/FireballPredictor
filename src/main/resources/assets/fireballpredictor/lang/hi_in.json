@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "विदर स्कल के लिए अनुमानित उड़ान प्रक्षेपवक्र का रंग।\nडिफ़ॉल्ट: ऐश ब्लैक (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "विदर स्कल के लिए अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: ऐश ब्लैक (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "ड्रैगन फायरबॉल के लिए अनुमानित उड़ान प्रक्षेपवक्र का रंग।\nडिफ़ॉल्ट: ड्रैगन पर्पल (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ड्रैगन फायरबॉल के लिए अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: ड्रैगन पर्पल (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "ड्रैगन फायरबॉल के लिए अनुमानित विस्फोट त्रिज्या गुंबद का रंग।\nडिफ़ॉल्ट: ड्रैगन पर्पल (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "मॉड टॉगल करें (मास्टर ट्रैकिंग)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a ट्रैकिंग सक्षम की गई",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c ट्रैकिंग अक्षम की गई"
 }

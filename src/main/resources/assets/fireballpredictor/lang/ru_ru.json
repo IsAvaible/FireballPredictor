@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "Цвет траектории полета черепов визера.\nПо умолчанию: Пепельно-черный (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "Цвет купола взрыва черепов визера.\nПо умолчанию: Пепельно-черный (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "Цвет траектории полета шаров дракона.\nПо умолчанию: Пурпурный дракона (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "Цвет купола взрыва шаров дракона.\nПо умолчанию: Пурпурный дракона (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "Цвет купола взрыва шаров дракона.\nПо умолчанию: Пурпурный дракона (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Переключить мод (Главное отслеживание)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Отслеживание включено",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Отслеживание отключено"
 }

@@ -93,6 +93,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         ServerTrackingRulesReceiver.registerReceivers();
 
         com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.register();
+        ModKeyBindings.init();
 
         net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
                 .registerReloadListener(new net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener() {
@@ -112,6 +113,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                 resetClientState(null);
                 return;
             }
+
+            ModKeyBindings.handleInput(client);
 
             if (client.level != trackedWorld) {
                 resetWorldState(client.level);

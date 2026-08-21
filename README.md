@@ -55,7 +55,7 @@ Restrictions are pushed to clients when they join and override their local setti
 | **Minecraft** | `26.2` / `1.21.11` | Fabric Loader `>=0.19.3` |
 | **Java** | `Java 25` | Gradle toolchain target |
 | **Required Mods** | [Fabric API](https://modrinth.com/mod/fabric-api) | Core networking and lifecycle hooks |
-| | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.5` — In-game config screen & live previews |
+| | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.6` — In-game config screen & live previews |
 | **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) | In-game configuration screen button |
 | | [Iris Shaders](https://modrinth.com/mod/iris) + [Sodium](https://modrinth.com/mod/sodium) | Soft-loaded fullbright translucent pipeline integration |
 

@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "A cor da trajetória de voo prevista para crânios de Wither.\nPadrão: Preto cinzento (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "A cor do domo do raio de explosão para crânios de Wither.\nPadrão: Preto cinzento (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "A cor da trajetória de voo prevista para bolas de dragão.\nPadrão: Roxo dragão (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "A cor do domo do raio de explosão para bolas de dragão.\nPadrão: Roxo dragão (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "A cor do domo do raio de explosão para bolas de dragão.\nPadrão: Roxo dragão (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Alternar Mod (Rastreamento Geral)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Rastreamento Ativado",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Rastreamento Desativado"
 }

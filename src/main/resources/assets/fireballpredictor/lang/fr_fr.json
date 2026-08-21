@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "La couleur de la trajectoire de vol prédite pour les crânes de Wither.\nPar défaut : Noir cendré (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "La couleur du dôme de rayon d'explosion pour les crânes de Wither.\nPar défaut : Noir cendré (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "La couleur de la trajectoire de vol prédite pour les boules de feu de dragon.\nPar défaut : Violet dragon (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "La couleur du dôme de rayon d'explosion pour les boules de feu de dragon.\nPar défaut : Violet dragon (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "La couleur du dôme de rayon d'explosion pour les boules de feu de dragon.\nPar défaut : Violet dragon (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Basculer le mod (Suivi principal)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Suivi activé",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Suivi désactivé"
 }

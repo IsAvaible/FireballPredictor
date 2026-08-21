@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "El color de la trayectoria de vuelo predicha para calaveras de Wither.\nPor defecto: Negro ceniza (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "El color del domo de radio de explosión para calaveras de Wither.\nPor defecto: Negro ceniza (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "El color de la trayectoria de vuelo predicha para bolas de dragón.\nPor defecto: Púrpura dragón (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "El color del domo de radio de explosión para bolas de dragón.\nPor defecto: Púrpura dragón (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "El color del domo de radio de explosión para bolas de dragón.\nPor defecto: Púrpura dragón (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "Alternar mod (Seguimiento principal)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Seguimiento activado",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Seguimiento desactivado"
 }

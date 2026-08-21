@@ -166,5 +166,10 @@
   "yacl3.config.fireballpredictor:config.witherSkullTrajectoryColor.desc": "لون مسار طيران جماجم الويذر المتوقع.\nالافتراضي: أسود رمادي (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.witherSkullShockwaveColor.desc": "لون قبة نصف قطر الانفجار لجماجم الويذر.\nالافتراضي: أسود رمادي (255, 128, 0)",
   "yacl3.config.fireballpredictor:config.dragonFireballTrajectoryColor.desc": "لون مسار طيران كرات التنين المتوقع.\nالافتراضي: أرجواني التنين (200, 50, 212)",
-  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "لون قبة نصف قطر الانفجار لكرات التنين.\nالافتراضي: أرجواني التنين (200, 50, 212)"
+  "yacl3.config.fireballpredictor:config.dragonFireballShockwaveColor.desc": "لون قبة نصف قطر الانفجار لكرات التنين.\nالافتراضي: أرجواني التنين (200, 50, 212)",
+  "key.category.fireballpredictor": "Fireball Predictor",
+  "key.category.fireballpredictor.general": "Fireball Predictor",
+  "key.fireballpredictor.toggle_tracking": "تبديل المود (التتبع الرئيسي)",
+  "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a تم تفعيل التتبع",
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c تم تعطيل التتبع"
 }
