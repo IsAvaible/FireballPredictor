@@ -1,9 +1,18 @@
 # Changelog
 
-## Unreleased
+## 1.9.1
 
-### Bug Fixes
-- **Constant Trail Decoration Density:** Spectral Soul, Abyssal Sculk, Matrix Digital, Event Horizon, Sakura Drift, and 8-Bit Arcade trajectory decorations now anchor to world-space distance along the predicted path instead of the per-tick segment index. On long or fast trajectories, where a single physics tick covers several blocks, elements no longer stretch or spread far apart; they keep the exact size and spacing of the preview gallery and simply increase in count with the trajectory length.
+### Visuals & Themes
+- **Dynamic Shockwave Effects:** Dome visual effects (such as electric arcs) now radiate outward from the exact point where the incoming projectile penetrates the blast dome.
+- **Consistent Trail Decoration Spacing:** Trajectory trail decorations (glyphs, wisps, blossoms, arcade sprites) are now anchored to world-space distance, maintaining uniform spacing and size on fast or long-distance paths.
+
+### Collision & Tracking Accuracy
+- **Line-of-Sight Collision Precedence:** Collision detection strictly prioritizes the closest obstacle, preventing occluded entities behind blocks from triggering hits and accurately displaying warning indicators on direct entity impacts.
+- **Isolated Power Inference:** Dynamically inferred explosion powers are now tracked per source with a 90-second cache, preventing custom player blasts from altering vanilla mob or dispenser predictions.
+
+### Performance & Memory
+- **Asynchronous Prediction & Instant Ribbons:** Offloaded heavy explosion simulations and dome mesh construction to background worker threads while rendering trajectory ribbons instantly on spawn.
+- **Sparse Memory & Safe Explosion Bounds:** Switched block destruction tracking to sparse memory and added safe limits for extreme custom explosion powers to prevent lag spikes.
 
 ## 1.9.0
 

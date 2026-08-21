@@ -27,12 +27,11 @@ public class BlockStateSnapshot implements BlockGetter {
 
     @Nullable
     public static BlockStateSnapshot create(Level world, Vec3 hitPos, float explosionPower) {
-        if (world == null || hitPos == null || explosionPower <= 0.0f) {
+        if (world == null || hitPos == null || explosionPower <= 0.0f || explosionPower > MAX_SNAPSHOT_POWER) {
             return null;
         }
 
-        float clampedPower = Math.min(explosionPower, MAX_SNAPSHOT_POWER);
-        float radius = clampedPower * 2.0f;
+        float radius = explosionPower * 2.0f;
 
         int minY = world.getMinY();
         int maxY = world.getMaxY() - 1;
