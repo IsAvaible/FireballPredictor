@@ -10,16 +10,16 @@ import net.minecraft.resources.Identifier;
  * Server → client sync of a projectile's owner classification.
  *
  * @param entityId      projectile entity id on the client
- * @param ownerType     ordinal of {@code ProjectileOwner} (byte-sized)
+ * @param ownerName     stable enum name of {@code ProjectileOwner}
  * @param ownerEntityId owner entity id, or {@code -1} when none / not tracked
  */
-public record FireballOwnerPayload(int entityId, int ownerType, int ownerEntityId) implements CustomPacketPayload {
+public record FireballOwnerPayload(int entityId, String ownerName, int ownerEntityId) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<FireballOwnerPayload> ID =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("fireballpredictor", "sync_owner"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, FireballOwnerPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, FireballOwnerPayload::entityId,
-            ByteBufCodecs.VAR_INT, FireballOwnerPayload::ownerType,
+            ByteBufCodecs.STRING_UTF8, FireballOwnerPayload::ownerName,
             ByteBufCodecs.INT, FireballOwnerPayload::ownerEntityId,
             FireballOwnerPayload::new
     );

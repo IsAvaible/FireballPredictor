@@ -1,5 +1,7 @@
 package com.simonconrad.fireballpredictor.client.network;
 
+import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.FireballLocationRecord;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -20,7 +22,8 @@ public class ExplosionInferenceHandler {
     }
 
     public static void onExplosion(Vec3 explosionPos, float radius, int blockCount, List<BlockPos> affectedBlocks) {
-        if (!FireballInferenceTracker.hasFireballNear(explosionPos, 3.0)) {
+        FireballLocationRecord matched = FireballInferenceTracker.findNearbyFireball(explosionPos, 3.0);
+        if (matched == null) {
             return;
         }
 
@@ -42,15 +45,17 @@ public class ExplosionInferenceHandler {
             estimatedBlockPower = (float) Math.max(1.0, Math.cbrt(blockCount * 1.5));
         }
 
+        ProjectileOwner owner = matched.owner != null ? matched.owner : ProjectileOwner.UNKNOWN;
+
         if (radius > 0.0f) {
             // Sanity check: If packet radius claims a large power (e.g. 4.0) but actual block destruction indicates much smaller power, treat packet radius as inflated.
             if (estimatedBlockPower != null && estimatedBlockPower < radius * 0.75f) {
-                ClientPowerLookup.updateInferredBlockEstimation(estimatedBlockPower);
+                ClientPowerLookup.recordInferredBlockEstimation(owner, estimatedBlockPower);
             } else {
-                ClientPowerLookup.setInferredPacketRadius(radius);
+                ClientPowerLookup.recordInferredPacketRadius(owner, radius);
             }
         } else if (estimatedBlockPower != null) {
-            ClientPowerLookup.updateInferredBlockEstimation(estimatedBlockPower);
+            ClientPowerLookup.recordInferredBlockEstimation(owner, estimatedBlockPower);
         }
     }
 }

@@ -5,16 +5,21 @@ import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.network.ExplosionInferenceHandler;
 import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker;
+import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
+import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.math.DamageCalculator;
 import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
 import com.simonconrad.fireballpredictor.math.ImpactPredictor;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
+import com.simonconrad.fireballpredictor.network.FireballOwnerPayload;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
@@ -361,24 +366,24 @@ public class TrajectoryTests extends GameTestBase {
         // power" so the prediction pipeline falls back to the inference chain instead of
         // propagating an invalid power (which would silently disable the shockwave dome,
         // block-destruction overlay and damage estimates for those projectiles).
-        ClientPowerCache.POWER_CACHE.clear();
-        ClientPowerCache.POWER_CACHE.put(1, -1.0f);
+        ClientPowerCache.clear();
+        ClientPowerCache.put(1, -1.0f);
         if (ClientPowerLookup.cachedPower(1) != null) {
             throw fail("Negative cached power (-1.0f sentinel) must be treated as 'no value'");
         }
 
-        ClientPowerCache.POWER_CACHE.put(2, 0.0f);
+        ClientPowerCache.put(2, 0.0f);
         if (ClientPowerLookup.cachedPower(2) != null) {
             throw fail("Zero cached power must be treated as 'no value'");
         }
 
-        ClientPowerCache.POWER_CACHE.put(3, 2.5f);
+        ClientPowerCache.put(3, 2.5f);
         Float positive = ClientPowerLookup.cachedPower(3);
         if (positive == null || positive != 2.5f) {
             throw fail("Positive cached power must be returned verbatim, got: " + positive);
         }
 
-        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerCache.clear();
         context.succeed();
     }
 
@@ -438,6 +443,225 @@ public class TrajectoryTests extends GameTestBase {
             Math.abs(fallbackSingle.y - 1.0) > 1e-4 || Math.abs(fallbackZeroR.y - 1.0) > 1e-4) {
             throw fail("Degenerate inputs did not fallback to (0, 1, 0)");
         }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testPerOwnerPowerInferenceIsolation(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Simulate a custom power 3.0 Bedwars fireball launched by a PLAYER
+        Vec3 playerHitPos = new Vec3(10.0, 64.0, 10.0);
+        LargeFireball playerFireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(playerFireball1.getId(), InferenceResult.of(ProjectileOwner.PLAYER, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        FireballInferenceTracker.registerFireballLocation(playerFireball1, playerHitPos, ProjectileOwner.PLAYER);
+
+        ExplosionInferenceHandler.onExplosion(playerHitPos, 3.0f);
+        playerFireball1.discard();
+
+        // Verify PLAYER power inferred to 3.0f
+        LargeFireball playerFireball2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(playerFireball2.getId(), InferenceResult.of(ProjectileOwner.PLAYER, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float resolvedPlayerPower = ClientPowerLookup.getPower(playerFireball2);
+        if (Math.abs(resolvedPlayerPower - 3.0f) > 0.01f) {
+            throw fail("Expected PLAYER fireball to resolve to inferred 3.0f, but got: " + resolvedPlayerPower);
+        }
+
+        // 2. Spawn a GHAST fireball — must NOT be poisoned by the PLAYER power 3.0 blast!
+        LargeFireball ghastFireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(ghastFireball.getId(), InferenceResult.of(ProjectileOwner.GHAST, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float resolvedGhastPower = ClientPowerLookup.getPower(ghastFireball);
+        if (Math.abs(resolvedGhastPower - 1.0f) > 0.01f) {
+            throw fail("Ghast fireball was incorrectly poisoned by player power! Expected 1.0f, but got: " + resolvedGhastPower);
+        }
+
+        playerFireball2.discard();
+        ghastFireball.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testPerOwnerPowerInferenceUpgrade(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Infer GHAST fireball at custom power 2.0
+        Vec3 ghastHitPos = new Vec3(5.0, 64.0, 5.0);
+        LargeFireball ghast1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        FireballInferenceTracker.registerFireballLocation(ghast1, ghastHitPos, ProjectileOwner.GHAST);
+        ExplosionInferenceHandler.onExplosion(ghastHitPos, 2.0f);
+        ghast1.discard();
+
+        // 2. Infer PLAYER fireball at custom power 3.5
+        Vec3 playerHitPos = new Vec3(15.0, 64.0, 15.0);
+        LargeFireball player1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        FireballInferenceTracker.registerFireballLocation(player1, playerHitPos, ProjectileOwner.PLAYER);
+        ExplosionInferenceHandler.onExplosion(playerHitPos, 3.5f);
+        player1.discard();
+
+        // 3. Verify independent inferences
+        LargeFireball ghast2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(ghast2.getId(), InferenceResult.of(ProjectileOwner.GHAST, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float ghastPower = ClientPowerLookup.getPower(ghast2);
+        if (Math.abs(ghastPower - 2.0f) > 0.01f) {
+            throw fail("Expected GHAST power 2.0f, got: " + ghastPower);
+        }
+
+        LargeFireball player2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(player2.getId(), InferenceResult.of(ProjectileOwner.PLAYER, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float playerPower = ClientPowerLookup.getPower(player2);
+        if (Math.abs(playerPower - 3.5f) > 0.01f) {
+            throw fail("Expected PLAYER power 3.5f, got: " + playerPower);
+        }
+
+        ghast2.discard();
+        player2.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testInferenceTtlExpiration(GameTestHelper context) {
+        resetGlobalState();
+
+        long pastTime = System.currentTimeMillis() - 100_000L; // 100s ago (exceeds 90s TTL)
+        ClientPowerLookup.InferredPowerEntry expiredEntry = new ClientPowerLookup.InferredPowerEntry(4.0f, pastTime, true);
+        if (!expiredEntry.isExpired(ClientPowerLookup.DEFAULT_INFERENCE_TTL_MS)) {
+            throw fail("Expected entry from 100s ago to be expired under 90s TTL");
+        }
+
+        ClientPowerLookup.InferredPowerEntry freshEntry = new ClientPowerLookup.InferredPowerEntry(4.0f, System.currentTimeMillis(), true);
+        if (freshEntry.isExpired(ClientPowerLookup.DEFAULT_INFERENCE_TTL_MS)) {
+            throw fail("Expected fresh entry to not be expired under 90s TTL");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testInferenceTtlRefreshOnNewShot(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Initial PLAYER explosion establishes 3.0 power
+        Vec3 hitPos1 = new Vec3(10.0, 64.0, 10.0);
+        LargeFireball fb1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        FireballInferenceTracker.registerFireballLocation(fb1, hitPos1, ProjectileOwner.PLAYER);
+        ExplosionInferenceHandler.onExplosion(hitPos1, 3.0f);
+        fb1.discard();
+
+        ClientPowerLookup.InferredPowerEntry initial = ClientPowerLookup.getOwnerInference(ProjectileOwner.PLAYER);
+        if (initial == null || Math.abs(initial.power() - 3.0f) > 0.01f) {
+            throw fail("Failed to initialize player power inference");
+        }
+        long initialTimestamp = initial.timestamp();
+
+        // 2. Registering a new shot of the same owner type touches and refreshes the timestamp
+        LargeFireball fb2 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        FireballInferenceTracker.registerFireballLocation(fb2, new Vec3(12.0, 64.0, 12.0), ProjectileOwner.PLAYER);
+
+        ClientPowerLookup.InferredPowerEntry refreshed = ClientPowerLookup.getOwnerInference(ProjectileOwner.PLAYER);
+        if (refreshed == null || refreshed.timestamp() < initialTimestamp) {
+            throw fail("Expected owner inference timestamp to be refreshed upon new shot registration");
+        }
+        if (Math.abs(refreshed.power() - 3.0f) > 0.01f) {
+            throw fail("Power value was altered during TTL touch refresh");
+        }
+
+        fb2.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testFireballOwnerPayloadStableEnumSerialization(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Valid names
+        if (ProjectileOwner.fromName("GHAST") != ProjectileOwner.GHAST) {
+            throw fail("Expected fromName('GHAST') == GHAST");
+        }
+        if (ProjectileOwner.fromName("PLAYER") != ProjectileOwner.PLAYER) {
+            throw fail("Expected fromName('PLAYER') == PLAYER");
+        }
+        if (ProjectileOwner.fromName("DISPENSER") != ProjectileOwner.DISPENSER) {
+            throw fail("Expected fromName('DISPENSER') == DISPENSER");
+        }
+        if (ProjectileOwner.fromName("BLAZE") != ProjectileOwner.BLAZE) {
+            throw fail("Expected fromName('BLAZE') == BLAZE");
+        }
+
+        // 2. Unrecognized or null names safely fallback to UNKNOWN
+        if (ProjectileOwner.fromName("NON_EXISTENT_ENUM_VALUE") != ProjectileOwner.UNKNOWN) {
+            throw fail("Expected unrecognized name to fallback to UNKNOWN");
+        }
+        if (ProjectileOwner.fromName(null) != ProjectileOwner.UNKNOWN) {
+            throw fail("Expected null name to fallback to UNKNOWN");
+        }
+        if (ProjectileOwner.fromName("") != ProjectileOwner.UNKNOWN) {
+            throw fail("Expected empty name to fallback to UNKNOWN");
+        }
+
+        // 3. Payload record getters
+        FireballOwnerPayload payload = new FireballOwnerPayload(123, "PLAYER", 456);
+        if (payload.entityId() != 123 || !"PLAYER".equals(payload.ownerName()) || payload.ownerEntityId() != 456) {
+            throw fail("FireballOwnerPayload record fields corrupted");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testClientPowerCacheEncapsulation(GameTestHelper context) {
+        resetGlobalState();
+
+        ClientPowerCache.clear();
+        if (ClientPowerCache.containsKey(999)) {
+            throw fail("Expected containsKey(999) to be false after clear");
+        }
+
+        ClientPowerCache.put(999, 2.5f);
+        if (!ClientPowerCache.containsKey(999)) {
+            throw fail("Expected containsKey(999) to be true after put");
+        }
+        if (ClientPowerCache.get(999) == null || ClientPowerCache.get(999) != 2.5f) {
+            throw fail("Expected get(999) to be 2.5f");
+        }
+
+        ClientPowerCache.remove(999);
+        if (ClientPowerCache.get(999) != null) {
+            throw fail("Expected get(999) to be null after remove");
+        }
+
+        ClientPowerCache.clear();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testDispenserPowerInferenceIsolation(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Simulate an explosion with power 3.5 from a PLAYER
+        Vec3 playerHitPos = new Vec3(20.0, 64.0, 20.0);
+        LargeFireball playerFb = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        FireballInferenceTracker.registerFireballLocation(playerFb, playerHitPos, ProjectileOwner.PLAYER);
+        ExplosionInferenceHandler.onExplosion(playerHitPos, 3.5f);
+        playerFb.discard();
+
+        // Player inference should be 3.5
+        LargeFireball playerCheck = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(playerCheck.getId(), InferenceResult.of(ProjectileOwner.PLAYER, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float playerPower = ClientPowerLookup.getPower(playerCheck);
+        if (Math.abs(playerPower - 3.5f) > 0.01f) {
+            throw fail("Expected player fireball to resolve inferred power 3.5f, got " + playerPower);
+        }
+        playerCheck.discard();
+
+        // 2. Dispenser fireball with no custom inference must resolve to vanilla default 1.0f (not poisoned by player's 3.5f)
+        LargeFireball dispenserFb = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ClientOwnerCache.put(dispenserFb.getId(), InferenceResult.of(ProjectileOwner.DISPENSER, null, InferenceResult.InferenceSource.SERVER_PACKET));
+        float dispenserPower = ClientPowerLookup.getPower(dispenserFb);
+        if (Math.abs(dispenserPower - 1.0f) > 0.01f) {
+            throw fail("Expected dispenser fireball to resolve default power 1.0f without cross-pollution, got " + dispenserPower);
+        }
+        dispenserFb.discard();
 
         context.succeed();
     }

@@ -26,7 +26,7 @@ public final class ClientOwnerCacheReceiver {
                     return;
                 }
 
-                ProjectileOwner owner = ProjectileOwner.fromOrdinalClamped(payload.ownerType());
+                ProjectileOwner owner = ProjectileOwner.fromName(payload.ownerName());
                 InferenceResult result = OwnerInferenceEngine.fromPacket(level, owner, payload.ownerEntityId());
                 if (result != null) {
                     ClientOwnerCache.put(payload.entityId(), result);

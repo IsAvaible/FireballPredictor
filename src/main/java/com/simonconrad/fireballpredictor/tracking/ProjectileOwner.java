@@ -28,4 +28,15 @@ public enum ProjectileOwner {
         }
         return values[ordinal];
     }
+
+    public static ProjectileOwner fromName(String name) {
+        if (name == null || name.isEmpty()) {
+            return UNKNOWN;
+        }
+        try {
+            return ProjectileOwner.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return UNKNOWN;
+        }
+    }
 }

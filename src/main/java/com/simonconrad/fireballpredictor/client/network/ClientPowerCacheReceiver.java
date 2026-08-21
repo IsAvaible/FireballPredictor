@@ -11,11 +11,11 @@ public class ClientPowerCacheReceiver {
     public static void registerReceivers() {
         ClientPlayNetworking.registerGlobalReceiver(FireballPowerPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                ClientPowerCache.POWER_CACHE.put(payload.entityId(), payload.power());
+                ClientPowerCache.put(payload.entityId(), payload.power());
             });
         });
 
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientPowerCache.POWER_CACHE.clear());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientPowerCache.clear());
     }
 }
 

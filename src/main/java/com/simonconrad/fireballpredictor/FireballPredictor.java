@@ -58,7 +58,7 @@ public class FireballPredictor implements ModInitializer {
                 ProjectileOwner owner = OwnerClassifier.resolveAuthoritative(fireball);
                 Entity ownerEntity = fireball.getOwner();
                 int ownerId = ownerEntity != null ? ownerEntity.getId() : -1;
-                ServerPlayNetworking.send(player, new FireballOwnerPayload(fireball.getId(), owner.ordinal(), ownerId));
+                ServerPlayNetworking.send(player, new FireballOwnerPayload(fireball.getId(), owner.name(), ownerId));
             }
         });
 

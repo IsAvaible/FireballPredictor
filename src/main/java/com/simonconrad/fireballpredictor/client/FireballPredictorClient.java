@@ -125,7 +125,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 int entityId = entry.getKey();
                 AbstractHurtingProjectile fireball = getProjectile(client.level, entityId);
                 if (fireball == null || !fireball.isAlive()) {
-                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    ClientPowerCache.remove(entityId);
                     ClientOwnerCache.remove(entityId);
                     trackedOwners.remove(entityId);
                     it.remove();
@@ -142,7 +142,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                         && !tracked.shouldRender();
 
                 if (filteredOut) {
-                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    ClientPowerCache.remove(entityId);
                     // Keep owner attribution so re-enabling a filter can restore tracking without re-inferring
                     it.remove();
                 }
@@ -155,7 +155,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                 int entityId = ownerEntry.getKey();
                 AbstractHurtingProjectile fireball = getProjectile(client.level, entityId);
                 if (fireball == null || !fireball.isAlive()) {
-                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    ClientPowerCache.remove(entityId);
                     ClientOwnerCache.remove(entityId);
                     ownerIt.remove();
                     continue;
@@ -456,7 +456,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedOwners.clear();
         highlightedBlocks.clear();
         previousHighlightedBlocks.clear();
-        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerCache.clear();
         ClientOwnerCache.clear();
         FireballInferenceTracker.clear();
         ClientPowerLookup.resetInferredPower();
@@ -538,11 +538,11 @@ public class FireballPredictorClient implements ClientModInitializer {
 
     private void handleEntityRemoved(Entity entity) {
         if (entity instanceof AbstractHurtingProjectile fireball) {
-            FireballInferenceTracker.unregisterFireballLocation(fireball);
+            FireballInferenceTracker.recordFinalFireballLocation(fireball);
             int entityId = fireball.getId();
             activePredictions.remove(entityId);
             trackedOwners.remove(entityId);
-            ClientPowerCache.POWER_CACHE.remove(entityId);
+            ClientPowerCache.remove(entityId);
             ClientOwnerCache.remove(entityId);
         }
     }

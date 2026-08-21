@@ -231,6 +231,27 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 ### 46. Trajectory Dome Intercept Geometry (`testComputeTrajectoryDomeIntercept_Geometry`)
 * **Details**: Asserts that `TrajectoryPredictor.computeTrajectoryDomeIntercept` accurately computes the entry unit vector on the shockwave dome boundary for vertical, horizontal, diagonal, and degenerate trajectory paths.
 
+### 47. Per-Owner Power Inference Isolation (`testPerOwnerPowerInferenceIsolation`)
+* **Details**: Validates that custom power 3.0 player explosions do not poison standard power 1.0 ghast fireball predictions, isolating mob owner types from player blasts.
+
+### 48. Per-Owner Power Inference Multi-Upgrade (`testPerOwnerPowerInferenceUpgrade`)
+* **Details**: Asserts that independent power inferences for `GHAST` (e.g. 2.0) and `PLAYER` (e.g. 3.5) coexist simultaneously and resolve correctly for subsequent fireballs.
+
+### 49. Inference TTL Expiration (`testInferenceTtlExpiration`)
+* **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold.
+
+### 50. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
+* **Details**: Asserts that observing a new active shot of an owner type refreshes the TTL timestamp of that owner's active inferred power.
+
+### 51. Stable Enum Serialization (`testFireballOwnerPayloadStableEnumSerialization`)
+* **Details**: Validates UTF-8 string encoding and decoding of `ProjectileOwner` enum names in `FireballOwnerPayload`, verifying fallback to `UNKNOWN` for invalid/unrecognized strings.
+
+### 52. ClientPowerCache Encapsulation (`testClientPowerCacheEncapsulation`)
+* **Details**: Tests accessor methods (`get`, `put`, `remove`, `clear`, `containsKey`) on `ClientPowerCache`.
+
+### 53. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
+* **Details**: Verifies that un-inferred dispenser fireballs resolve to vanilla `1.0F` default and are protected against cross-pollution from previous power 3.5 player explosions.
+
 ---
 
 ## Key Technical Solutions
@@ -272,10 +293,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 48 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (48 tests)...
-[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 48 GAME TESTS COMPLETE IN 1.305 s ======================
-[Server thread/INFO] (Minecraft) All 48 required tests passed :)
+[Server thread/INFO] (Minecraft) 55 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (5 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 55 GAME TESTS COMPLETE IN 1.582 s ======================
+[Server thread/INFO] (Minecraft) All 55 required tests passed :)
 BUILD SUCCESSFUL
 ```

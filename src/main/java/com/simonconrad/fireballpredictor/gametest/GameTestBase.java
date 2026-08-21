@@ -54,7 +54,7 @@ public abstract class GameTestBase {
      * to guarantee a clean environment and prevent test leakage.
      */
     public static void resetGlobalState() {
-        ClientPowerCache.POWER_CACHE.clear();
+        ClientPowerCache.clear();
         ClientPowerLookup.resetInferredPower();
         FireballInferenceTracker.clear();
         ClientOwnerCache.clear();
