@@ -23,7 +23,24 @@ import static com.simonconrad.fireballpredictor.client.render.PredictionFeatureR
  */
 public final class PredictionThemeRenderer {
 
+    /** Reference step length (~0.616 blocks) matching preview gallery density for trail decorations. */
+    private static final double TRAIL_DECOR_STEP = Math.sqrt(
+            Math.pow(6.5 / (2.0 * Math.sin(Math.PI / 16.0)), 2.0) + 8.0 * 8.0) / 30.0;
+
+    /** Epsilon for half-open arc-length slot intervals across segment boundaries. */
+    private static final double TRAIL_DECOR_EPS = 1.0e-6;
+
     private PredictionThemeRenderer() {
+    }
+
+    /** Converts arc length (blocks) into gallery step units for consistent animation frequencies. */
+    private static float galleryUnits(double distFromStart) {
+        return (float) (distFromStart / TRAIL_DECOR_STEP);
+    }
+
+    /** Index of the first decoration slot at or after {@code segStartDist}. */
+    private static int firstDecorSlot(double segStartDist, int stepCount) {
+        return (int) Math.floor((segStartDist + TRAIL_DECOR_EPS) / (stepCount * TRAIL_DECOR_STEP));
     }
 
     /**
@@ -39,13 +56,14 @@ public final class PredictionThemeRenderer {
 
     /**
      * Renders per-segment thematic decorative passes along the 3D trajectory ribbon.
+     * Trail decorations anchor to cumulative arc length ({@code segStartDist}) for uniform spacing.
      */
     public static void renderTrailThemeSegment(
             VertexConsumer consumer, Matrix4f positionMatrix, VisualTheme theme,
             List<Vec3> path, int i, Vec3 p1, Vec3 p2, Vec3 rightDir, Vec3 trailUp,
             float width1, float width2, int centerAlpha1, int baseCenterAlpha1,
             float alphaBlend1, float pulse1, float dash1, float fade, int maxAlpha,
-            double animTime
+            double animTime, double segStartDist
     ) {
         // Pass 3: Branching Electric Arcs (High-voltage plasma with blistering white core & electric cyan corona)
         if (theme == VisualTheme.ELECTRIC_ARC && i < path.size() - 2) {
@@ -82,23 +100,36 @@ public final class PredictionThemeRenderer {
 
         // Pass 4: Sculk Wavy Organic Soul Tendrils
         if (theme == VisualTheme.SCULK_VOID && i < path.size() - 1) {
-            float wavePhase1 = (float) (animTime * -4.5 + i * 0.45);
-            float wavePhase2 = (float) (animTime * -4.5 + (i + 1) * 0.45);
-            float waveLat1 = (float) (Math.sin(wavePhase1) * 0.60 + Math.sin(wavePhase1 * 2.1) * 0.25) * width1;
-            float waveLat2 = (float) (Math.sin(wavePhase2) * 0.60 + Math.sin(wavePhase2 * 2.1) * 0.25) * width2;
-            float waveVert1 = (float) (Math.cos(wavePhase1 * 1.5) * 0.35) * width1;
-            float waveVert2 = (float) (Math.cos(wavePhase2 * 1.5) * 0.35) * width2;
+            double segDist = p1.distanceTo(p2);
+            int subSteps = Math.max(1, (int) Math.ceil(segDist / TRAIL_DECOR_STEP - 1.0e-9));
+            for (int s = 0; s < subSteps; s++) {
+                float fA = (float) s / subSteps;
+                float fB = (float) (s + 1) / subSteps;
+                float guA = galleryUnits(segStartDist + segDist * fA);
+                float guB = galleryUnits(segStartDist + segDist * fB);
+                float wA = Mth.lerp(fA, width1, width2);
+                float wB = Mth.lerp(fB, width1, width2);
 
-            Vec3 w1 = p1.add(rightDir.scale(waveLat1)).add(0, waveVert1, 0);
-            Vec3 w2 = p2.add(rightDir.scale(waveLat2)).add(0, waveVert2, 0);
+                float wavePhaseA = (float) (animTime * -4.5 + guA * 0.45);
+                float wavePhaseB = (float) (animTime * -4.5 + guB * 0.45);
+                float waveLatA = (float) (Math.sin(wavePhaseA) * 0.60 + Math.sin(wavePhaseA * 2.1) * 0.25) * wA;
+                float waveLatB = (float) (Math.sin(wavePhaseB) * 0.60 + Math.sin(wavePhaseB * 2.1) * 0.25) * wB;
+                float waveVertA = (float) (Math.cos(wavePhaseA * 1.5) * 0.35) * wA;
+                float waveVertB = (float) (Math.cos(wavePhaseB * 1.5) * 0.35) * wB;
 
-            float tendrilWidth1 = width1 * 0.22f;
-            float tendrilWidth2 = width2 * 0.22f;
-            int soulAlpha = Mth.clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1 * fade * 1.15f), 0, maxAlpha);
+                Vec3 sA = p1.lerp(p2, fA);
+                Vec3 sB = p1.lerp(p2, fB);
+                Vec3 w1 = sA.add(rightDir.scale(waveLatA)).add(0, waveVertA, 0);
+                Vec3 w2 = sB.add(rightDir.scale(waveLatB)).add(0, waveVertB, 0);
 
-            emitRibbonQuad(consumer, positionMatrix, w1, w2,
-                    rightDir.scale(tendrilWidth1), rightDir.scale(tendrilWidth2),
-                    0, 245, 212, 0, 0, soulAlpha, soulAlpha);
+                float tendrilWidthA = wA * 0.22f;
+                float tendrilWidthB = wB * 0.22f;
+                int soulAlpha = Mth.clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1 * fade * 1.15f), 0, maxAlpha);
+
+                emitRibbonQuad(consumer, positionMatrix, w1, w2,
+                        rightDir.scale(tendrilWidthA), rightDir.scale(tendrilWidthB),
+                        0, 245, 212, 0, 0, soulAlpha, soulAlpha);
+            }
         }
 
         // Pass 5: Inferno Dynamic Multi-Tier Licking Flames & Floating Embers (Constant small spacing)
@@ -144,35 +175,65 @@ public final class PredictionThemeRenderer {
 
         // Pass 6: Ghost Spectral Soul Wisps & Tendrils
         if (theme == VisualTheme.GHOST && i < path.size() - 1) {
-            float wispPhase1 = (float) (animTime * 2.8 - i * 0.38);
-            float wispLat1 = (float) (Math.sin(wispPhase1) * 0.70 + Math.sin(wispPhase1 * 2.3) * 0.30) * width1;
-            float wispVert1 = (float) (Math.cos(wispPhase1 * 1.7) * 0.45) * width1;
+            double segDist = p1.distanceTo(p2);
+            int subSteps = Math.max(1, (int) Math.ceil(segDist / TRAIL_DECOR_STEP - 1.0e-9));
+            for (int s = 0; s < subSteps; s++) {
+                float fA = (float) s / subSteps;
+                float fB = (float) (s + 1) / subSteps;
+                float wA = Mth.lerp(fA, width1, width2);
 
-            Vec3 w1 = p1.add(rightDir.scale(wispLat1)).add(0, wispVert1, 0);
-            Vec3 w2 = p2.add(rightDir.scale(wispLat1 * 0.8)).add(0, wispVert1 * 0.8, 0);
+                float wispPhase = (float) (animTime * 2.8 - galleryUnits(segStartDist + segDist * fA) * 0.38);
+                float wispLat = (float) (Math.sin(wispPhase) * 0.70 + Math.sin(wispPhase * 2.3) * 0.30) * wA;
+                float wispVert = (float) (Math.cos(wispPhase * 1.7) * 0.45) * wA;
 
-            float wispW = width1 * 0.20f;
-            int soulAlpha = Mth.clamp((int) (centerAlpha1 * 1.20f), 0, maxAlpha);
+                Vec3 sA = p1.lerp(p2, fA);
+                Vec3 sB = p1.lerp(p2, fB);
+                Vec3 w1 = sA.add(rightDir.scale(wispLat)).add(0, wispVert, 0);
+                Vec3 w2 = sB.add(rightDir.scale(wispLat * 0.8)).add(0, wispVert * 0.8, 0);
 
-            emitRibbonQuad(consumer, positionMatrix, w1, w2,
-                    rightDir.scale(wispW), rightDir.scale(wispW),
-                    45, 212, 191, 0, 0, soulAlpha, soulAlpha);
+                float wispW = wA * 0.20f;
+                int soulAlpha = Mth.clamp((int) (centerAlpha1 * 1.20f), 0, maxAlpha);
 
-            if (i % 3 == 0) {
-                float orbRise = ((float) ((animTime * 1.2 + i * 0.29) % 1.0)) * width1 * 2.6f;
-                float orbSway = (float) Math.sin(animTime * 2.0 + i * 1.5) * width1 * 0.45f;
-                Vec3 orbPos = p1.add(rightDir.scale(orbSway)).add(0, orbRise, 0);
-                float orbSize = width1 * 0.10f;
-                int orbAlpha = Mth.clamp((int) ((1.0f - orbRise / (width1 * 2.6f)) * maxAlpha), 0, maxAlpha);
+                emitRibbonQuad(consumer, positionMatrix, w1, w2,
+                        rightDir.scale(wispW), rightDir.scale(wispW),
+                        45, 212, 191, 0, 0, soulAlpha, soulAlpha);
+            }
+
+            // Rising spirit orbs
+            double segEnd = segStartDist + segDist;
+            for (int k = firstDecorSlot(segStartDist, 3); k * 3 * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * 3 * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float gu = k * 3.0f;
+                float wK = Mth.lerp(t, width1, width2);
+
+                float orbRise = ((float) ((animTime * 1.2 + gu * 0.29) % 1.0)) * wK * 2.6f;
+                float orbSway = (float) Math.sin(animTime * 2.0 + gu * 1.5) * wK * 0.45f;
+                Vec3 orbPos = p1.lerp(p2, t).add(rightDir.scale(orbSway)).add(0, orbRise, 0);
+                float orbSize = wK * 0.10f;
+                int orbAlpha = Mth.clamp((int) ((1.0f - orbRise / (wK * 2.6f)) * maxAlpha), 0, maxAlpha);
                 emitBillboardGlint(consumer, positionMatrix, orbPos, rightDir, trailUp, orbSize, 153, 246, 228, orbAlpha);
             }
         }
 
         // Pass 7: Matrix Digital Glyphs on Trajectory
-        if (theme == VisualTheme.MATRIX && i % 3 == 0) {
-            int glyphIdx = (int) (animTime * 8.0 + i) & 15;
-            Vec3 gCenter = p1.add(p2).scale(0.5).add(0, width1 * 0.4, 0);
-            emitMatrixGlyph(consumer, positionMatrix, gCenter, rightDir, trailUp, width1 * 0.12f, glyphIdx, 0, 255, 65, maxAlpha);
+        if (theme == VisualTheme.MATRIX) {
+            double segDist = p1.distanceTo(p2);
+            double segEnd = segStartDist + segDist;
+            for (int k = firstDecorSlot(segStartDist, 3); k * 3 * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * 3 * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float wK = Mth.lerp(t, width1, width2);
+                int glyphIdx = (int) (animTime * 8.0 + k * 3) & 15;
+                Vec3 gCenter = p1.lerp(p2, t).add(0, wK * 0.4f, 0);
+                emitMatrixGlyph(consumer, positionMatrix, gCenter, rightDir, trailUp, wK * 0.12f, glyphIdx, 0, 255, 65, maxAlpha);
+            }
         }
 
         // Pass 8: Aurora Borealis Drifting Ice Hexagon Glints
@@ -188,35 +249,68 @@ public final class PredictionThemeRenderer {
 
         // Pass 9: Singularity Orbiting Accretion Glints & Photon Ring Particles
         if (theme == VisualTheme.SINGULARITY) {
-            float angle1 = (float) (animTime * 5.5 + i * 1.2);
-            float spiralR = width1 * (0.8f + 0.3f * (float) Math.sin(animTime * 3.0 + i));
-            Vec3 glint1 = p1.add(rightDir.scale(Math.cos(angle1) * spiralR)).add(0, Math.sin(angle1) * spiralR, 0);
-            Vec3 glint2 = p1.subtract(rightDir.scale(Math.cos(angle1) * spiralR)).subtract(0, Math.sin(angle1) * spiralR, 0);
-            float gSize = width1 * 0.08f;
-            int gAlpha = Mth.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
-            emitBillboardGlint(consumer, positionMatrix, glint1, rightDir, trailUp, gSize, 255, 125, 10, gAlpha);
-            emitBillboardGlint(consumer, positionMatrix, glint2, rightDir, trailUp, gSize * 0.75f, 217, 70, 239, gAlpha);
+            double segDist = p1.distanceTo(p2);
+            double segEnd = segStartDist + segDist;
+            for (int k = firstDecorSlot(segStartDist, 1); k * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float gu = (float) k;
+                float wK = Mth.lerp(t, width1, width2);
+
+                float angle1 = (float) (animTime * 5.5 + gu * 1.2);
+                float spiralR = wK * (0.8f + 0.3f * (float) Math.sin(animTime * 3.0 + gu));
+                Vec3 base = p1.lerp(p2, t);
+                Vec3 glint1 = base.add(rightDir.scale(Math.cos(angle1) * spiralR)).add(0, Math.sin(angle1) * spiralR, 0);
+                Vec3 glint2 = base.subtract(rightDir.scale(Math.cos(angle1) * spiralR)).subtract(0, Math.sin(angle1) * spiralR, 0);
+                float gSize = wK * 0.08f;
+                int gAlpha = Mth.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
+                emitBillboardGlint(consumer, positionMatrix, glint1, rightDir, trailUp, gSize, 255, 125, 10, gAlpha);
+                emitBillboardGlint(consumer, positionMatrix, glint2, rightDir, trailUp, gSize * 0.75f, 217, 70, 239, gAlpha);
+            }
         }
 
         // Pass 10: Sakura Drift: Fluttering 5-Petal Blossoms & Drifting Petals
         if (theme == VisualTheme.SAKURA) {
-            // 5-petal flower every 2 segments
-            if (i % 2 == 0) {
-                float fAngle = (float) (animTime * 2.2 + i * 0.75);
-                float fOrbit = width1 * 0.9f * (float) Math.sin(animTime * 1.8 + i * 0.5);
-                Vec3 flowerPos = p1.add(rightDir.scale(fOrbit)).add(0, width1 * 0.35f, 0);
-                float fSize = width1 * 0.12f;
+            double segDist = p1.distanceTo(p2);
+            double segEnd = segStartDist + segDist;
+
+            // 5-petal flower every 2 steps
+            for (int k = firstDecorSlot(segStartDist, 2); k * 2 * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * 2 * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float gu = k * 2.0f;
+                float wK = Mth.lerp(t, width1, width2);
+                float fAngle = (float) (animTime * 2.2 + gu * 0.75);
+                float fOrbit = wK * 0.9f * (float) Math.sin(animTime * 1.8 + gu * 0.5);
+                Vec3 flowerPos = p1.lerp(p2, t).add(rightDir.scale(fOrbit)).add(0, wK * 0.35f, 0);
+                float fSize = wK * 0.12f;
                 int fAlpha = Mth.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
                 emitSakuraFlower(consumer, positionMatrix, flowerPos, rightDir, trailUp, fSize, fAngle, 244, 114, 182, fAlpha);
             }
+
             // Individual drifting petal
-            float petalPhase = (float) ((animTime * 1.4 + i * 0.29) % 1.0);
-            float petalSway = (float) Math.sin(animTime * 2.8 + i * 1.3) * width1 * 1.1f;
-            float petalFall = petalPhase * width1 * 2.2f;
-            Vec3 petalPos = p1.add(rightDir.scale(petalSway)).add(0, width1 * 0.6f - petalFall, 0);
-            float petalSize = width1 * 0.09f;
-            int petalAlpha = Mth.clamp((int) ((1.0f - petalPhase * 0.5f) * maxAlpha), 0, maxAlpha);
-            emitPetalGlint(consumer, positionMatrix, petalPos, rightDir, trailUp, petalSize, 251, 113, 133, petalAlpha);
+            for (int k = firstDecorSlot(segStartDist, 1); k * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float gu = (float) k;
+                float wK = Mth.lerp(t, width1, width2);
+                float petalPhase = (float) ((animTime * 1.4 + gu * 0.29) % 1.0);
+                float petalSway = (float) Math.sin(animTime * 2.8 + gu * 1.3) * wK * 1.1f;
+                float petalFall = petalPhase * wK * 2.2f;
+                Vec3 petalPos = p1.lerp(p2, t).add(rightDir.scale(petalSway)).add(0, wK * 0.6f - petalFall, 0);
+                float petalSize = wK * 0.09f;
+                int petalAlpha = Mth.clamp((int) ((1.0f - petalPhase * 0.5f) * maxAlpha), 0, maxAlpha);
+                emitPetalGlint(consumer, positionMatrix, petalPos, rightDir, trailUp, petalSize, 251, 113, 133, petalAlpha);
+            }
         }
 
         // Pass 11: Prismatic Crystal Faceted Octahedron Gemstones
@@ -234,11 +328,21 @@ public final class PredictionThemeRenderer {
         }
 
         // Pass 12: 8-Bit Arcade Matrix Sprites on Trajectory
-        if (theme == VisualTheme.ARCADE && i % 3 == 0) {
-            int spriteIdx = (int) (animTime * 5.0 + i) & 7;
-            Vec3 aCenter = p1.add(p2).scale(0.5).add(0, width1 * 0.45, 0);
-            int[] aCol = ThemeVisualAssets.getArcadeSpriteColor(spriteIdx);
-            emitArcadeSprite(consumer, positionMatrix, aCenter, rightDir, trailUp, width1 * 0.08f, spriteIdx, aCol[0], aCol[1], aCol[2], maxAlpha);
+        if (theme == VisualTheme.ARCADE) {
+            double segDist = p1.distanceTo(p2);
+            double segEnd = segStartDist + segDist;
+            for (int k = firstDecorSlot(segStartDist, 3); k * 3 * TRAIL_DECOR_STEP < segEnd - TRAIL_DECOR_EPS; k++) {
+                double anchor = k * 3 * TRAIL_DECOR_STEP;
+                if (anchor < segStartDist - TRAIL_DECOR_EPS) {
+                    continue;
+                }
+                float t = (float) ((anchor - segStartDist) / Math.max(segDist, TRAIL_DECOR_EPS));
+                float wK = Mth.lerp(t, width1, width2);
+                int spriteIdx = (int) (animTime * 5.0 + k * 3) & 7;
+                Vec3 aCenter = p1.lerp(p2, t).add(0, wK * 0.45f, 0);
+                int[] aCol = ThemeVisualAssets.getArcadeSpriteColor(spriteIdx);
+                emitArcadeSprite(consumer, positionMatrix, aCenter, rightDir, trailUp, wK * 0.08f, spriteIdx, aCol[0], aCol[1], aCol[2], maxAlpha);
+            }
         }
     }
 

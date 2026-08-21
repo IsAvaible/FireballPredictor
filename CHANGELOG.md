@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+- **Constant Trail Decoration Density:** Spectral Soul, Abyssal Sculk, Matrix Digital, Event Horizon, Sakura Drift, and 8-Bit Arcade trajectory decorations now anchor to world-space distance along the predicted path instead of the per-tick segment index. On long or fast trajectories, where a single physics tick covers several blocks, elements no longer stretch or spread far apart; they keep the exact size and spacing of the preview gallery and simply increase in count with the trajectory length.
+
 ## 1.9.0
 
 ### Per-Projectile Themes & Colors

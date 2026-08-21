@@ -86,6 +86,12 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
         // visually identical to the pre-theme renderer.
         double pulseSpeed = 0.45 * 20.0;
 
+        // Cumulative arc length (in blocks) up to first rendered segment for distance-anchored decorations
+        double segStartDist = 0.0;
+        for (int s = 1; s <= elapsedTicks && s < path.size(); s++) {
+            segStartDist += path.get(s - 1).distanceTo(path.get(s));
+        }
+
         float fade = state.fade();
         int maxAlpha = Math.round(PredictionRenderer.MAX_TRAIL_ALPHA * fade);
 
@@ -184,8 +190,10 @@ public class PredictionFeatureRenderer extends RenderTypeFeatureRenderer<Predict
                 PredictionThemeRenderer.renderTrailThemeSegment(
                         consumer, positionMatrix, theme, path, i, p1, p2, rightDir, trailUp,
                         width1, width2, centerAlpha1, baseCenterAlpha1, alphaBlend1, pulse1,
-                        dash1, fade, maxAlpha, animTime);
+                        dash1, fade, maxAlpha, animTime, segStartDist);
             }
+
+            segStartDist += p1.distanceTo(p2);
         }
 
         // Thematic whole-path passes (Tactical HUD fighter jets, etc.)
