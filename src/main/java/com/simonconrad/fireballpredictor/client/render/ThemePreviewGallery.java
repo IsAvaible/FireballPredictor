@@ -24,6 +24,7 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -37,6 +38,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -655,7 +657,11 @@ public final class ThemePreviewGallery {
             );
 
             float distSq = (float) cameraPos.distanceToSqr(hitPos);
-            collection.translucentModels.submit(new PredictionSubmit(distSq, trailState, domeState));
+            AABB pathBox = TrajectoryPredictor.calculatePathBoundingBox(track.path(), domeRadius);
+            Frustum frustum = camera.getCullFrustum();
+            if (pathBox == null || frustum == null || frustum.isVisible(pathBox)) {
+                collection.translucentModels.submit(new PredictionSubmit(distSq, trailState, domeState));
+            }
 
             // 3. Nameplate tooltip at the top of the trajectory path
             Vec3 tagRelPos = track.startPos().subtract(cameraPos).add(0.0, 0.4, 0.0);

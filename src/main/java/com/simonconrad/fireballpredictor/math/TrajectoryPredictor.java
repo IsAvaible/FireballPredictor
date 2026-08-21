@@ -411,4 +411,33 @@ public class TrajectoryPredictor {
 
         return new Vec3(0, 1, 0);
     }
+
+    /**
+     * Calculates an axis-aligned bounding box enclosing all points in the predicted trajectory path,
+     * inflated to account for ribbon thickness, theme decorative glints, and the terminal shockwave dome radius.
+     */
+    public static AABB calculatePathBoundingBox(List<Vec3> path, float domeRadius) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+
+        for (Vec3 pos : path) {
+            if (pos.x < minX) minX = pos.x;
+            if (pos.y < minY) minY = pos.y;
+            if (pos.z < minZ) minZ = pos.z;
+            if (pos.x > maxX) maxX = pos.x;
+            if (pos.y > maxY) maxY = pos.y;
+            if (pos.z > maxZ) maxZ = pos.z;
+        }
+
+        double margin = Math.max(domeRadius, 1.5);
+        return new AABB(minX - margin, minY - margin, minZ - margin, maxX + margin, maxY + margin, maxZ + margin);
+    }
 }

@@ -4,19 +4,24 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.PredictionData;
+import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+
+import java.util.List;
 
 public class PredictionRenderer {
 
@@ -167,6 +172,7 @@ public class PredictionRenderer {
         }
 
         DomeRenderState domeState = null;
+        float domeRadius = 0.0f;
         if (config.renderShockwaveDome && data.hitResult() != null && data.renderData() != null && !data.renderData().domeQuads().isEmpty()) {
             Vec3 hitPos = data.hitResult().getLocation();
             Matrix4f poseMatrix = new Matrix4f(basePose).translate(
@@ -176,7 +182,7 @@ public class PredictionRenderer {
             );
 
             float pulseFactor = computePulseFactor(animSeconds);
-            float domeRadius = (float) data.renderData().domeQuads().get(0).p1().length();
+            domeRadius = (float) data.renderData().domeQuads().get(0).p1().length();
             Vec3 trajectoryIntercept = com.simonconrad.fireballpredictor.math.TrajectoryPredictor.computeTrajectoryDomeIntercept(data.path(), hitPos, domeRadius);
 
             domeState = new DomeRenderState(
@@ -199,7 +205,11 @@ public class PredictionRenderer {
         if (trailState != null || domeState != null) {
             float distSq = (float) camera.position().distanceToSqr(fireball.position());
             PredictionSubmit submit = new PredictionSubmit(distSq, trailState, domeState);
-            collection.translucentModels.submit(submit);
+            AABB pathBox = TrajectoryPredictor.calculatePathBoundingBox(data.path(), domeRadius);
+            Frustum frustum = camera.getCullFrustum();
+            if (pathBox == null || frustum == null || frustum.isVisible(pathBox)) {
+                collection.translucentModels.submit(submit);
+            }
         }
     }
 

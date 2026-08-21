@@ -765,4 +765,43 @@ public class TrajectoryTests extends GameTestBase {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testPathBoundingBoxCalculation(GameTestHelper context) {
+        resetGlobalState();
+
+        // Null / empty path returns null
+        if (TrajectoryPredictor.calculatePathBoundingBox(null, 0.0f) != null) {
+            throw fail("Expected null AABB for null path");
+        }
+        if (TrajectoryPredictor.calculatePathBoundingBox(List.of(), 2.0f) != null) {
+            throw fail("Expected null AABB for empty path");
+        }
+
+        // Single point path
+        List<Vec3> single = List.of(new Vec3(10.0, 20.0, 30.0));
+        net.minecraft.world.phys.AABB singleBox = TrajectoryPredictor.calculatePathBoundingBox(single, 0.0f);
+        if (singleBox == null || singleBox.minX != 8.5 || singleBox.maxX != 11.5) {
+            throw fail("Expected single point box inflated by default margin 1.5, got: " + singleBox);
+        }
+
+        // Multi-point path with dome radius
+        List<Vec3> multi = List.of(
+            new Vec3(0.0, 5.0, 10.0),
+            new Vec3(5.0, 10.0, 20.0),
+            new Vec3(15.0, 8.0, 5.0)
+        );
+        float domeRadius = 3.0f;
+        net.minecraft.world.phys.AABB multiBox = TrajectoryPredictor.calculatePathBoundingBox(multi, domeRadius);
+        if (multiBox == null) {
+            throw fail("Expected non-null AABB for multi-point path");
+        }
+        if (Math.abs(multiBox.minX - (-3.0)) > 1e-5 || Math.abs(multiBox.maxX - 18.0) > 1e-5 ||
+            Math.abs(multiBox.minY - 2.0) > 1e-5 || Math.abs(multiBox.maxY - 13.0) > 1e-5 ||
+            Math.abs(multiBox.minZ - 2.0) > 1e-5 || Math.abs(multiBox.maxZ - 23.0) > 1e-5) {
+            throw fail("Unexpected multi-point bounding box dimensions: " + multiBox);
+        }
+
+        context.succeed();
+    }
 }

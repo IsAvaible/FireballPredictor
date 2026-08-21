@@ -7,6 +7,7 @@
 - **Breeze Config Toggle:** Added a dedicated `Track Breezes` toggle under Mob Sources with schematic preview support and full localization across all 11 languages.
 
 ### Performance & Memory
+- **View Frustum Culling:** Trajectory ribbons and shockwave domes calculate an axis-aligned bounding box and check camera view frustum visibility before submission, eliminating off-screen render overhead.
 - **Damage Raycast Early-Out:** Skips main-thread line-of-sight raycasts when players are safely out of blast range, eliminating frame drops during multi-projectile barrages.
 - **Explosion & Memory Optimizations:** Precomputed explosion ray unit vectors, zero-allocation ray stepping, and lazy fluid snapshots significantly reduce CPU usage and GC micro-stutters.
 
