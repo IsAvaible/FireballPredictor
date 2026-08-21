@@ -44,6 +44,7 @@ final class TrackingRenderer {
         BLAZE(Items.BLAZE_POWDER, new Color(255, 160, 32)),
         GHAST(Items.GHAST_TEAR, new Color(240, 240, 240)),
         DRAGON(Items.DRAGON_HEAD, new Color(160, 40, 180)),
+        BREEZE(Items.BREEZE_ROD, new Color(180, 210, 240)),
         PLAYER(Items.PLAYER_HEAD, new Color(90, 170, 255)),
         DISPENSER(Items.DISPENSER, new Color(140, 140, 150)),
         COMMAND(Items.COMMAND_BLOCK, new Color(200, 160, 60));
@@ -78,12 +79,14 @@ final class TrackingRenderer {
     static void renderMobMaster(Painter p, int x, int y, int w, int h,
                                 boolean enabled,
                                 boolean blaze, boolean ghast,
-                                boolean dragon, boolean wither) {
+                                boolean dragon, boolean wither,
+                                boolean breeze) {
         List<SourceChip> chips = List.of(
                 new SourceChip(Target.BLAZE, blaze && enabled),
                 new SourceChip(Target.GHAST, ghast && enabled),
                 new SourceChip(Target.DRAGON, dragon && enabled),
-                new SourceChip(Target.WITHER, wither && enabled)
+                new SourceChip(Target.WITHER, wither && enabled),
+                new SourceChip(Target.BREEZE, breeze && enabled)
         );
         renderOverview(p, x, y, w, h, enabled, chips, "MOBS", Items.ENDERMAN_SPAWN_EGG);
     }

@@ -8,6 +8,7 @@ public enum ProjectileOwner {
     GHAST,
     ENDER_DRAGON,
     WITHER,
+    BREEZE,
     PLAYER,
     DISPENSER,
     /** Summoned / command-block / unmatched environmental spawn. */
@@ -18,7 +19,8 @@ public enum ProjectileOwner {
         return this == BLAZE
                 || this == GHAST
                 || this == ENDER_DRAGON
-                || this == WITHER;
+                || this == WITHER
+                || this == BREEZE;
     }
 
     public static ProjectileOwner fromOrdinalClamped(int ordinal) {

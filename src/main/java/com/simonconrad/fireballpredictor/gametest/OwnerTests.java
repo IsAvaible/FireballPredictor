@@ -16,8 +16,10 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.monster.breeze.Breeze;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
 import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -409,6 +411,81 @@ public class OwnerTests extends GameTestBase {
             }
         } finally {
             ServerTrackingRules.applyMask(previousMask);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testBreezeOwnerClassificationAndFilter(GameTestHelper context) {
+        resetGlobalState();
+
+        Breeze breeze = context.spawn(EntityTypes.BREEZE, 1, 2, 1);
+        try {
+            // 1. Classification & mob check
+            if (OwnerClassifier.classifyEntity(breeze) != ProjectileOwner.BREEZE) {
+                throw fail("Expected classifyEntity(Breeze) to return BREEZE, got: " + OwnerClassifier.classifyEntity(breeze));
+            }
+            if (!ProjectileOwner.BREEZE.isMob()) {
+                throw fail("Expected ProjectileOwner.BREEZE.isMob() to be true");
+            }
+
+            // 2. Native inference with Breeze owner
+            BreezeWindCharge windCharge = spawnProjectile(context, EntityTypes.BREEZE_WIND_CHARGE, 0.0, false);
+            windCharge.setOwner(breeze);
+            InferenceResult nativeResult = OwnerInferenceEngine.infer(windCharge, context.getLevel());
+            if (nativeResult.owner() != ProjectileOwner.BREEZE) {
+                throw fail("Expected BREEZE owner via native NBT, got: " + nativeResult.owner());
+            }
+
+            // 3. Filter evaluation
+            ModConfig config = ModConfig.instance();
+            boolean prevMaster = config.trackProjectiles;
+            boolean prevMobMaster = config.trackMobProjectiles;
+            boolean prevBreeze = config.trackBreezeWindCharges;
+            boolean prevWindType = config.trackWindCharges;
+            boolean prevOther = config.trackOtherOwnerProjectiles;
+            try {
+                config.trackProjectiles = true;
+                config.trackMobProjectiles = true;
+                config.trackBreezeWindCharges = true;
+                config.trackWindCharges = true;
+                config.trackOtherOwnerProjectiles = false; // Should not affect mob owner
+
+                if (!TrackedProjectile.evaluateFilter(windCharge, ProjectileOwner.BREEZE)) {
+                    throw fail("Breeze wind charge should be tracked when enabled and trackOtherOwnerProjectiles=false");
+                }
+
+                // Sub-filter disabled
+                config.trackBreezeWindCharges = false;
+                if (TrackedProjectile.evaluateFilter(windCharge, ProjectileOwner.BREEZE)) {
+                    throw fail("Breeze wind charge should not be tracked when trackBreezeWindCharges=false");
+                }
+                config.trackBreezeWindCharges = true;
+
+                // Mob master disabled
+                config.trackMobProjectiles = false;
+                if (TrackedProjectile.evaluateFilter(windCharge, ProjectileOwner.BREEZE)) {
+                    throw fail("Breeze wind charge should not be tracked when trackMobProjectiles=false");
+                }
+                config.trackMobProjectiles = true;
+
+                // Wind charge type disabled
+                config.trackWindCharges = false;
+                if (TrackedProjectile.evaluateFilter(windCharge, ProjectileOwner.BREEZE)) {
+                    throw fail("Breeze wind charge should not be tracked when trackWindCharges=false");
+                }
+            } finally {
+                config.trackProjectiles = prevMaster;
+                config.trackMobProjectiles = prevMobMaster;
+                config.trackBreezeWindCharges = prevBreeze;
+                config.trackWindCharges = prevWindType;
+                config.trackOtherOwnerProjectiles = prevOther;
+            }
+
+            windCharge.discard();
+        } finally {
+            breeze.discard();
         }
 
         context.succeed();

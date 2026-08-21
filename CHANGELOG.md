@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.2
+
+### Tracking & Bug Fixes
+- **Breeze Mob Classification:** Correctly classified Breezes as hostile mob sources so Breeze wind charges respect mob tracking filters instead of falling back to command/other source filters.
+- **Breeze Config Toggle:** Added a dedicated `Track Breezes` toggle under Mob Sources with schematic preview support and full localization across all 11 languages.
+
 ## 1.9.1
 
 ### Visuals & Themes

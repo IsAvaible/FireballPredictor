@@ -111,6 +111,7 @@ public final class TrackedProjectile {
             case GHAST -> config.trackMobProjectiles && config.trackGhastFireballs;
             case ENDER_DRAGON -> config.trackMobProjectiles && config.trackEnderDragonFireballs;
             case WITHER -> config.trackMobProjectiles && config.trackWitherMob;
+            case BREEZE -> config.trackMobProjectiles && config.trackBreezeWindCharges;
             case PLAYER -> (config.trackOtherOwnerProjectiles && config.trackPlayerProjectiles) || isDeflected;
             case DISPENSER -> config.trackOtherOwnerProjectiles && config.trackDispenserProjectiles;
             case COMMAND, UNKNOWN -> config.trackOtherOwnerProjectiles && config.trackCommandProjectiles;

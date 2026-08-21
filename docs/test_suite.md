@@ -141,7 +141,14 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
   1. Verifies dispenser adjacency detection (`DISPENSER` owner).
   2. Simulates player hit/punch velocity reversal, confirming owner re-attribution to `PLAYER` (`isDeflected() == true`) and filter evaluation logic.
 
-### 22. Server Tracking Restrictions (`testServerTrackingRestrictions`)
+### 22. Breeze Owner Classification & Tracking Filter (`testBreezeOwnerClassificationAndFilter`)
+* **Entities**: `Breeze`, `BreezeWindCharge`
+* **Details**:
+  1. Asserts that `OwnerClassifier.classifyEntity(breeze)` resolves to `ProjectileOwner.BREEZE` and `isMob()` is true.
+  2. Asserts that native owner assignment resolves to `BREEZE`.
+  3. Verifies `TrackedProjectile.evaluateFilter` gates on `trackMobProjectiles`, `trackBreezeWindCharges`, and `trackWindCharges`, while ignoring non-mob toggles (`trackOtherOwnerProjectiles`).
+
+### 23. Server Tracking Restrictions (`testServerTrackingRestrictions`)
 * **Entities**: `LargeFireball`
 * **Details**: Asserts that server restriction masks (`ServerTrackingRules`) override local client config settings (including deflection bypass) for player, dispenser, command, or group restrictions, and that clearing restrictions restores local settings immediately.
 

@@ -67,6 +67,8 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         TRACK_DRAGON(TrackingRenderer.Target.DRAGON, "trackEnderDragonFireballs", ParentGroup.MOB),
         /** Single lock-on: wither mob. */
         TRACK_WITHER_MOB(TrackingRenderer.Target.WITHER, "trackWitherMob", ParentGroup.MOB),
+        /** Single lock-on: breeze wind charge. */
+        TRACK_BREEZE(TrackingRenderer.Target.BREEZE, "trackBreezeWindCharges", ParentGroup.MOB),
         /** Single lock-on: player-owned projectile. */
         TRACK_PLAYER(TrackingRenderer.Target.PLAYER, "trackPlayerProjectiles", ParentGroup.OTHER),
         /** Single lock-on: dispenser projectile. */
@@ -130,7 +132,7 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
         float aspect = switch (mode) {
             case TRACK_MASTER, TRACK_MOB_MASTER, TRACK_OTHER_MASTER -> MASTER_ASPECT;
             case TRACK_FIREBALL, TRACK_WITHER, TRACK_WIND, TRACK_BLAZE, TRACK_GHAST,
-                 TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND -> TRACKING_ASPECT;
+                 TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_BREEZE, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND -> TRACKING_ASPECT;
             case DAMAGE_HEARTS, KNOCKBACK_ESTIMATOR -> DAMAGE_ASPECT;
             default -> PANEL_ASPECT;
         };
@@ -155,7 +157,7 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
             case TRACK_MOB_MASTER -> renderTrackMobMaster(p, innerX, innerY, innerW, innerH);
             case TRACK_OTHER_MASTER -> renderTrackOtherMaster(p, innerX, innerY, innerW, innerH);
             case TRACK_FIREBALL, TRACK_WITHER, TRACK_WIND, TRACK_BLAZE, TRACK_GHAST,
-                 TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND
+                 TRACK_DRAGON, TRACK_WITHER_MOB, TRACK_BREEZE, TRACK_PLAYER, TRACK_DISPENSER, TRACK_COMMAND
                     -> renderTracking(p, innerX, innerY, innerW, innerH);
             case DAMAGE_HEARTS -> renderDamageHearts(p, innerX, innerY, innerW, innerH);
             case KNOCKBACK_ESTIMATOR -> renderKnockbackEstimator(p, innerX, innerY, innerW, innerH);
@@ -258,7 +260,8 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
                 pendingBool("trackBlazeFireballs", true),
                 pendingBool("trackGhastFireballs", true),
                 pendingBool("trackEnderDragonFireballs", true),
-                pendingBool("trackWitherMob", true));
+                pendingBool("trackWitherMob", true),
+                pendingBool("trackBreezeWindCharges", true));
     }
 
     private void renderTrackOtherMaster(Painter p, int x, int y, int w, int h) {
@@ -436,6 +439,10 @@ public final class ConfigPreviewRenderer implements ImageRenderer {
 
     public static final class TrackWitherMobFactory extends ModeFactory {
         public TrackWitherMobFactory() { super(Mode.TRACK_WITHER_MOB); }
+    }
+
+    public static final class TrackBreezeFactory extends ModeFactory {
+        public TrackBreezeFactory() { super(Mode.TRACK_BREEZE); }
     }
 
     public static final class TrackPlayerFactory extends ModeFactory {

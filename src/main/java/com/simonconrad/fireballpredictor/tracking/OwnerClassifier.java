@@ -7,6 +7,7 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.monster.breeze.Breeze;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.level.Level;
@@ -41,6 +42,9 @@ public final class OwnerClassifier {
         }
         if (entity instanceof WitherBoss) {
             return ProjectileOwner.WITHER;
+        }
+        if (entity instanceof Breeze) {
+            return ProjectileOwner.BREEZE;
         }
         if (entity instanceof Player) {
             return ProjectileOwner.PLAYER;

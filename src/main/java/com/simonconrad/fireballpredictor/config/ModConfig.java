@@ -113,7 +113,8 @@ public class ModConfig {
             "trackBlazeFireballs",
             "trackGhastFireballs",
             "trackEnderDragonFireballs",
-            "trackWitherMob"
+            "trackWitherMob",
+            "trackBreezeWindCharges"
     })
     public boolean trackMobProjectiles = true;
 
@@ -140,6 +141,12 @@ public class ModConfig {
     @CustomImage(factory = ConfigPreviewRenderer.TrackWitherMobFactory.class)
     @TickBox
     public boolean trackWitherMob = true;
+
+    @SerialEntry
+    @AutoGen(category = "general", group = "tracking_mobs")
+    @CustomImage(factory = ConfigPreviewRenderer.TrackBreezeFactory.class)
+    @TickBox
+    public boolean trackBreezeWindCharges = true;
 
     /**
      * Master for non-mob source projectiles (player, dispenser, command).
