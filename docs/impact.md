@@ -24,7 +24,8 @@ Because fireball size/power is normally handled server-side, the mod resolves ex
 ### 3. Asynchronous Execution & Snapshot Caching
 To prevent game micro-stutters and keep frame rendering smooth when predicting multiple fireballs:
 - **[BlockStateSnapshot.java](../src/main/java/com/simonconrad/fireballpredictor/math/BlockStateSnapshot.java)**: When a collision is predicted on the main thread, a thread-safe local block state snapshot is captured inside the bounding box of the explosion. It implements `BlockGetter` (`BlockView`) and stores immutable references to `BlockState` and `FluidState`.
-- **Asynchronous Raycasting**: The 1352 explosion rays are simulated asynchronously on a background worker thread (`FireballPredictor-Worker`) using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
+- **Asynchronous Raycasting & Mesh Generation**: The 1,352 explosion rays and procedural dome mesh quads are simulated asynchronously on a background worker thread (`FireballPredictor-Worker`) using this snapshot, bypassing non-thread-safe world calls and avoiding main-thread freezes.
+- **Preliminary Flight Path Rendering**: On initial entity spawn, the main render thread immediately binds a lightweight preliminary prediction (flight ribbon) on frame 0, attaching broken block highlights and the shockwave dome mesh as soon as the background worker finishes.
 
 ### 4. Damage & Knockback Prediction ([DamageCalculator.java](../src/main/java/com/simonconrad/fireballpredictor/math/DamageCalculator.java))
 The mod replicates Minecraft 26.2's complete explosion damage and knockback pipeline client-side without relying on server-only classes:

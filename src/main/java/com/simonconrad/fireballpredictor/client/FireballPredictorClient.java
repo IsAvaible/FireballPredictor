@@ -178,12 +178,21 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
                 TrackedPrediction trackedPrediction = entry.getValue();
 
-                if (trackedPrediction.shouldRefresh(fireball, client.level) && !trackedPrediction.isCalculating) {
+                if (!trackedPrediction.isCalculating && trackedPrediction.shouldRefresh(fireball, client.level)) {
                     trackedPrediction.isCalculating = true;
                     float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
                     boolean currentDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
                     TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, client.level);
                     int predictionAge = fireball.tickCount;
+
+                    // Immediately update prediction data to preliminary prediction so new trajectory ribbon renders on frame 0 of deflection / drift
+                    trackedPrediction.predictionData = TrajectoryPredictor.createPreliminaryPrediction(result, predictionAge);
+                    trackedPrediction.calculatedPower = currentPower;
+                    trackedPrediction.calculatedDangerous = currentDangerous;
+                    trackedPrediction.cachedDamageHitTick = -1;
+
+                    Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
+                    FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
                     
                     PREDICTION_EXECUTOR.submit(() -> {
                         try {
@@ -193,6 +202,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                                     trackedPrediction.predictionData = data;
                                     trackedPrediction.calculatedPower = currentPower;
                                     trackedPrediction.calculatedDangerous = currentDangerous;
+                                    trackedPrediction.cachedDamageHitTick = -1;
                                     trackedPrediction.isCalculating = false;
                                 }
                             });
@@ -238,7 +248,8 @@ public class FireballPredictorClient implements ClientModInitializer {
                     double dangerRadius = warningPower * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 
-                    if (isThreateningPlayer(player, fireball, data, elapsedTicks, dangerRadiusSq)) {
+                    TrackedPrediction trackedPrediction = entry.getValue();
+                    if (isThreateningPlayer(player, fireball, trackedPrediction, elapsedTicks, dangerRadiusSq)) {
                         impactWarningDetected = true;
                         float travelProgress = getTravelProgress(fireball.tickCount, ticksToImpact);
                         if (ticksToImpact < minTicksToImpact) {
@@ -329,7 +340,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     if (fireball == null || data == null) {
                         continue;
                     }
-                    HitResult damageHit = TrajectoryPredictor.findDamageHitResult(client.level, fireball, data);
+                    HitResult damageHit = trackedPrediction.getOrComputeDamageHit(client.level, fireball, fireball.tickCount);
                     if (damageHit == null) {
                         continue;
                     }
@@ -439,15 +450,43 @@ public class FireballPredictorClient implements ClientModInitializer {
     private void createAndRegisterPrediction(AbstractHurtingProjectile fireball, ClientLevel world) {
         int entityId = fireball.getId();
         TrackedPrediction trackedPrediction = new TrackedPrediction();
-        trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, world);
-        trackedPrediction.calculatedPower = ImpactPredictor.resolveExplosionPower(fireball);
-        trackedPrediction.calculatedDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
+        float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
+        boolean currentDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
+        
+        TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, world);
+        int predictionAge = fireball.tickCount;
+
+        // Set preliminary prediction immediately for zero-latency frame 0 trajectory rendering
+        trackedPrediction.predictionData = TrajectoryPredictor.createPreliminaryPrediction(result, predictionAge);
+        trackedPrediction.calculatedPower = currentPower;
+        trackedPrediction.calculatedDangerous = currentDangerous;
+        trackedPrediction.cachedDamageHitTick = -1;
+        trackedPrediction.isCalculating = true;
         activePredictions.put(entityId, trackedPrediction);
 
-        if (trackedPrediction.predictionData != null) {
-            Vec3 hitPos = trackedPrediction.predictionData.hitResult() != null ? trackedPrediction.predictionData.hitResult().getLocation() : null;
-            FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
-        }
+        Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
+        FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
+
+        // Offload heavy explosion raycasting (1,352 rays) and procedural dome mesh generation to worker
+        PREDICTION_EXECUTOR.submit(() -> {
+            try {
+                PredictionData data = TrajectoryPredictor.computePrediction(result, predictionAge);
+                Minecraft.getInstance().execute(() -> {
+                    if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction) {
+                        trackedPrediction.predictionData = data;
+                        trackedPrediction.calculatedPower = currentPower;
+                        trackedPrediction.calculatedDangerous = currentDangerous;
+                        trackedPrediction.cachedDamageHitTick = -1;
+                        trackedPrediction.isCalculating = false;
+                    }
+                });
+            } catch (Exception e) {
+                FireballPredictor.LOGGER.error("Failed to calculate initial fireball prediction", e);
+                Minecraft.getInstance().execute(() -> {
+                    trackedPrediction.isCalculating = false;
+                });
+            }
+        });
     }
 
     private void resetClientState(ClientLevel world) {
@@ -547,13 +586,17 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
     }
 
-    private static boolean isThreateningPlayer(LocalPlayer player, AbstractHurtingProjectile projectile, PredictionData data, int elapsedTicks, double dangerRadiusSq) {
-        if (player == null || data == null || data.path() == null || data.path().isEmpty()) {
+    private static boolean isThreateningPlayer(LocalPlayer player, AbstractHurtingProjectile projectile, TrackedPrediction trackedPrediction, int elapsedTicks, double dangerRadiusSq) {
+        if (player == null || trackedPrediction == null) {
+            return false;
+        }
+        PredictionData data = trackedPrediction.predictionData;
+        if (data == null || data.path() == null || data.path().isEmpty()) {
             return false;
         }
 
         // 1. Direct entity hit on the player along the path
-        HitResult damageHit = TrajectoryPredictor.findDamageHitResult(player.level(), projectile, data);
+        HitResult damageHit = trackedPrediction.getOrComputeDamageHit(player.level(), projectile, projectile.tickCount);
         if (damageHit instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
             return true;
         }
@@ -604,6 +647,17 @@ public class FireballPredictorClient implements ClientModInitializer {
         private float cachedSeenPercent = -1.0f;
         private Vec3 lastEstimatePlayerPos;
         private Vec3 lastEstimateHitPos;
+        private HitResult cachedDamageHit;
+        private int cachedDamageHitTick = -1;
+
+        public HitResult getOrComputeDamageHit(net.minecraft.world.level.Level world, AbstractHurtingProjectile fireball, int tick) {
+            if (cachedDamageHitTick == tick) {
+                return cachedDamageHit;
+            }
+            cachedDamageHit = TrajectoryPredictor.findDamageHitResult(world, fireball, predictionData);
+            cachedDamageHitTick = tick;
+            return cachedDamageHit;
+        }
 
         private boolean shouldRefresh(AbstractHurtingProjectile fireball, ClientLevel world) {
             float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
@@ -649,11 +703,24 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
-            for (int i = elapsedTicks; i < predictionData.path().size() - 1; i++) {
+            // Check the immediate next 5 ticks ahead on every tick
+            int immediateAhead = Math.min(predictionData.path().size() - 1, elapsedTicks + 5);
+            for (int i = elapsedTicks; i < immediateAhead; i++) {
                 Vec3 pos = predictionData.path().get(i);
                 net.minecraft.core.BlockPos blockPos = net.minecraft.core.BlockPos.containing(pos.x, pos.y, pos.z);
                 if (!world.getBlockState(blockPos).getCollisionShape(world, blockPos).isEmpty()) {
                     return true;
+                }
+            }
+
+            // Throttle full-path obstruction rescans to once every 5 ticks to avoid redundant O(N) rescans
+            if (fireball.tickCount % 5 == 0 && immediateAhead < predictionData.path().size() - 1) {
+                for (int i = immediateAhead; i < predictionData.path().size() - 1; i++) {
+                    Vec3 pos = predictionData.path().get(i);
+                    net.minecraft.core.BlockPos blockPos = net.minecraft.core.BlockPos.containing(pos.x, pos.y, pos.z);
+                    if (!world.getBlockState(blockPos).getCollisionShape(world, blockPos).isEmpty()) {
+                        return true;
+                    }
                 }
             }
 

@@ -205,6 +205,25 @@ public class TrajectoryPredictor {
         return new PredictionData(result.path, result.velocities, result.hitResult, result.damageHitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
     }
 
+    /**
+     * Creates a lightweight preliminary {@link PredictionData} with flight path and hit results
+     * for instant rendering on frame 0 while heavy explosion calculations and dome mesh generation
+     * run asynchronously on the worker thread.
+     */
+    public static PredictionData createPreliminaryPrediction(TrajectoryResult result, int predictionAge) {
+        Vec3 initialVelocity = result.velocities.isEmpty() ? Vec3.ZERO : result.velocities.get(0);
+        return new PredictionData(
+            result.path,
+            result.velocities,
+            result.hitResult,
+            result.damageHitResult,
+            List.of(),
+            initialVelocity,
+            PredictionRenderData.EMPTY,
+            predictionAge
+        );
+    }
+
     public static PredictionRenderData createRenderData(List<Vec3> path, float explosionPower) {
         return createRenderData(explosionPower);
     }
