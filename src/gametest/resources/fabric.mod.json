@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "fireballpredictor_testmod",
+  "version": "${version}",
+  "name": "Fireball Predictor Game Tests",
+  "description": "GameTest testmod for Fireball Predictor",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "com.simonconrad.fireballpredictor.gametest.TrajectoryTests",
+      "com.simonconrad.fireballpredictor.gametest.DamageTests",
+      "com.simonconrad.fireballpredictor.gametest.OwnerTests",
+      "com.simonconrad.fireballpredictor.gametest.ThemeTests"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "fabric-api": "*",
+    "fireballpredictor": "*"
+  }
+}

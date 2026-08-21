@@ -94,7 +94,7 @@ fabricApi {
     }
 }
 
-processResources {
+tasks.withType(ProcessResources).configureEach {
 	inputs.property "version", project.version
 
 	filesMatching("fabric.mod.json") {
@@ -103,6 +103,10 @@ processResources {
 
 	exclude "**/icon-256px.png"
 	exclude "**/icon.pxo"
+}
+
+tasks.named("check") {
+	dependsOn(tasks.named("runGameTest"))
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -185,6 +189,10 @@ publishMods {
 		commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
 		tagName = providers.environmentVariable("GITHUB_REF_NAME").orElse("v${project.mod_version}+${project.minecraft_version}")
 	}
+}
+
+tasks.named("publishMods") {
+	dependsOn(tasks.named("check"))
 }
 
 // configure the maven publication
