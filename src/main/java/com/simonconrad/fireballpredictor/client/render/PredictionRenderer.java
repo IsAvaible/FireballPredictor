@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.PredictionData;
+import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

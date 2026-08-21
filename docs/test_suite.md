@@ -100,7 +100,7 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 * **Entity**: `DragonFireball`
 * **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
 * **Environment**: A target wall of `Blocks.DIRT` at relative `x = 2`.
-* **Details**: Asserts that Ender Dragon fireballs resolve explosion power as `0.0f` (spawning effect clouds rather than block-damaging explosions) and predict/execute 0 broken blocks.
+* **Details**: Asserts that Ender Dragon fireballs resolve explosion power as `0.0f` (spawning effect clouds rather than block-damaging explosions), evaluate direct-hit damage as `0.0f`, and predict/execute 0 broken blocks.
 
 ### 16. Inferred Explosion Power Fallback (`testInferredExplosionPowerFallback`)
 * **Entity**: `LargeFireball` (unsynced entity ID)

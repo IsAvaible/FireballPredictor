@@ -11,6 +11,8 @@ import com.simonconrad.fireballpredictor.math.ImpactPredictor;
 import com.simonconrad.fireballpredictor.math.PredictionRenderData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.mixin.ChatComponentAccessor;
+import com.simonconrad.fireballpredictor.projectile.ProjectileKind;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -517,7 +519,8 @@ public final class ThemePreviewGallery {
 
             List<BlockPos> brokenBlocks = null;
             if (player.level() != null) {
-                brokenBlocks = ImpactPredictor.predictBrokenBlocks(1.3f, false, false, hitPos, player.level());
+                brokenBlocks = ImpactPredictor.predictBrokenBlocks(
+                        1.3f, VanillaProfiles.of(ProjectileKind.LARGE_FIREBALL), false, hitPos, player.level());
             }
 
             TRACKS.add(new Track(theme, theme.getDisplayName(), startPos, hitPos, path, domeMesh, brokenBlocks));

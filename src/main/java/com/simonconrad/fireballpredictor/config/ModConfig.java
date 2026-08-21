@@ -2,6 +2,9 @@ package com.simonconrad.fireballpredictor.config;
 
 import com.simonconrad.fireballpredictor.client.gui.ModConfigGui;
 import com.simonconrad.fireballpredictor.client.gui.preview.ConfigPreviewRenderer;
+import com.simonconrad.fireballpredictor.projectile.ProjectileKind;
+import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
@@ -17,9 +20,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 
 import java.awt.Color;
 
@@ -339,27 +339,59 @@ public class ModConfig {
     @CustomImage(factory = ConfigPreviewRenderer.ShockwaveDragonFactory.class) @ColorField
     public Color dragonFireballShockwaveColor = new Color(200, 50, 212);
 
-    // 3. Helper methods to match your existing client initialization calls
+    // 3. Helper methods to match your existing client initialization calls.
+    //    Theme / color selection is keyed on the projectile's kind (from its profile), not on
+    //    instanceof chains, so adding a new projectile kind only touches the registry.
     public VisualTheme getThemeFor(AbstractHurtingProjectile projectile) {
-        ProjectileVisualTheme selection = projectile instanceof AbstractWindCharge ? windChargeVisualTheme
-                : projectile instanceof WitherSkull ? witherSkullVisualTheme
-                : projectile instanceof DragonFireball ? dragonFireballVisualTheme
-                : fireballVisualTheme;
+        return getThemeFor(VanillaProfiles.from(projectile));
+    }
+
+    public VisualTheme getThemeFor(ProjectileProfile profile) {
+        return getThemeFor(profile != null ? profile.kind() : ProjectileKind.LARGE_FIREBALL);
+    }
+
+    public VisualTheme getThemeFor(ProjectileKind kind) {
+        ProjectileVisualTheme selection = switch (kind) {
+            case WIND_CHARGE, BREEZE_WIND_CHARGE -> windChargeVisualTheme;
+            case WITHER_SKULL -> witherSkullVisualTheme;
+            case DRAGON_FIREBALL -> dragonFireballVisualTheme;
+            default -> fireballVisualTheme;
+        };
         return (selection == null ? ProjectileVisualTheme.GLOBAL : selection).resolve(this.visualTheme);
     }
 
     public Color getTrajectoryColorFor(AbstractHurtingProjectile projectile) {
-        if (projectile instanceof AbstractWindCharge) return windChargeTrajectoryColor;
-        if (projectile instanceof WitherSkull) return witherSkullTrajectoryColor;
-        if (projectile instanceof DragonFireball) return dragonFireballTrajectoryColor;
-        return trajectoryColor;
+        return getTrajectoryColorFor(VanillaProfiles.from(projectile));
+    }
+
+    public Color getTrajectoryColorFor(ProjectileProfile profile) {
+        return getTrajectoryColorFor(profile != null ? profile.kind() : ProjectileKind.LARGE_FIREBALL);
+    }
+
+    public Color getTrajectoryColorFor(ProjectileKind kind) {
+        return switch (kind) {
+            case WIND_CHARGE, BREEZE_WIND_CHARGE -> windChargeTrajectoryColor;
+            case WITHER_SKULL -> witherSkullTrajectoryColor;
+            case DRAGON_FIREBALL -> dragonFireballTrajectoryColor;
+            default -> trajectoryColor;
+        };
     }
 
     public Color getShockwaveColorFor(AbstractHurtingProjectile projectile) {
-        if (projectile instanceof AbstractWindCharge) return windChargeShockwaveColor;
-        if (projectile instanceof WitherSkull) return witherSkullShockwaveColor;
-        if (projectile instanceof DragonFireball) return dragonFireballShockwaveColor;
-        return shockwaveColor;
+        return getShockwaveColorFor(VanillaProfiles.from(projectile));
+    }
+
+    public Color getShockwaveColorFor(ProjectileProfile profile) {
+        return getShockwaveColorFor(profile != null ? profile.kind() : ProjectileKind.LARGE_FIREBALL);
+    }
+
+    public Color getShockwaveColorFor(ProjectileKind kind) {
+        return switch (kind) {
+            case WIND_CHARGE, BREEZE_WIND_CHARGE -> windChargeShockwaveColor;
+            case WITHER_SKULL -> witherSkullShockwaveColor;
+            case DRAGON_FIREBALL -> dragonFireballShockwaveColor;
+            default -> shockwaveColor;
+        };
     }
 
     public static Screen createScreen(Screen parentScreen) {

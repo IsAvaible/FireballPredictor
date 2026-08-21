@@ -30,7 +30,7 @@ This document describes the client-side visual effects (VFX) used to represent p
 
 ### 5. HUD Impact Warning Badge
 - **Collision Warning**: When the local player is directly in the path of an incoming projectile or within its blast danger radius, [PredictionRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) renders an anchorable HUD warning badge via `HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT, ...)`.
-- **Projectile Category Theming ([WarningProjectileType.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/WarningProjectileType.java))**: The warning badge adapts dynamically to the incoming projectile type:
+- **Projectile Category Theming ([WarningProjectileType.java](../src/main/java/com/simonconrad/fireballpredictor/projectile/WarningProjectileType.java))**: The warning badge adapts dynamically to the incoming projectile type:
   - **Fireballs** (`FIREBALL`): Renders `Items.FIRE_CHARGE` with a fiery orange progress bar (`#FFE67A00`).
   - **Wither Skulls** (`WITHER_SKULL`): Renders `Items.WITHER_SKELETON_SKULL` with a slate-grey progress bar (`#FFA0A8B0`).
   - **Wind Charges** (`WIND_CHARGE`): Renders `Items.WIND_CHARGE` with an ice-blue progress bar (`#FFCFD6F7`).

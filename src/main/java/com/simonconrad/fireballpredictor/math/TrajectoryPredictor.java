@@ -3,6 +3,8 @@ package com.simonconrad.fireballpredictor.math;
 import java.util.ArrayList;
 import java.util.List;
 import com.simonconrad.fireballpredictor.mixin.ProjectileAccessor;
+import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
@@ -28,7 +30,7 @@ public class TrajectoryPredictor {
         HitResult damageHitResult,
         float explosionPower,
         BlockStateSnapshot snapshot,
-        boolean isWindCharge,
+        ProjectileProfile profile,
         boolean isDangerous
     ) {
         public TrajectoryResult(
@@ -37,10 +39,10 @@ public class TrajectoryPredictor {
             HitResult hitResult,
             float explosionPower,
             BlockStateSnapshot snapshot,
-            boolean isWindCharge,
+            ProjectileProfile profile,
             boolean isDangerous
         ) {
-            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, isWindCharge, isDangerous);
+            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, profile, isDangerous);
         }
     }
 
@@ -67,21 +69,17 @@ public class TrajectoryPredictor {
         HitResult blockHit = null;
         HitResult firstEntityHit = null;
         
-        boolean isWindCharge = fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
+        ProjectileProfile profile = VanillaProfiles.from(fireball);
+        if (profile == null) {
+            profile = VanillaProfiles.of(com.simonconrad.fireballpredictor.projectile.ProjectileKind.LARGE_FIREBALL);
+        }
         boolean isDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
 
-        double airDrag = 0.95;
-        if (isWindCharge) {
-            airDrag = 1.0;
-        } else if (isDangerous) {
-            airDrag = 0.73;
-        }
-
-        double waterDrag = isWindCharge ? 1.0 : 0.8;
+        double waterDrag = profile.dragWater();
         
         for (int i = 0; i < maxTicks; i++) {
             AABB currentBox = boundingBox.move(currentPos.subtract(fireballPos));
-            double drag = isTouchingWater(world, currentBox) ? waterDrag : airDrag;
+            double drag = isTouchingWater(world, currentBox) ? waterDrag : profile.airDrag(fireball);
 
             // Apply acceleration to velocity and apply drag BEFORE movement, matching vanilla tick phase
             Vec3 acceleration = velocity.lengthSqr() > 1e-12 ? velocity.normalize().scale(accelerationPower) : Vec3.ZERO;
@@ -129,7 +127,7 @@ public class TrajectoryPredictor {
         HitResult hitResult = blockHit != null ? blockHit : firstEntityHit;
         HitResult damageHitResult = firstEntityHit != null ? firstEntityHit : blockHit;
 
-        float explosionPower = (blockHit != null || firstEntityHit != null) ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
+        float explosionPower = (blockHit != null || firstEntityHit != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
         BlockStateSnapshot snapshot = null;
         HitResult snapshotHit = blockHit != null ? blockHit : firstEntityHit;
         if (snapshotHit != null && explosionPower > 0.0f) {
@@ -140,13 +138,13 @@ public class TrajectoryPredictor {
             snapshot = new BlockStateSnapshot(world, minPos, maxPos);
         }
         
-        return new TrajectoryResult(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, isWindCharge, isDangerous);
+        return new TrajectoryResult(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous);
     }
 
     public static PredictionData computePrediction(TrajectoryResult result, int predictionAge) {
         List<BlockPos> brokenBlocks = new ArrayList<>();
         if (result.hitResult != null && result.explosionPower > 0.0f && result.snapshot != null) {
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.isWindCharge, result.isDangerous, result.hitResult.getLocation(), result.snapshot);
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.profile, result.isDangerous, result.hitResult.getLocation(), result.snapshot);
         }
         
         PredictionRenderData renderData = createRenderData(result.explosionPower);

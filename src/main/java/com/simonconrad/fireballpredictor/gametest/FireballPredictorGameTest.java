@@ -10,7 +10,7 @@ import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
 import com.simonconrad.fireballpredictor.client.tracking.OwnerInferenceEngine;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
-import com.simonconrad.fireballpredictor.client.render.WarningProjectileType;
+import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
 import com.simonconrad.fireballpredictor.config.VisualTheme;
@@ -455,6 +455,11 @@ public class FireballPredictorGameTest {
         DragonFireball fireball = spawnProjectile(context, EntityTypes.DRAGON_FIREBALL, 0.0, false);
         if (com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball) != 0.0f) {
             throw fail("DragonFireball explosion power expected to be 0.0f, got: " + com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball));
+        }
+        Player player = spawnMockPlayer(context, new Vec3(8.0, 3.0, 3.5));
+        DamageEstimate estimate = DamageCalculator.calculateDirectHit(fireball.position(), 0.0F, player, context.getLevel(), fireball, null);
+        if (estimate.finalDamage() != 0.0f) {
+            throw fail("DragonFireball direct hit damage expected to be 0.0f, got: " + estimate.finalDamage());
         }
         assertNoDestruction(context, fireball, Blocks.DIRT);
     }

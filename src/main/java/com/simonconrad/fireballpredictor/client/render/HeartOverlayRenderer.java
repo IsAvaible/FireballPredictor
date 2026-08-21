@@ -5,6 +5,7 @@ import java.util.Locale;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
+import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

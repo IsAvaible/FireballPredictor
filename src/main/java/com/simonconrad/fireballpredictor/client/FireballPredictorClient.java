@@ -16,7 +16,7 @@ import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.HeartOverlayRenderer;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
-import com.simonconrad.fireballpredictor.client.render.WarningProjectileType;
+import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
 import com.simonconrad.fireballpredictor.math.DamageCalculator;
 import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
 import com.simonconrad.fireballpredictor.math.ImpactPredictor;

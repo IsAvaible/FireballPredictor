@@ -1,10 +1,7 @@
-package com.simonconrad.fireballpredictor.client.render;
+package com.simonconrad.fireballpredictor.projectile;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -12,6 +9,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Projectile category model for HUD impact warning badge icons and progress bar themes.
+ *
+ * <p>This is the display-side companion of {@link ProjectileKind}: it maps a kind onto the icon,
+ * optional custom texture and bar colours used by the impact warning badge. It intentionally uses
+ * only side-neutral Minecraft types ({@link Item}, {@link Identifier}, {@link ItemStack}) so it can
+ * be loaded headlessly by the GameTest suite.
  */
 public enum WarningProjectileType {
     FIREBALL(Items.FIRE_CHARGE, null, 0xAA1A0B00, 0xFFE67A00),
@@ -62,16 +64,18 @@ public enum WarningProjectileType {
         return barFillColor;
     }
 
+    /** Maps a {@link ProjectileKind} onto its display category. */
+    public static WarningProjectileType fromKind(ProjectileKind kind) {
+        return switch (kind) {
+            case DRAGON_FIREBALL -> DRAGON_FIREBALL;
+            case WITHER_SKULL -> WITHER_SKULL;
+            case WIND_CHARGE, BREEZE_WIND_CHARGE -> WIND_CHARGE;
+            case LARGE_FIREBALL, SMALL_FIREBALL -> FIREBALL;
+        };
+    }
+
     public static WarningProjectileType fromProjectile(AbstractHurtingProjectile projectile) {
-        if (projectile instanceof AbstractWindCharge) {
-            return WIND_CHARGE;
-        }
-        if (projectile instanceof WitherSkull) {
-            return WITHER_SKULL;
-        }
-        if (projectile instanceof DragonFireball) {
-            return DRAGON_FIREBALL;
-        }
-        return FIREBALL;
+        ProjectileProfile profile = VanillaProfiles.from(projectile);
+        return profile != null ? profile.warningType() : FIREBALL;
     }
 }

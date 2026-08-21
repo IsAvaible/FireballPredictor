@@ -1,6 +1,8 @@
 package com.simonconrad.fireballpredictor.math;
 
 import com.simonconrad.fireballpredictor.mixin.CompositeLootItemConditionAccessor;
+import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,8 +20,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.Fireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.ConditionalEffect;
@@ -56,9 +56,9 @@ public final class DamageCalculator {
 
     /** Vanilla {@code LargeFireball.onHitEntity} direct-hit damage (26.2: 6.0 via "minecraft:fireball"). */
     public static final float DIRECT_HIT_DAMAGE = 6.0F;
-    public static final float LARGE_FIREBALL_DIRECT_HIT_DAMAGE = 6.0F;
-    public static final float SMALL_FIREBALL_DIRECT_HIT_DAMAGE = 5.0F;
-    public static final float WITHER_SKULL_DIRECT_HIT_DAMAGE = 8.0F;
+
+    // Per-kind direct-hit damage now lives in ProjectileProfile (see VanillaProfiles) rather than
+    // being hard-coded per entity class here.
 
     /** Blast radius multiplier: r = power * 2 (vanilla {@code ServerExplosion.hurtEntities}). */
     public static final float BLAST_RADIUS_MULTIPLIER = 2.0F;
@@ -160,18 +160,14 @@ public final class DamageCalculator {
         float directBaseDamage = 0.0F;
         DamageSource directSource = null;
 
-        if (projectile instanceof LargeFireball largeFireball) {
-            directBaseDamage = LARGE_FIREBALL_DIRECT_HIT_DAMAGE;
-            directSource = level.damageSources().fireball(largeFireball, owner);
-        } else if (projectile instanceof SmallFireball smallFireball) {
-            directBaseDamage = SMALL_FIREBALL_DIRECT_HIT_DAMAGE;
-            directSource = level.damageSources().fireball(smallFireball, owner);
-        } else if (projectile instanceof WitherSkull witherSkull) {
-            directBaseDamage = WITHER_SKULL_DIRECT_HIT_DAMAGE;
-            directSource = level.damageSources().witherSkull(witherSkull, owner);
-        } else if (projectile instanceof Fireball fireball) {
-            directBaseDamage = DIRECT_HIT_DAMAGE;
-            directSource = level.damageSources().fireball(fireball, owner);
+        ProjectileProfile profile = VanillaProfiles.from(projectile);
+        if (profile != null && profile.directHitDamage() > 0.0F) {
+            directBaseDamage = profile.directHitDamage();
+            directSource = switch (profile.kind()) {
+                case WITHER_SKULL -> level.damageSources().witherSkull((WitherSkull) projectile, owner);
+                case WIND_CHARGE, BREEZE_WIND_CHARGE -> null; // wind charges deal no direct-hit damage
+                default -> projectile instanceof Fireball fireball ? level.damageSources().fireball(fireball, owner) : null; // Large, Small, Dragon
+            };
         }
 
         float directFinal = directSource != null ? computeFinalDamage(directBaseDamage, player, directSource) : 0.0F;

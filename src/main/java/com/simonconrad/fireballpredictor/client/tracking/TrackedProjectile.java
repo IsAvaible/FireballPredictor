@@ -1,15 +1,13 @@
 package com.simonconrad.fireballpredictor.client.tracking;
 
+import com.simonconrad.fireballpredictor.projectile.ProjectileFilterKey;
+import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -122,37 +120,23 @@ public final class TrackedProjectile {
             return false;
         }
 
-        // 2. WHAT check (Projectile Type)
-        boolean passType;
-        if (projectile instanceof AbstractWindCharge) {
-            passType = config.trackWindCharges;
-        } else if (projectile instanceof WitherSkull) {
-            passType = config.trackWitherSkulls;
-        } else {
-            // Fireballs (Large, Small, Dragon)
-            passType = config.trackFireballs;
-        }
+        // 2. WHAT check (Projectile Type) - driven by the projectile's filter key.
+        ProjectileProfile profile = VanillaProfiles.from(projectile);
+        ProjectileFilterKey filterKey = profile != null ? profile.filterKey() : ProjectileFilterKey.FIREBALL;
+        boolean passType = switch (filterKey) {
+            case WIND_CHARGE -> config.trackWindCharges;
+            case WITHER_SKULL -> config.trackWitherSkulls;
+            case FIREBALL -> config.trackFireballs; // Large, Small, Dragon fireballs
+        };
 
         return passType;
     }
 
     /**
-     * True when this entity is one of the filterable projectiles.
+     * True when this entity is one of the filterable projectiles (i.e. has a registered profile).
      */
     public static boolean isOwnerFilterable(AbstractHurtingProjectile projectile) {
-        return projectile instanceof LargeFireball
-                || projectile instanceof SmallFireball
-                || projectile instanceof DragonFireball
-                || projectile instanceof WitherSkull
-                || projectile instanceof AbstractWindCharge;
-    }
-
-    /**
-     * True for projectiles that deal no blast power (SmallFireball, DragonFireball).
-     */
-    public static boolean isZeroExplosionPower(AbstractHurtingProjectile projectile) {
-        return projectile instanceof SmallFireball
-                || projectile instanceof DragonFireball;
+        return VanillaProfiles.from(projectile) != null;
     }
 
     @Nullable

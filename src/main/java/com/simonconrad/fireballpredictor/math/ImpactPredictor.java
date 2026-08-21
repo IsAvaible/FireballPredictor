@@ -3,6 +3,10 @@ package com.simonconrad.fireballpredictor.math;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import com.simonconrad.fireballpredictor.FireballEntityAccessor;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
+import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
@@ -13,36 +17,47 @@ import net.minecraft.world.phys.Vec3;
 
 public class ImpactPredictor {
 
+    /**
+     * Resolves the explosion power for a live projectile by looking up its {@link ProjectileProfile}.
+     */
     public static float resolveExplosionPower(AbstractHurtingProjectile fireball) {
-        if (com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile.isZeroExplosionPower(fireball)) {
-            return 0.0F;
-        }
+        return resolveExplosionPower(VanillaProfiles.from(fireball), fireball);
+    }
 
-        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge) {
-            return 3.0F;
-        }
-        if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
-            return 1.2F;
-        }
-
-        if (!fireball.level().isClientSide()) {
-            if (fireball instanceof net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball f) {
-                return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();
-            }
+    /**
+     * Resolves the explosion power from a {@link ProjectileProfile}.
+     *
+     * <p>Most projectiles have a static power baked into their profile (wind charges, wither skulls,
+     * and the zero-power small/dragon fireballs). Large fireballs are dynamic: their power comes from
+     * the server-side {@link FireballEntityAccessor} or, on the client, from {@link ClientPowerLookup}.
+     */
+    public static float resolveExplosionPower(ProjectileProfile profile, AbstractHurtingProjectile fireball) {
+        if (profile == null) {
             return 1.0F;
         }
 
-        return com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
+        // Zero-blast projectiles (SmallFireball, DragonFireball) report 0.
+        if (profile.staticExplosionPower() <= 0.0F) {
+            return 0.0F;
+        }
+
+        if (profile.dynamicExplosionPower()) {
+            if (!fireball.level().isClientSide()) {
+                return fireball instanceof FireballEntityAccessor accessor ? accessor.getExplosionPower() : profile.staticExplosionPower();
+            }
+            return ClientPowerLookup.getPower(fireball);
+        }
+
+        return profile.staticExplosionPower();
     }
 
-
-
-    public static List<BlockPos> predictBrokenBlocks(float power, boolean isWindCharge, boolean isDangerous, Vec3 explosionPos, BlockGetter world) {
-        if (isWindCharge || power <= 0.0f) {
-            // Wind Charges do not break blocks, so we return an empty list.
+    public static List<BlockPos> predictBrokenBlocks(
+            float power, ProjectileProfile profile, boolean isDangerous, Vec3 explosionPos, BlockGetter world) {
+        if (!profile.breaksBlocks() || power <= 0.0f) {
+            // Wind charges and zero-blast projectiles do not break blocks.
             return List.of();
         }
-        
+
         Set<BlockPos> affectedBlocks = new HashSet<>();
 
         // Vanilla explosion algorithm creates 16 rays per side of a 16x16x16 cube
@@ -62,7 +77,7 @@ public class ImpactPredictor {
                         // We use the upper bound (1.3F) to show the "maximum possible" destruction.
                         float rayPowerMultiplier = com.simonconrad.fireballpredictor.config.ModConfig.instance().rayPowerMultiplier;
                         float rayPower = power * rayPowerMultiplier;
-                        
+
                         double x = explosionPos.x;
                         double y = explosionPos.y;
                         double z = explosionPos.z;
@@ -79,14 +94,14 @@ public class ImpactPredictor {
 
                             // Combined blast resistance of block and fluid (e.g. waterlogging)
                             float blastResistance = Math.max(blockState.getBlock().getExplosionResistance(), fluidState.getExplosionResistance());
-                            
+
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
                             if (isDangerous) {
                                 if (WitherBoss.canDestroy(blockState)) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
                             }
-                            
+
                             if (!blockState.isAir() || !fluidState.isEmpty()) {
                                 rayPower -= (blastResistance + 0.3F) * 0.3F;
                             }
@@ -103,7 +118,7 @@ public class ImpactPredictor {
                 }
             }
         }
-        
+
         return List.copyOf(affectedBlocks);
     }
 }
