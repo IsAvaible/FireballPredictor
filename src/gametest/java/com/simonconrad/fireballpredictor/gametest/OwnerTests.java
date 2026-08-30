@@ -6,6 +6,7 @@ import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
+import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import com.simonconrad.fireballpredictor.tracking.TrackingRules;
@@ -487,6 +488,43 @@ public class OwnerTests extends GameTestBase {
         } finally {
             breeze.discard();
         }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testDeflectedFireballBreaksBlocksUnderMobGriefingDisabled(GameTestHelper context) {
+        resetGlobalState();
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.setTestOverride(false);
+
+        LargeFireball fireball = context.spawn(EntityTypes.FIREBALL, 1, 2, 1);
+        Ghast ghast = context.spawn(EntityTypes.GHAST, 1, 2, 1);
+        fireball.setOwner(ghast);
+
+        // 1. Initial state: ghast owner -> canBreakBlocks is false under mob_griefing = false
+        boolean canBreakGhast = TrajectoryPredictor.canBreakBlocks(
+                fireball, context.getLevel(), ProjectileOwner.GHAST, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(fireball));
+        if (canBreakGhast) {
+            throw fail("Ghast fireball should NOT be able to break blocks when mob_griefing is false");
+        }
+
+        // 2. Deflected state: re-assigned to PLAYER -> in vanilla ExplosionInteraction.MOB still suppresses block breaking when mob_griefing = false
+        boolean canBreakDeflected = TrajectoryPredictor.canBreakBlocks(
+                fireball, context.getLevel(), ProjectileOwner.PLAYER, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(fireball));
+        if (canBreakDeflected) {
+            throw fail("Player-deflected fireball should NOT be able to break blocks when mob_griefing is false");
+        }
+
+        // 3. When mob_griefing is true: can break blocks
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.setTestOverride(true);
+        boolean canBreakEnabled = TrajectoryPredictor.canBreakBlocks(
+                fireball, context.getLevel(), ProjectileOwner.PLAYER, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(fireball));
+        if (!canBreakEnabled) {
+            throw fail("Player-deflected fireball SHOULD be able to break blocks when mob_griefing is true");
+        }
+
+        fireball.discard();
+        ghast.discard();
 
         context.succeed();
     }

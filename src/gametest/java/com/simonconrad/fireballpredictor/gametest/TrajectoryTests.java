@@ -804,4 +804,94 @@ public class TrajectoryTests extends GameTestBase {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testMobGriefingPredictionBehavior(GameTestHelper context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+
+        Ghast ghast = context.spawn(EntityTypes.GHAST, 1, 3, 3);
+        Player player = spawnMockPlayer(context, new Vec3(1.0, 3.0, 3.5));
+        LargeFireball ghastFireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        ghastFireball.setOwner(ghast);
+
+        LargeFireball playerFireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        playerFireball.setOwner(player);
+
+        WitherSkull skull = spawnProjectile(context, EntityTypes.WITHER_SKULL, 0.0, false);
+        skull.setOwner(ghast);
+
+        // 1. When mob_griefing is FALSE:
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.setTestOverride(false);
+
+        // Mob projectiles should NOT be predicted to break blocks
+        if (TrajectoryPredictor.canBreakBlocks(ghastFireball, context.getLevel(), ProjectileOwner.GHAST, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(ghastFireball))) {
+            throw fail("Ghast fireball should NOT be able to break blocks when mob_griefing is false");
+        }
+        if (TrajectoryPredictor.canBreakBlocks(skull, context.getLevel(), ProjectileOwner.WITHER, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(skull))) {
+            throw fail("Wither skull should NOT be able to break blocks when mob_griefing is false");
+        }
+
+        PredictionData ghastPrediction = TrajectoryPredictor.predict(ghastFireball, context.getLevel(), ProjectileOwner.GHAST);
+        if (!ghastPrediction.brokenBlocks().isEmpty()) {
+            throw fail("Ghast prediction should contain 0 broken blocks when mob_griefing is false, got: " + ghastPrediction.brokenBlocks().size());
+        }
+
+        // In vanilla, all LargeFireball / WitherSkull explosions use MOB interaction, so player fireballs also do not break blocks when mob_griefing is false
+        if (TrajectoryPredictor.canBreakBlocks(playerFireball, context.getLevel(), ProjectileOwner.PLAYER, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(playerFireball))) {
+            throw fail("Player fireball should NOT be able to break blocks when mob_griefing is false under vanilla rules");
+        }
+        PredictionData playerPrediction = TrajectoryPredictor.predict(playerFireball, context.getLevel(), ProjectileOwner.PLAYER);
+        if (!playerPrediction.brokenBlocks().isEmpty()) {
+            throw fail("Player prediction should contain 0 broken blocks when mob_griefing is false, got: " + playerPrediction.brokenBlocks().size());
+        }
+
+        // 2. When mob_griefing is TRUE:
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.setTestOverride(true);
+
+        if (!TrajectoryPredictor.canBreakBlocks(ghastFireball, context.getLevel(), ProjectileOwner.GHAST, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(ghastFireball))) {
+            throw fail("Ghast fireball SHOULD be able to break blocks when mob_griefing is true");
+        }
+        PredictionData ghastPredictionTrue = TrajectoryPredictor.predict(ghastFireball, context.getLevel(), ProjectileOwner.GHAST);
+        if (ghastPredictionTrue.brokenBlocks().isEmpty()) {
+            throw fail("Ghast prediction should contain broken blocks when mob_griefing is true");
+        }
+
+        if (!TrajectoryPredictor.canBreakBlocks(playerFireball, context.getLevel(), ProjectileOwner.PLAYER, com.simonconrad.fireballpredictor.projectile.VanillaProfiles.from(playerFireball))) {
+            throw fail("Player fireball SHOULD be able to break blocks when mob_griefing is true");
+        }
+        PredictionData playerPredictionTrue = TrajectoryPredictor.predict(playerFireball, context.getLevel(), ProjectileOwner.PLAYER);
+        if (playerPredictionTrue.brokenBlocks().isEmpty()) {
+            throw fail("Player prediction should contain broken blocks when mob_griefing is true");
+        }
+
+        ghastFireball.discard();
+        playerFireball.discard();
+        skull.discard();
+        ghast.discard();
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
+    public void testMobGriefingStateSync(GameTestHelper context) {
+        resetGlobalState();
+
+        // Default should be true
+        if (!com.simonconrad.fireballpredictor.tracking.MobGriefingState.isMobGriefingEnabled()) {
+            throw fail("Expected default MobGriefingState to be true");
+        }
+
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.setMobGriefing(false);
+        if (com.simonconrad.fireballpredictor.tracking.MobGriefingState.isMobGriefingEnabled()) {
+            throw fail("Expected MobGriefingState to be false after setting false");
+        }
+
+        com.simonconrad.fireballpredictor.tracking.MobGriefingState.clear();
+        if (!com.simonconrad.fireballpredictor.tracking.MobGriefingState.isMobGriefingEnabled()) {
+            throw fail("Expected MobGriefingState to reset to true after clear");
+        }
+
+        context.succeed();
+    }
 }

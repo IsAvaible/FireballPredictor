@@ -9,6 +9,7 @@ import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
+import com.simonconrad.fireballpredictor.tracking.MobGriefingState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -54,11 +55,20 @@ public abstract class GameTestBase {
      * to guarantee a clean environment and prevent test leakage.
      */
     public static void resetGlobalState() {
+        resetGlobalState(null);
+    }
+
+    public static void resetGlobalState(GameTestHelper context) {
         ClientPowerCache.clear();
         ClientPowerLookup.resetInferredPower();
         FireballInferenceTracker.clear();
         ClientOwnerCache.clear();
         ServerTrackingRules.clear();
+        MobGriefingState.clear();
+
+        if (context != null && context.getLevel() != null && context.getLevel().getServer() != null) {
+            context.getLevel().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.MOB_GRIEFING, true, context.getLevel().getServer());
+        }
 
         ServerConfig serverConfig = ServerConfig.instance();
         serverConfig.disableOtherOwnerTracking = false;

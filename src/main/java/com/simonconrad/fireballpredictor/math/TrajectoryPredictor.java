@@ -2,9 +2,13 @@ package com.simonconrad.fireballpredictor.math;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.simonconrad.fireballpredictor.client.tracking.OwnerInferenceEngine;
 import com.simonconrad.fireballpredictor.mixin.ProjectileAccessor;
 import com.simonconrad.fireballpredictor.projectile.ProjectileProfile;
 import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
+import com.simonconrad.fireballpredictor.tracking.MobGriefingState;
+import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
@@ -73,12 +77,35 @@ public class TrajectoryPredictor {
         }
     }
 
+    public static boolean canBreakBlocks(AbstractHurtingProjectile fireball, Level world, ProjectileOwner owner, ProjectileProfile profile) {
+        if (profile == null || !profile.breaksBlocks()) {
+            return false;
+        }
+        return MobGriefingState.isMobGriefingEnabled(world);
+    }
+
     public static PredictionData predict(AbstractHurtingProjectile fireball, Level world) {
-        TrajectoryResult result = simulateTrajectory(fireball, world);
+        return predict(fireball, world, null);
+    }
+
+    public static PredictionData predict(AbstractHurtingProjectile fireball, Level world, ProjectileOwner owner) {
+        TrajectoryResult result = simulateTrajectory(fireball, world, owner);
         return computePrediction(result, fireball.tickCount);
     }
 
     public static TrajectoryResult simulateTrajectory(AbstractHurtingProjectile fireball, Level world) {
+        return simulateTrajectory(fireball, world, null);
+    }
+
+    public static TrajectoryResult simulateTrajectory(AbstractHurtingProjectile fireball, Level world, ProjectileOwner owner) {
+        if (owner == null) {
+            if (world.isClientSide()) {
+                owner = OwnerInferenceEngine.infer(fireball, world).owner();
+            } else {
+                owner = OwnerClassifier.resolveAuthoritative(fireball);
+            }
+        }
+
         Vec3 fireballPos = fireball.position();
         Vec3 currentPos = fireballPos;
         Vec3 initialVelocity = fireball.getDeltaMovement();
@@ -176,9 +203,10 @@ public class TrajectoryPredictor {
         HitResult damageHitResult = firstCollision != null ? firstCollision.result() : blockHit;
 
         float explosionPower = (visualHitResult != null || damageHitResult != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
+        boolean canBreak = canBreakBlocks(fireball, world, owner, profile);
         BlockStateSnapshot snapshot = null;
         HitResult snapshotHit = visualHitResult;
-        if (snapshotHit != null && explosionPower > 0.0f && profile.breaksBlocks()) {
+        if (snapshotHit != null && explosionPower > 0.0f && canBreak) {
             snapshot = BlockStateSnapshot.create(world, snapshotHit.getLocation(), explosionPower);
         }
         

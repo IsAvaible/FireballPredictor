@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Mob Griefing Gamerule Support:** Predictions now respect the server's `mobGriefing` gamerule, accurately hiding block-destruction highlights and particle accents when block damage is disabled.
+
 ## 1.10.0
 
 ### Tracking & Controls

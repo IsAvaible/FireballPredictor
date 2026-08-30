@@ -9,6 +9,7 @@ import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
 import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
+import com.simonconrad.fireballpredictor.client.tracking.MobGriefingReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRulesReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
@@ -16,7 +17,10 @@ import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.HeartOverlayRenderer;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
+import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
 import com.simonconrad.fireballpredictor.projectile.WarningProjectileType;
+import com.simonconrad.fireballpredictor.tracking.MobGriefingState;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import com.simonconrad.fireballpredictor.math.DamageCalculator;
 import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
 import com.simonconrad.fireballpredictor.math.ImpactPredictor;
@@ -91,6 +95,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         ClientOwnerCacheReceiver.registerReceivers();
         ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
         ServerTrackingRulesReceiver.registerReceivers();
+        MobGriefingReceiver.registerReceivers();
 
         com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.register();
         ModKeyBindings.init();
@@ -434,15 +439,19 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedPrediction.isCalculating = true;
         long taskId = ++trackedPrediction.currentTaskId;
 
+        TrackedProjectile tracked = trackedOwners.get(entityId);
+        ProjectileOwner owner = tracked != null ? tracked.owner() : null;
         float currentPower = ImpactPredictor.resolveExplosionPower(fireball);
         boolean currentDangerous = fireball instanceof WitherSkull skull && skull.isDangerous();
-        TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, world);
+        boolean currentCanBreak = TrajectoryPredictor.canBreakBlocks(fireball, world, owner, VanillaProfiles.from(fireball));
+        TrajectoryPredictor.TrajectoryResult result = TrajectoryPredictor.simulateTrajectory(fireball, world, owner);
         int predictionAge = fireball.tickCount;
 
         // Set preliminary prediction immediately for zero-latency frame 0 trajectory rendering
         trackedPrediction.predictionData = TrajectoryPredictor.createPreliminaryPrediction(result, predictionAge);
         trackedPrediction.calculatedPower = currentPower;
         trackedPrediction.calculatedDangerous = currentDangerous;
+        trackedPrediction.calculatedCanBreakBlocks = currentCanBreak;
         trackedPrediction.cachedDamageHitTick = -1;
 
         Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
@@ -464,6 +473,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                         trackedPrediction.predictionData = data;
                         trackedPrediction.calculatedPower = currentPower;
                         trackedPrediction.calculatedDangerous = currentDangerous;
+                        trackedPrediction.calculatedCanBreakBlocks = currentCanBreak;
                         trackedPrediction.cachedDamageHitTick = -1;
                         trackedPrediction.isCalculating = false;
                         trackedPrediction.activeTask = null;
@@ -517,6 +527,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         damageOverlayActive = false;
         if (world == null) {
             ServerTrackingRules.clear();
+            MobGriefingState.clear();
         }
     }
 
@@ -658,6 +669,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         private long currentTaskId = 0L;
         private float calculatedPower = -1.0f;
         private boolean calculatedDangerous = false;
+        private boolean calculatedCanBreakBlocks = true;
         private float cachedSeenPercent = -1.0f;
         private Vec3 lastEstimatePlayerPos;
         private Vec3 lastEstimateHitPos;
@@ -696,6 +708,13 @@ public class FireballPredictorClient implements ClientModInitializer {
                 if (currentDangerous != calculatedDangerous) {
                     return true;
                 }
+            }
+
+            TrackedProjectile tracked = INSTANCE != null ? INSTANCE.trackedOwners.get(fireball.getId()) : null;
+            ProjectileOwner owner = tracked != null ? tracked.owner() : null;
+            boolean currentCanBreak = TrajectoryPredictor.canBreakBlocks(fireball, world, owner, VanillaProfiles.from(fireball));
+            if (currentCanBreak != calculatedCanBreakBlocks) {
+                return true;
             }
 
             if (predictionData == null || predictionData.path() == null || predictionData.velocities() == null) {

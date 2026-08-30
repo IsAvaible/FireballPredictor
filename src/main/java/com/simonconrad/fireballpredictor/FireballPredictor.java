@@ -3,6 +3,7 @@ package com.simonconrad.fireballpredictor;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
 import com.simonconrad.fireballpredictor.network.FireballOwnerPayload;
 import com.simonconrad.fireballpredictor.network.FireballPowerPayload;
+import com.simonconrad.fireballpredictor.network.MobGriefingPayload;
 import com.simonconrad.fireballpredictor.network.TrackingRulesPayload;
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
@@ -23,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +44,7 @@ public class FireballPredictor implements ModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(FireballPowerPayload.ID, FireballPowerPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FireballOwnerPayload.ID, FireballOwnerPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TrackingRulesPayload.ID, TrackingRulesPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MobGriefingPayload.ID, MobGriefingPayload.CODEC);
 
         // Server-side fair-play switches (config/fireballpredictor-server.json)
         ServerConfig.load();
@@ -62,9 +65,12 @@ public class FireballPredictor implements ModInitializer {
             }
         });
 
-        // Push the server's tracking restrictions (disabled "other" owner options) to joining clients
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                ServerPlayNetworking.send(handler.player, trackingRulesPayload()));
+        // Push the server's tracking restrictions and active mobGriefing state to joining clients
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayNetworking.send(handler.player, trackingRulesPayload());
+            boolean mobGriefing = handler.player.level().getGameRules().get(GameRules.MOB_GRIEFING);
+            ServerPlayNetworking.send(handler.player, new MobGriefingPayload(mobGriefing));
+        });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("fireballpredictor")
@@ -75,6 +81,8 @@ public class FireballPredictor implements ModInitializer {
                                 TrackingRulesPayload payload = new TrackingRulesPayload(mask);
                                 for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
                                     ServerPlayNetworking.send(player, payload);
+                                    boolean mobGriefing = player.level().getGameRules().get(GameRules.MOB_GRIEFING);
+                                    ServerPlayNetworking.send(player, new MobGriefingPayload(mobGriefing));
                                 }
                                 context.getSource().sendSuccess(
                                         () -> Component.literal("Reloaded Fireball Predictor server config and re-synced tracking restrictions to all players."),
