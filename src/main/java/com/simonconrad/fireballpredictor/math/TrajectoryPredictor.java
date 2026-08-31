@@ -2,9 +2,11 @@ package com.simonconrad.fireballpredictor.math;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.simonconrad.fireballpredictor.mixin.ProjectileAccessor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
@@ -23,11 +25,24 @@ public class TrajectoryPredictor {
         List<Vec3d> path,
         List<Vec3d> velocities,
         HitResult hitResult,
+        HitResult damageHitResult,
         float explosionPower,
         BlockStateSnapshot snapshot,
         boolean isWindCharge,
         boolean isDangerous
-    ) {}
+    ) {
+        public TrajectoryResult(
+            List<Vec3d> path,
+            List<Vec3d> velocities,
+            HitResult hitResult,
+            float explosionPower,
+            BlockStateSnapshot snapshot,
+            boolean isWindCharge,
+            boolean isDangerous
+        ) {
+            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, isWindCharge, isDangerous);
+        }
+    }
 
     public static PredictionData predict(ExplosiveProjectileEntity fireball, World world) {
         TrajectoryResult result = simulateTrajectory(fireball, world);
@@ -56,7 +71,8 @@ public class TrajectoryPredictor {
         path.add(currentPos);
         velocities.add(velocity);
         
-        HitResult finalHit = null;
+        HitResult blockHit = null;
+        HitResult firstEntityHit = null;
         
         boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
         boolean isDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
@@ -95,27 +111,27 @@ public class TrajectoryPredictor {
                 fireball
             ));
             
-            if (hitResult.getType() != HitResult.Type.MISS) {
-                nextPos = hitResult.getPos();
-            }
-            
-            // Raycast for entities
-            Box currentBox = new Box(minX, minY, minZ, maxX, maxY, maxZ);
-            Box box = currentBox.stretch(velocity).expand(1.0);
+            Vec3d entityRayEnd = hitResult.getType() != HitResult.Type.MISS ? hitResult.getPos() : nextPos;
 
-            EntityHitResult entityHitResult = ProjectileUtil.getEntityCollision(
-                world, fireball, currentPos, nextPos, box, 
-                entity -> false // Completely ignore entities for trajectory prediction
-            );
-            
-            if (entityHitResult != null) {
-                hitResult = entityHitResult;
+            // Raycast for entities along this step (only before any block collision)
+            if (firstEntityHit == null) {
+                Box currentBox = new Box(minX, minY, minZ, maxX, maxY, maxZ);
+                Box box = currentBox.stretch(velocity).expand(1.0);
+
+                EntityHitResult entityHitResult = ProjectileUtil.getEntityCollision(
+                    world, fireball, currentPos, entityRayEnd, box, 
+                    entity -> canHitEntity(fireball, entity)
+                );
+                
+                if (entityHitResult != null) {
+                    firstEntityHit = entityHitResult;
+                }
             }
             
-            if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
+            if (hitResult.getType() != HitResult.Type.MISS) {
                 path.add(hitResult.getPos());
                 velocities.add(velocity);
-                finalHit = hitResult;
+                blockHit = hitResult;
                 break;
             }
             
@@ -124,17 +140,21 @@ public class TrajectoryPredictor {
             velocities.add(velocity);
         }
         
-        float explosionPower = finalHit != null ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
+        HitResult hitResult = blockHit != null ? blockHit : firstEntityHit;
+        HitResult damageHitResult = firstEntityHit != null ? firstEntityHit : blockHit;
+
+        float explosionPower = (blockHit != null || firstEntityHit != null) ? ImpactPredictor.resolveExplosionPower(fireball) : 0.0f;
         BlockStateSnapshot snapshot = null;
-        if (finalHit != null && explosionPower > 0.0f) {
-            Vec3d hitPos = finalHit.getPos();
+        HitResult snapshotHit = blockHit != null ? blockHit : firstEntityHit;
+        if (snapshotHit != null && explosionPower > 0.0f) {
+            Vec3d hitPos = snapshotHit.getPos();
             float radius = explosionPower * 2.0f;
             BlockPos minPos = BlockPos.ofFloored(hitPos.x - radius - 2, hitPos.y - radius - 2, hitPos.z - radius - 2);
             BlockPos maxPos = BlockPos.ofFloored(hitPos.x + radius + 2, hitPos.y + radius + 2, hitPos.z + radius + 2);
             snapshot = new BlockStateSnapshot(world, minPos, maxPos);
         }
         
-        return new TrajectoryResult(path, velocities, finalHit, explosionPower, snapshot, isWindCharge, isDangerous);
+        return new TrajectoryResult(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, isWindCharge, isDangerous);
     }
 
     public static PredictionData computePrediction(TrajectoryResult result, int predictionAge) {
@@ -146,11 +166,7 @@ public class TrajectoryPredictor {
         PredictionRenderData renderData = createRenderData(result.path, result.explosionPower);
         Vec3d initialVelocity = result.velocities.isEmpty() ? Vec3d.ZERO : result.velocities.get(0);
         
-        return new PredictionData(result.path, result.velocities, result.hitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
-    }
-
-    public static PredictionData computePrediction(ExplosiveProjectileEntity fireball, TrajectoryResult result, int predictionAge) {
-        return computePrediction(result, predictionAge);
+        return new PredictionData(result.path, result.velocities, result.hitResult, result.damageHitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
     }
 
     private static PredictionRenderData createRenderData(List<Vec3d> path, float explosionPower) {
@@ -229,5 +245,52 @@ public class TrajectoryPredictor {
             }
         }
         return false;
+    }
+
+    public static boolean canHitEntity(ExplosiveProjectileEntity fireball, Entity entity) {
+        if (fireball instanceof ProjectileAccessor accessor) {
+            try {
+                return accessor.fireballpredictor$canHitEntity(entity);
+            } catch (Throwable ignored) {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Dynamically finds the first entity intercepted along the remaining flight path of the projectile
+     * based on current entity positions in the level. If no entity is intercepted, returns the predicted
+     * block hit result at the end of the path.
+     */
+    public static HitResult findDamageHitResult(World world, ExplosiveProjectileEntity fireball, PredictionData data) {
+        if (data == null || data.path == null || data.path.size() < 2) {
+            return data != null ? data.hitResult : null;
+        }
+
+        int elapsedTicks = Math.max(0, fireball.age - data.predictionAge);
+        if (elapsedTicks >= data.path.size() - 1) {
+            return data.hitResult;
+        }
+
+        for (int i = elapsedTicks; i < data.path.size() - 1; i++) {
+            Vec3d p1 = data.path.get(i);
+            Vec3d p2 = data.path.get(i + 1);
+            Box segBox = new Box(
+                Math.min(p1.x, p2.x), Math.min(p1.y, p2.y), Math.min(p1.z, p2.z),
+                Math.max(p1.x, p2.x), Math.max(p1.y, p2.y), Math.max(p1.z, p2.z)
+            ).expand(1.0);
+
+            EntityHitResult entityHitResult = ProjectileUtil.getEntityCollision(
+                world, fireball, p1, p2, segBox, 
+                entity -> canHitEntity(fireball, entity)
+            );
+
+            if (entityHitResult != null) {
+                return entityHitResult;
+            }
+        }
+
+        return data.hitResult;
     }
 }

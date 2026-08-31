@@ -17,7 +17,9 @@ import net.minecraft.util.math.Vec3d;
 public class ImpactPredictor {
 
     public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
-        if (fireball instanceof SmallFireballEntity || fireball instanceof DragonFireballEntity) {
+        if (fireball instanceof SmallFireballEntity
+                || fireball instanceof DragonFireballEntity
+                || fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
             return 0.0F;
         }
 

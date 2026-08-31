@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "碰撞预警标记垂直偏移",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "基于锚点的垂直偏移量。正值向下移动。\n默认值：0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "碎裂伤害红心覆盖",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "在生命值栏上覆盖碎裂红心，以显示来袭弹射物的预估伤害。\n默认值：开启",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "伤害与击退数值显示",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "在碰撞预警标记旁显示预估伤害和击退速度。\n默认值：开启",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "伤害预估",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "渲染碰撞预警",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "当您处于火球碰撞轨道上时，是否在 HUD 上显示预警标记。\n默认值：开启",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "轨迹颜色",

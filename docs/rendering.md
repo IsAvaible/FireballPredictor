@@ -29,14 +29,32 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Density**: Simulates heat build-up prior to impact. The spawning is throttle-controlled in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java) to maintain high performance and automatically paused when the game is paused.
 
 ### 5. HUD Impact Warning Badge
-- **Collision Warning**: When the local player is directly in the path of an incoming projectile, [PredictionRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) renders an anchorable HUD warning badge.
-- **Progress Bar**: Displays a dynamic countdown bar indicating remaining travel time before impact. Supports wind charges with a custom icon and color palette.
+- **Collision Warning**: When the local player is directly in the path of an incoming projectile or within its blast danger radius, [PredictionRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) renders an anchorable HUD warning badge via `HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT, ...)`.
+- **Projectile Category Theming ([WarningProjectileType.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/WarningProjectileType.java))**: The warning badge adapts dynamically to the incoming projectile type:
+  - **Fireballs** (`FIREBALL`): Renders `Items.FIRE_CHARGE` with a fiery orange progress bar (`#FFE67A00`).
+  - **Wither Skulls** (`WITHER_SKULL`): Renders `Items.WITHER_SKELETON_SKULL` with a slate-grey progress bar (`#FFA0A8B0`).
+  - **Wind Charges** (`WIND_CHARGE`): Renders `Items.WIND_CHARGE` with an ice-blue progress bar (`#FFCFD6F7`).
+  - **Dragon Fireballs** (`DRAGON_FIREBALL`): Renders a custom dragon fireball texture (`textures/entity/enderdragon/dragon_fireball.png`, fallback `Items.DRAGON_HEAD`) with a distinct magenta/purple progress bar (`#FFC832D4`).
+- **Dynamic Countdown Progress Bar**: Fills or depletes smoothly based on the ratio of remaining travel ticks to total trajectory flight time.
+- **Shared Positioning Helper**: `PredictionRenderer.impactBadgePosition(client)` calculates the exact on-screen position accounting for screen dimensions, anchor placement, and user-configured X/Y pixel offsets.
+
+### 6. Cracking Damage Hearts Overlay & Knockback Readout ([HeartOverlayRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/HeartOverlayRenderer.java))
+- **Health Bar Overlay**: Hooked after `VanillaHudElements.HEALTH_BAR` via Fabric HUD Element Registry. Overlays fiery, cracking heart sprites directly on top of the health bar to show the exact health/absorption points predicted to be lost upon detonation.
+- **Two-Stage Damage Allocation**: Replicates Minecraft's vanilla damage consumption order:
+  1. Absorption hearts are consumed first, starting from the highest absorption point.
+  2. Any remaining unmitigated damage consumes current health, starting from the highest health point.
+- **Independent Half-Heart Evaluation**: Evaluates left and right half-heart units independently per slot to support odd health values, partial absorption, and multiple stacked heart rows without visual misalignments.
+- **Flashing Pre-Impact Alert**: Alternates between steady and blinking sprite states based on `player.level().getGameTime()`:
+  - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
+  - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
+  - `hud/heart/cracking_half_right` / `hud/heart/cracking_half_right_blinking`
+- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
 
 ---
 
 ## Mod Configuration
 
-- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass).
+- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass). HUD overlays are registered via Fabric's `HudElementRegistry`.
 - **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features across General, Visuals, and Tracking categories:
   - `renderTrajectory`: Enables/disables the ribbon path.
   - `trajectoryWidth`: Line width multiplier for the trajectory ribbon trail (`0.1` to `2.0`).
@@ -50,6 +68,8 @@ This document describes the client-side visual effects (VFX) used to represent p
   - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
   - `windChargeTrajectoryColor` & `windChargeShockwaveColor`: Custom color configuration for wind charges (defaults to white).
   - `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y`: HUD collision warning badge visibility, screen anchor alignment, and pixel offsets.
+  - `renderDamageHeartsOverlay`: Enables/disables the cracking hearts overlay on the player's health bar.
+  - `showKnockbackEstimator`: Enables/disables the numerical damage and knockback speed text readout next to the impact badge.
   - `globalFallbackFireballPower`, `serverFallbackPowers`, `rayPowerMultiplier`: Fallback explosion power levels, per-server IP power overrides, and ray simulation blast resistance scaling.
   - `trackProjectiles`, `trackMobProjectiles`, `trackOtherOwnerProjectiles`: Hierarchical master, mob-master, and non-mob master switches.
   - Per-source filters: `trackFireballs`, `trackWitherSkulls`, `trackWindCharges`, `trackBlazeFireballs`, `trackGhastFireballs`, `trackEnderDragonFireballs`, `trackWitherMob`, `trackPlayerProjectiles`, `trackDispenserProjectiles`, `trackCommandProjectiles`.
@@ -84,6 +104,8 @@ Options under the **Visuals** and **Tracking** categories annotate `@CustomImage
 | Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
 | Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength` |
 | HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
+| Damage hearts overlay | `DamageHeartsFactory` | `renderDamageHeartsOverlay` |
+| Damage & knockback readout | `KnockbackEstimatorFactory` | `showKnockbackEstimator` |
 | Tracking overviews | `TrackMasterFactory` / `TrackMobMasterFactory` / `TrackOtherMasterFactory` | Master chip overviews & source toggles |
 | Single tracking lock-on | `TrackFireballFactory` / `TrackWitherFactory` / `TrackWindFactory` / etc. | Per-source target tracking toggles |
 
@@ -95,6 +117,7 @@ Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAcc
 - **[TrajectoryRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrajectoryRenderer.java)**: Renders 2D animated path with ribbon width, color, pulse wave, core glow, and `SOLID`/`DASHED`/`CORE_ONLY` styles.
 - **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc, Fresnel rim shading, and crack overlays.
 - **[HudRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/HudRenderer.java)**: Renders miniature screen frame showing HUD anchor alignment, X/Y pixel offsets, and dynamic progress bar.
+- **[DamageEstimatorRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/DamageEstimatorRenderer.java)**: Renders animated cracking damage hearts on a 10-heart health bar with rising fiery embers, and the impact badge with damage/knockback readout.
 - **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
 - **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers.
 

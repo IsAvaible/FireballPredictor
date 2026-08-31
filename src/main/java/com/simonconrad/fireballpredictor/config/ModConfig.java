@@ -275,6 +275,28 @@ public class ModConfig {
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetY = 0;
 
+    // ---- Damage & Knockback Estimation -------------------------------------
+
+    /**
+     * Renders the "cracking fireball hearts" overlay on top of the health bar, highlighting the
+     * exact hearts predicted to be lost if a tracked projectile detonates at its impact point.
+     */
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "damage_estimator")
+    @CustomImage(factory = ConfigPreviewRenderer.DamageHeartsFactory.class)
+    @TickBox
+    public boolean renderDamageHeartsOverlay = true;
+
+    /**
+     * Shows the predicted damage (hearts) and knockback speed (blocks/second) readout next to the
+     * impact warning badge for the most threatening incoming projectile.
+     */
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "damage_estimator")
+    @CustomImage(factory = ConfigPreviewRenderer.KnockbackEstimatorFactory.class)
+    @TickBox
+    public boolean showKnockbackEstimator = true;
+
     // 3. Helper methods to match your existing client initialization calls
     public static dev.isxander.yacl3.api.YetAnotherConfigLib generateGui() {
         // 1. Evaluate server tracking restrictions before building the GUI options

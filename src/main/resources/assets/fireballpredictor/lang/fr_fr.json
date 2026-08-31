@@ -50,6 +50,11 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Décalage vertical de l'indicateur",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Décalage vertical appliqué depuis le point d'ancrage. Les valeurs positives déplacent vers le bas.\nPar défaut : 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Superposition de cœurs fissurés",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Affiche des cœurs fissurés sur la barre de vie indiquant les dégâts prédits des projectiles entrants.\nPar défaut : Activé",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Affichage des dégâts et du recul",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Affiche les dégâts et la vitesse de recul prédits à côté de l'indicateur d'impact.\nPar défaut : Activé",
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Estimation des dégâts",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Afficher l'indicateur d'impact",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Affiche l'avertissement à l'écran lorsque vous êtes sur la trajectoire d'une boule de feu.\nPar défaut : Activé",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Couleur de la trajectoire",

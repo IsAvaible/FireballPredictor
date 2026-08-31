@@ -11,24 +11,31 @@ import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRulesReceiver;
 import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.client.render.HeartOverlayRenderer;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
+import com.simonconrad.fireballpredictor.client.render.WarningProjectileType;
+import com.simonconrad.fireballpredictor.math.DamageCalculator;
+import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -48,7 +55,9 @@ public class FireballPredictorClient implements ClientModInitializer {
     private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
     private boolean impactWarningVisible;
     private float impactWarningProgress;
-    private boolean impactWarningIsWindCharge;
+    private WarningProjectileType impactWarningType = WarningProjectileType.FIREBALL;
+    private DamageEstimate currentDamageEstimate = DamageEstimate.NONE;
+    private boolean damageOverlayActive;
     private ClientWorld trackedWorld;
 
     public FireballPredictorClient() {
@@ -89,7 +98,9 @@ public class FireballPredictorClient implements ClientModInitializer {
                 com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
                 impactWarningVisible = false;
                 impactWarningProgress = 0.0f;
-                impactWarningIsWindCharge = false;
+                impactWarningType = WarningProjectileType.FIREBALL;
+                currentDamageEstimate = DamageEstimate.NONE;
+                damageOverlayActive = false;
                 trackedWorld = null;
                 return;
             }
@@ -206,12 +217,11 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             java.util.Map<net.minecraft.util.math.BlockPos, Integer> newHighlightedBlocks = new java.util.HashMap<>();
             boolean impactWarningDetected = false;
+            int minTicksToImpact = Integer.MAX_VALUE;
             float mostRelevantWarningProgress = 0.0f;
-            boolean warningIsWindCharge = false;
+            WarningProjectileType warningType = WarningProjectileType.FIREBALL;
 
             ClientPlayerEntity player = client.player;
-            Vec3d playerPosition = player != null ? new Vec3d(player.getX(), player.getY(), player.getZ()) : Vec3d.ZERO;
-            Vec3d playerVelocity = player != null ? player.getVelocity() : Vec3d.ZERO;
 
             for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
                 int entityId = entry.getKey();
@@ -234,12 +244,13 @@ public class FireballPredictorClient implements ClientModInitializer {
                     double dangerRadius = warningPower * 2.0f * 2.0f;
                     double dangerRadiusSq = dangerRadius * dangerRadius;
 
-                    if (isDangerousPath(playerPosition, playerVelocity, data.path, elapsedTicks, dangerRadiusSq)) {
+                    if (isThreateningPlayer(player, fireball, data, elapsedTicks, dangerRadiusSq)) {
                         impactWarningDetected = true;
                         float travelProgress = getTravelProgress(fireball.age, ticksToImpact);
-                        if (travelProgress >= mostRelevantWarningProgress) {
+                        if (ticksToImpact < minTicksToImpact) {
+                            minTicksToImpact = ticksToImpact;
                             mostRelevantWarningProgress = travelProgress;
-                            warningIsWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
+                            warningType = WarningProjectileType.fromProjectile(fireball);
                         }
                     }
                 }
@@ -257,16 +268,16 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < ((period * 3) / 4);
                     int currentStage = isVisible ? baseStage : -1;
                     
-                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
-                        int particleCount = 1 + client.world.random.nextInt(3);
+                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.world.getRandom().nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                        int particleCount = 1 + client.world.getRandom().nextInt(3);
                         for (int i = 0; i < particleCount; i++) {
-                            net.minecraft.util.math.BlockPos randomPos = data.brokenBlocks.get(client.world.random.nextInt(data.brokenBlocks.size()));
+                            net.minecraft.util.math.BlockPos randomPos = data.brokenBlocks.get(client.world.getRandom().nextInt(data.brokenBlocks.size()));
                             if (!client.world.getBlockState(randomPos).isAir()) {
-                                double px = randomPos.getX() + client.world.random.nextDouble();
+                                double px = randomPos.getX() + client.world.getRandom().nextDouble();
                                 double py = randomPos.getY() + 1.1;
-                                double pz = randomPos.getZ() + client.world.random.nextDouble();
+                                double pz = randomPos.getZ() + client.world.getRandom().nextDouble();
                                 
-                                int pType = client.world.random.nextInt(3);
+                                int pType = client.world.getRandom().nextInt(3);
                                 net.minecraft.particle.ParticleEffect effect = ParticleTypes.FLAME;
                                 if (pType == 1) effect = ParticleTypes.LAVA;
                                 else if (pType == 2) effect = ParticleTypes.CAMPFIRE_COSY_SMOKE;
@@ -288,10 +299,10 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             if (impactWarningDetected) {
                 impactWarningProgress = mostRelevantWarningProgress;
-                impactWarningIsWindCharge = warningIsWindCharge;
+                impactWarningType = warningType;
             } else {
                 impactWarningProgress = 0.0f;
-                impactWarningIsWindCharge = false;
+                impactWarningType = WarningProjectileType.FIREBALL;
             }
 
             impactWarningVisible = impactWarningDetected;
@@ -312,12 +323,87 @@ public class FireballPredictorClient implements ClientModInitializer {
                 }
             }
 
+            // Damage & knockback estimation for the cracking-hearts HUD overlay.
+            // Computed on the main thread every tick: DamageCalculator.getSeenPercent raycasts the
+            // level (level.clip) and is not thread-safe, so it must never run on the worker thread.
+            // The most threatening in-range threat (highest final damage) drives the overlay.
+            DamageEstimate bestEstimate = DamageEstimate.NONE;
+            boolean estimateFound = false;
+            ModConfig config = ModConfig.instance();
+            if (player != null && (config.renderDamageHeartsOverlay || config.showKnockbackEstimator)) {
+                for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
+                    ExplosiveProjectileEntity fireball = getProjectile(client.world, entry.getKey());
+                    TrackedPrediction trackedPrediction = entry.getValue();
+                    PredictionData data = trackedPrediction.predictionData;
+                    if (fireball == null || data == null) {
+                        continue;
+                    }
+                    HitResult damageHit = TrajectoryPredictor.findDamageHitResult(client.world, fireball, data);
+                    if (damageHit == null) {
+                        continue;
+                    }
+                    Vec3d hitPos = damageHit.getPos();
+                    Vec3d playerPos = player.getEntityPos();
+                    float seenPercent;
+                    if (trackedPrediction.cachedSeenPercent >= 0.0f
+                            && trackedPrediction.lastEstimatePlayerPos != null
+                            && trackedPrediction.lastEstimateHitPos != null
+                            && playerPos.squaredDistanceTo(trackedPrediction.lastEstimatePlayerPos) < 0.0025
+                            && hitPos.squaredDistanceTo(trackedPrediction.lastEstimateHitPos) < 0.0025) {
+                        seenPercent = trackedPrediction.cachedSeenPercent;
+                    } else {
+                        seenPercent = DamageCalculator.getExposure(client.world, hitPos, player);
+                        trackedPrediction.cachedSeenPercent = seenPercent;
+                        trackedPrediction.lastEstimatePlayerPos = playerPos;
+                        trackedPrediction.lastEstimateHitPos = hitPos;
+                    }
+
+                    float power = ClientPowerLookup.getPower(fireball);
+                    TrackedProjectile tracked = trackedOwners.get(entry.getKey());
+                    Entity owner = tracked != null ? tracked.ownerEntity() : null;
+
+                    DamageEstimate estimate;
+                    if (damageHit.getType() == net.minecraft.util.hit.HitResult.Type.ENTITY
+                            && damageHit instanceof net.minecraft.util.hit.EntityHitResult entityHit
+                            && entityHit.getEntity() == player) {
+                        estimate = DamageCalculator.calculateDirectHitFromSeenPercent(
+                                hitPos, power, player, client.world, fireball, owner, seenPercent);
+                    } else {
+                        DamageSource explosionSource = client.world.getDamageSources().explosion(fireball, owner);
+                        estimate = DamageCalculator.calculateFromSeenPercent(
+                                hitPos, power, player, explosionSource, seenPercent);
+                    }
+
+                    if (!estimate.inRange()) {
+                        continue;
+                    }
+                    if (!estimateFound || estimate.finalDamage() > bestEstimate.finalDamage()) {
+                        bestEstimate = estimate;
+                        estimateFound = true;
+                    }
+                }
+            }
+            currentDamageEstimate = estimateFound ? bestEstimate : DamageEstimate.NONE;
+            damageOverlayActive = estimateFound;
+
             currentlyHighlightedBlocks = newHighlightedBlocks;
         });
 
-        HudRenderCallback.EVENT.register((drawContext, tickCounter) -> {
-            PredictionRenderer.renderImpactWarningBadge(drawContext, MinecraftClient.getInstance(), impactWarningVisible, impactWarningProgress, impactWarningIsWindCharge);
-        });
+        HudElementRegistry.attachElementBefore(
+            VanillaHudElements.CHAT,
+            Identifier.of("fireballpredictor", "impact_warning"),
+            (graphics, tickCounter) -> {
+                PredictionRenderer.renderImpactWarningBadge(graphics, MinecraftClient.getInstance(), impactWarningVisible, impactWarningProgress, impactWarningType);
+            }
+        );
+
+        HudElementRegistry.attachElementAfter(
+            VanillaHudElements.HEALTH_BAR,
+            Identifier.of("fireballpredictor", "damage_hearts"),
+            (graphics, tickCounter) -> {
+                HeartOverlayRenderer.render(graphics, MinecraftClient.getInstance(), damageOverlayActive, currentDamageEstimate);
+            }
+        );
 
         WorldRenderEvents.END_MAIN.register(context -> {
             if (activePredictions.isEmpty()) return;
@@ -353,7 +439,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
         impactWarningVisible = false;
         impactWarningProgress = 0.0f;
-        impactWarningIsWindCharge = false;
+        impactWarningType = WarningProjectileType.FIREBALL;
+        currentDamageEstimate = DamageEstimate.NONE;
+        damageOverlayActive = false;
 
         for (Entity entity : world.getEntities()) {
             handleEntityAdded(entity);
@@ -446,11 +534,40 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
     }
 
-    private static boolean isDangerousPath(Vec3d playerPosition, Vec3d playerVelocity, java.util.List<Vec3d> path, int elapsedTicks, double dangerRadiusSq) {
-        for (int i = elapsedTicks; i < path.size(); i++) {
-            Vec3d predictedPlayerPos = playerPosition.add(playerVelocity.multiply(i - elapsedTicks));
-            if (path.get(i).squaredDistanceTo(predictedPlayerPos) <= dangerRadiusSq) {
+    private static boolean isThreateningPlayer(ClientPlayerEntity player, ExplosiveProjectileEntity projectile, PredictionData data, int elapsedTicks, double dangerRadiusSq) {
+        if (player == null || data == null || data.path == null || data.path.isEmpty()) {
+            return false;
+        }
+
+        // 1. Direct entity hit on the player along the path
+        HitResult damageHit = TrajectoryPredictor.findDamageHitResult(player.getEntityWorld(), projectile, data);
+        if (damageHit instanceof net.minecraft.util.hit.EntityHitResult entityHit && entityHit.getEntity() == player) {
+            return true;
+        }
+        if (data.hitResult instanceof net.minecraft.util.hit.EntityHitResult entityHit && entityHit.getEntity() == player) {
+            return true;
+        }
+
+        // 2. Impact detonation point is within blast danger radius of the player
+        Vec3d playerPos = player.getEntityPos();
+        Vec3d impactPos = damageHit != null ? damageHit.getPos() : (data.hitResult != null ? data.hitResult.getPos() : null);
+        if (impactPos != null && playerPos.squaredDistanceTo(impactPos) <= dangerRadiusSq) {
+            return true;
+        }
+
+        // 3. Proximity along the flight path (current player position + short-term velocity extrapolation)
+        Vec3d playerVel = player.getVelocity();
+        for (int i = elapsedTicks; i < data.path.size(); i++) {
+            Vec3d pathPoint = data.path.get(i);
+            if (pathPoint.squaredDistanceTo(playerPos) <= dangerRadiusSq) {
                 return true;
+            }
+            int lookahead = Math.min(5, i - elapsedTicks);
+            if (lookahead > 0) {
+                Vec3d shortExtrapolated = playerPos.add(playerVel.multiply(lookahead));
+                if (pathPoint.squaredDistanceTo(shortExtrapolated) <= dangerRadiusSq) {
+                    return true;
+                }
             }
         }
 
@@ -471,6 +588,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         private boolean isCalculating = false;
         private float calculatedPower = -1.0f;
         private boolean calculatedDangerous = false;
+        private float cachedSeenPercent = -1.0f;
+        private Vec3d lastEstimatePlayerPos;
+        private Vec3d lastEstimateHitPos;
 
         private boolean shouldRefresh(ExplosiveProjectileEntity fireball, ClientWorld world) {
             float currentPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);

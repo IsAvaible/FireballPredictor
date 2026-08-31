@@ -11,8 +11,6 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
@@ -39,10 +37,7 @@ public class PredictionRenderer {
     static final int MAX_TRAIL_ALPHA = 190;
     static final int MAX_DOME_ALPHA = 110;
 
-    private static final ItemStack WARNING_ICON = new ItemStack(Items.FIRE_CHARGE);
-    private static final ItemStack WIND_CHARGE_WARNING_ICON = new ItemStack(Items.WIND_CHARGE);
-
-    public static void renderImpactWarningBadge(DrawContext context, MinecraftClient client, boolean visible, float progress, boolean isWindCharge) {
+    public static void renderImpactWarningBadge(DrawContext context, MinecraftClient client, boolean visible, float progress, WarningProjectileType warningType) {
         if (!visible || client.player == null) {
             return;
         }
@@ -55,6 +50,42 @@ public class PredictionRenderer {
         if (!config.renderImpactWarning) {
             return;
         }
+
+        int[] badge = impactBadgePosition(client);
+        int x = badge[0];
+        int y = badge[1];
+
+        int size = 20;
+        com.simonconrad.fireballpredictor.client.gui.SpriteBlitter.draw(context, net.minecraft.util.Identifier.ofVanilla("hud/effect_background"), x, y, size, size);
+
+        WarningProjectileType type = warningType == null ? WarningProjectileType.FIREBALL : warningType;
+        if (type.customTexture() != null) {
+            try {
+                context.drawTexture(net.minecraft.client.gl.RenderPipelines.GUI_TEXTURED, type.customTexture(), x + 2, y + 2, 0.0f, 0.0f, 16, 16, 16, 16);
+            } catch (RuntimeException | LinkageError ignored) {
+                context.drawItem(type.icon(), x + 2, y + 2);
+            }
+        } else {
+            context.drawItem(type.icon(), x + 2, y + 2);
+        }
+
+        int barX = x + 2;
+        int barY = y + size - 2;
+        int barWidth = 15;
+        int barHeight = 1;
+        int filledWidth = Math.max(1, Math.round(MathHelper.clamp(progress, 0.0f, 1.0f) * barWidth));
+
+        context.fill(barX, barY, barX + barWidth, barY + barHeight, type.barBackgroundColor());
+        context.fill(barX, barY, barX + filledWidth, barY + barHeight, type.barFillColor());
+        context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
+    }
+
+    /**
+     * Top-left corner of the impact warning badge on screen, honouring the configured anchor and
+     * X/Y offsets. Shared with the damage/knockback HUD readout so both stay visually aligned.
+     */
+    public static int[] impactBadgePosition(MinecraftClient client) {
+        com.simonconrad.fireballpredictor.config.ModConfig config = com.simonconrad.fireballpredictor.config.ModConfig.instance();
         int badgeWidth = 20;
         int badgeHeight = 20;
         int margin = 8;
@@ -73,28 +104,7 @@ public class PredictionRenderer {
             default -> margin;
         } + config.impactWarningBadgeOffsetY;
 
-        int size = 20;
-
-        context.drawTexture(net.minecraft.client.gl.RenderPipelines.GUI_TEXTURED, net.minecraft.util.Identifier.ofVanilla("textures/gui/sprites/hud/effect_background.png"), x, y, 0.0f, 0.0f, size, size, 20, 20);
-
-        ItemStack icon = isWindCharge ? WIND_CHARGE_WARNING_ICON : WARNING_ICON;
-        context.drawItem(icon, x + 2, y + 2);
-
-        int barX = x + 2;
-        int barY = y + size - 2;
-        int barWidth = 15;
-        int barHeight = 1;
-        int filledWidth = Math.max(1, Math.round(MathHelper.clamp(progress, 0.0f, 1.0f) * barWidth));
-
-        if (isWindCharge) {
-            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1C2230);
-            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFCFD6F7);
-            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
-        } else {
-            context.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA1A0B00);
-            context.fill(barX, barY, barX + filledWidth, barY + barHeight, 0xFFE67A00);
-            context.fill(barX, barY, barX + barWidth, barY + 1, 0x55FFFFFF);
-        }
+        return new int[]{x, y};
     }
 
     public static void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, ClientWorld world, PredictionData data, ExplosiveProjectileEntity fireball) {

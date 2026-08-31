@@ -7,7 +7,8 @@ This document describes the trajectory prediction system implemented in the mod.
 ### 1. [TrajectoryPredictor.java](../src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java)
 Contains the physics simulation engine that mimics Minecraft's projectile update loops:
 - **Tick-by-Tick Simulation**: Steps through the fireball's movement tick-by-tick (up to a maximum of 200 ticks).
-- **Collision Checking**: In each simulated tick, it performs raycasts for blocks (`world.clip` with `ClipContext.Block.COLLIDER`) and entities (`ProjectileUtil.getEntityHitResult`). To ensure trajectories represent full flight paths without terminating on mobs or players, the entity filter explicitly rejects all living entities (`entity -> false`).
+- **Collision Checking & Dual Hit Results**: In each simulated tick, it performs raycasts for blocks (`world.clip` with `ClipContext.Block.COLLIDER`) and entities (`ProjectileUtil.getEntityHitResult` with `canHitEntity` via [ProjectileAccessor.java](../src/main/java/com/simonconrad/fireballpredictor/mixin/ProjectileAccessor.java)). Visual trajectory ribbons, shockwave domes, and block destruction continue past entities to show full paths against terrain (`hitResult`), while damage estimation intercepts the first valid entity in the path (`damageHitResult`) to accurately predict direct-hit and splash damage.
+- **Dynamic Entity Path Interception (`findDamageHitResult`)**: During flight, entities may step into or out of the fireball's remaining path. On each tick, `TrajectoryPredictor.findDamageHitResult(world, fireball, data)` re-evaluates entity collisions along only the remaining path segments without re-simulating the entire flight path.
 - **Physics Equations**: Applies acceleration in the direction of the velocity vector using the fireball's `accelerationPower` field, then applies entity-specific drag:
   - **Fireballs & Uncharged Wither Skulls**: Standard drag (`0.95` in air, `0.8` in water).
   - **Charged Wither Skulls**: High drag (`0.73` in air, `0.8` in water).
@@ -24,6 +25,7 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 - **Deduplicated Updates**: Tracks an `isCalculating` flag for each active `TrackedProjectile` to prevent queueing redundant simulation tasks if a task is already running.
 - **Main Thread Safe Sync**: Once background calculations complete, applies the resulting `PredictionData` back to the main thread via the client's thread-safe executor (`client.execute()`).
 - **Dynamic Recalculation Cache Invalidation**: Tracks cached parameters (explosion power, `isCharged()` state, owner attribution, ray power multiplier snapshot). If a parameter changes or a block update occurs near the path, it schedules an immediate recalculation.
+- **Threat Assessment & Ranking (`isThreateningPlayer`)**: Evaluates incoming projectiles using direct hit checks, detonation proximity to the player within the blast danger radius, and trajectory proximity with short-term player velocity extrapolation. Ranks threats by maximum damage to drive the HUD warning badge and cracking hearts overlay.
 - Cleans up tracking data when fireballs are destroyed or unloaded.
 
 ## Validation Results

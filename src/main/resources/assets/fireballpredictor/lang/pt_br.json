@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Deslocamento Vertical do Alerta",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Deslocamento vertical aplicado a partir do ponto de ancoragem. Valores positivos movem para baixo.\nPadrão: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Sobreposição de Corações Rachados",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Sobrepõe corações rachados na barra de vida indicando o dano previsto de projéteis recebidos.\nPadrão: Ativado",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Indicador de Dano e Repulsão",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Exibe o dano e a velocidade de repulsão previstos ao lado do alerta de impacto.\nPadrão: Ativado",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Estimativa de Dano",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Renderizar Alerta de Impacto",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Exibe o alerta no HUD quando você estiver em rota de colisão com uma bola de fogo.\nPadrão: Ativado",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Cor da Trajetória",

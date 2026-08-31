@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "সতর্কতার উল্লম্ব অফসেট",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "অবস্থান থেকে উল্লম্ব দূরত্ব। ধনাত্মক মান নিচে সরায়।\nডিফল্ট: ০",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "ফাটল ধরা ক্ষতির হার্ট ওভারলে",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "আসন্ন প্রজেক্টাইল থেকে অনুমানিত ক্ষতি নির্দেশ করতে স্বাস্থ্য বারে ফাটল ধরা হার্ট প্রদর্শন করে।\nডিফল্ট: চালু",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "ক্ষতি এবং নকব্যাক রিডআউট",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "সংঘর্ষের সতর্কতার পাশে অনুমানিত ক্ষতি এবং নকব্যাকের গতি প্রদর্শন করে।\nডিফল্ট: চালু",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "ক্ষতির পূর্বাভাস",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "সংঘর্ষের সতর্কতা রেন্ডার করুন",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "ফায়ারবলের সাথে সংঘর্ষের সম্ভাবনা থাকলে স্ক্রিনে সতর্কতা প্রদর্শন করুন।\nডিফল্ট: চালু",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "গতিপথের রঙ",

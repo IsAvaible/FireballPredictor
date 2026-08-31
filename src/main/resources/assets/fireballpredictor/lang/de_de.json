@@ -50,6 +50,12 @@
 
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY": "Vertikaler Offset der Einschlagswarnung",
  "yacl3.config.fireballpredictor:config.impactWarningBadgeOffsetY.desc": "Vertikaler Versatz relativ zur Ankerposition. Positive Werte verschieben nach unten.\nStandard: 0",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay": "Rissige Schadensherzen-Überlagerung",
+ "yacl3.config.fireballpredictor:config.renderDamageHeartsOverlay.desc": "Überlagert die Lebensleiste mit rissigen Herzen, die den vorhergesagten Schaden ankommender Projektile anzeigen.\nStandard: Aktiviert",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator": "Schadens- & Rückstoßanzeige",
+ "yacl3.config.fireballpredictor:config.showKnockbackEstimator.desc": "Zeigt den vorhergesagten Schaden und die Rückstoßgeschwindigkeit neben der Einschlagswarnung an.\nStandard: Aktiviert",
+
+ "yacl3.config.fireballpredictor:config.category.visuals.group.damage_estimator": "Schadensschätzung",
  "yacl3.config.fireballpredictor:config.renderImpactWarning": "Einschlagswarnung anzeigen",
  "yacl3.config.fireballpredictor:config.renderImpactWarning.desc": "Aktiviert die Warnmeldung auf dem Bildschirm, wenn Kollisionsgefahr mit einem Feuerball besteht.\nStandard: Aktiviert",
  "yacl3.config.fireballpredictor:config.trajectoryColor": "Farbe der Flugbahn",

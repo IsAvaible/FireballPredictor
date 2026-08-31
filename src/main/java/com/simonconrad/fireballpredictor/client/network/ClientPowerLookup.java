@@ -15,7 +15,9 @@ public class ClientPowerLookup {
     private static volatile Float inferredBlockEstimation = null;
 
     public static float getPower(ExplosiveProjectileEntity fireball) {
-        if (fireball instanceof SmallFireballEntity || fireball instanceof DragonFireballEntity) {
+        if (fireball instanceof SmallFireballEntity
+                || fireball instanceof DragonFireballEntity
+                || fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
             return 0.0F;
         }
 
