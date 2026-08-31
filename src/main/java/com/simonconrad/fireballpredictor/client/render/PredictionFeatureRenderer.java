@@ -1,0 +1,232 @@
+package com.simonconrad.fireballpredictor.client.render;
+
+import net.minecraft.client.render.VertexConsumer;
+import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
+import com.simonconrad.fireballpredictor.math.PredictionRenderData;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Matrix4f;
+
+import java.util.List;
+
+/**
+ * Emits the geometry for the prediction overlay (trail + dome) into the shared
+ * {@link PredictionPipelines#PREDICTION} buffer.
+ *
+ * <p>On 26.2 this class is a {@code RenderTypeFeatureRenderer}; 1.21.11 has no feature renderer
+ * API, so the identical vertex emission lives behind a plain static entry point that
+ * {@link PredictionRenderer} calls every frame from {@code WorldRenderEvents.END_MAIN}.
+ */
+public final class PredictionFeatureRenderer {
+
+    private PredictionFeatureRenderer() {
+    }
+
+    /** One shared RenderLayer -&gt; one buffer -&gt; emission order == blend order.
+     * Dome first, ribbon on top, so the trail stays readable through the blast sphere. */
+    public static void render(VertexConsumer consumer, List<PredictionSubmit> submits) {
+        for (PredictionSubmit submit : submits) {
+            if (submit.domeState() != null) {
+                renderDome(consumer, submit.domeState());
+            }
+        }
+
+        for (PredictionSubmit submit : submits) {
+            if (submit.trailState() != null) {
+                renderTrail(consumer, submit.trailState());
+            }
+        }
+    }
+
+    private static Vec3d safeNormalize(Vec3d v, Vec3d fallback) {
+        double lenSq = v.lengthSquared();
+        if (lenSq > 1e-7) {
+            return v.multiply(1.0 / Math.sqrt(lenSq));
+        }
+        return fallback;
+    }
+
+    private static void renderTrail(VertexConsumer consumer, TrailRenderState state) {
+        Matrix4f positionMatrix = state.pose();
+        float baseWidth = state.width();
+        int r = state.r();
+        int g = state.g();
+        int b = state.b();
+        Vec3d camLook = state.camLook();
+        List<Vec3d> path = state.path();
+        int elapsedTicks = state.elapsedTicks();
+        int totalPathSteps = path.size() - 1;
+        float startBlendSteps = 1.0f;
+
+        TrajectoryStyle style = state.style() == null ? TrajectoryStyle.SOLID : state.style();
+        boolean isDashed = style == TrajectoryStyle.DASHED;
+        boolean isCoreOnly = style == TrajectoryStyle.CORE_ONLY;
+        boolean drawCore = state.renderCoreGlow() || isCoreOnly;
+        boolean drawShroud = !isCoreOnly;
+
+        double animTime = state.animTime();
+        double pulseSpeed = 0.45;
+
+        float fade = state.fade();
+        int maxAlpha = Math.round(PredictionRenderer.MAX_TRAIL_ALPHA * fade);
+
+        for (int i = elapsedTicks; i < path.size() - 1; i++) {
+            Vec3d p1 = path.get(i);
+            Vec3d p2 = path.get(i + 1);
+            Vec3d dir = safeNormalize(p2.subtract(p1), new Vec3d(0, 1, 0));
+
+            float blend1 = Math.min(1.0f, (float) (i - elapsedTicks) / startBlendSteps);
+            float blend2 = Math.min(1.0f, (float) (i + 1 - elapsedTicks) / startBlendSteps);
+
+            float widthBlend1 = 0.4f + 0.6f * blend1;
+            float widthBlend2 = 0.4f + 0.6f * blend2;
+            float alphaBlend1 = 0.3f + 0.7f * blend1;
+            float alphaBlend2 = 0.3f + 0.7f * blend2;
+
+            float progress1 = (float) i / totalPathSteps;
+            float progress2 = (float) (i + 1) / totalPathSteps;
+
+            float endTaper1 = progress1 > 0.8f ? 1.0f - (progress1 - 0.8f) * 2.0f : 1.0f;
+            float endTaper2 = progress2 > 0.8f ? 1.0f - (progress2 - 0.8f) * 2.0f : 1.0f;
+
+            float width1 = baseWidth * widthBlend1 * endTaper1;
+            float width2 = baseWidth * widthBlend2 * endTaper2;
+
+            float pulse1 = state.enableRibbonPulse() ? (0.85f + 0.15f * (float) Math.sin(animTime * pulseSpeed - progress1 * 6.0f)) : 1.0f;
+            float pulse2 = state.enableRibbonPulse() ? (0.85f + 0.15f * (float) Math.sin(animTime * pulseSpeed - progress2 * 6.0f)) : 1.0f;
+
+            float dash1 = isDashed ? ((i % 3 < 2) ? 1.0f : 0.15f) : 1.0f;
+            float dash2 = isDashed ? (((i + 1) % 3 < 2) ? 1.0f : 0.15f) : 1.0f;
+
+            int baseCenterAlpha1 = (int) (200 - (140 * Math.pow(progress1, 2)));
+            int baseCenterAlpha2 = (int) (200 - (140 * Math.pow(progress2, 2)));
+
+            // Clamped against MAX_TRAIL_ALPHA: with the translucent
+            // (non-additive) pipeline a high alpha would paint over the cracking overlay of blocks the
+            // ribbon crosses.
+            int centerAlpha1 = MathHelper.clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1 * fade), 0, maxAlpha);
+            int centerAlpha2 = MathHelper.clamp((int) (baseCenterAlpha2 * alphaBlend2 * pulse2 * dash2 * fade), 0, maxAlpha);
+            int edgeAlpha = 0;
+
+            Vec3d perp = dir.crossProduct(camLook);
+            if (perp.lengthSquared() < 0.001) {
+                perp = dir.crossProduct(new Vec3d(0, 1, 0));
+            }
+            if (perp.lengthSquared() < 0.001) {
+                perp = dir.crossProduct(new Vec3d(1, 0, 0));
+            }
+            Vec3d rightDir = safeNormalize(perp, new Vec3d(1, 0, 0));
+
+            // Pass 1: Outer Shroud
+            if (drawShroud) {
+                Vec3d right1 = rightDir.multiply(width1);
+                Vec3d right2 = rightDir.multiply(width2);
+
+                Vec3d p1L = p1.add(right1);
+                Vec3d p1R = p1.subtract(right1);
+                Vec3d p2L = p2.add(right2);
+                Vec3d p2R = p2.subtract(right2);
+
+                consumer.vertex(positionMatrix, (float) p1L.x, (float) p1L.y, (float) p1L.z).color(r, g, b, edgeAlpha);
+                consumer.vertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).color(r, g, b, centerAlpha1);
+                consumer.vertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).color(r, g, b, centerAlpha2);
+                consumer.vertex(positionMatrix, (float) p2L.x, (float) p2L.y, (float) p2L.z).color(r, g, b, edgeAlpha);
+
+                consumer.vertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).color(r, g, b, centerAlpha1);
+                consumer.vertex(positionMatrix, (float) p1R.x, (float) p1R.y, (float) p1R.z).color(r, g, b, edgeAlpha);
+                consumer.vertex(positionMatrix, (float) p2R.x, (float) p2R.y, (float) p2R.z).color(r, g, b, edgeAlpha);
+                consumer.vertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).color(r, g, b, centerAlpha2);
+            }
+
+            // Pass 2: Inner Core Layer
+            if (drawCore) {
+                float coreWidthRatio = isCoreOnly ? 0.6f : 0.35f;
+                float coreWidth1 = width1 * coreWidthRatio;
+                float coreWidth2 = width2 * coreWidthRatio;
+
+                int pass2R = isCoreOnly ? r : Math.min(255, r + (int) ((255 - r) * 0.35f));
+                int pass2G = isCoreOnly ? g : Math.min(255, g + (int) ((255 - g) * 0.35f));
+                int pass2B = isCoreOnly ? b : Math.min(255, b + (int) ((255 - b) * 0.35f));
+
+                Vec3d coreRight1 = rightDir.multiply(coreWidth1);
+                Vec3d coreRight2 = rightDir.multiply(coreWidth2);
+
+                Vec3d cp1L = p1.add(coreRight1);
+                Vec3d cp1R = p1.subtract(coreRight1);
+                Vec3d cp2L = p2.add(coreRight2);
+                Vec3d cp2R = p2.subtract(coreRight2);
+
+                int coreAlphaCenter1 = isCoreOnly ? centerAlpha1 : MathHelper.clamp((int) (centerAlpha1 * 1.25f), 0, maxAlpha);
+                int coreAlphaCenter2 = isCoreOnly ? centerAlpha2 : MathHelper.clamp((int) (centerAlpha2 * 1.25f), 0, maxAlpha);
+                int coreAlphaEdge1 = isCoreOnly ? 0 : (int) (centerAlpha1 * 0.4f);
+                int coreAlphaEdge2 = isCoreOnly ? 0 : (int) (centerAlpha2 * 0.4f);
+
+                consumer.vertex(positionMatrix, (float) cp1L.x, (float) cp1L.y, (float) cp1L.z).color(pass2R, pass2G, pass2B, coreAlphaEdge1);
+                consumer.vertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).color(pass2R, pass2G, pass2B, coreAlphaCenter1);
+                consumer.vertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).color(pass2R, pass2G, pass2B, coreAlphaCenter2);
+                consumer.vertex(positionMatrix, (float) cp2L.x, (float) cp2L.y, (float) cp2L.z).color(pass2R, pass2G, pass2B, coreAlphaEdge2);
+
+                consumer.vertex(positionMatrix, (float) p1.x, (float) p1.y, (float) p1.z).color(pass2R, pass2G, pass2B, coreAlphaCenter1);
+                consumer.vertex(positionMatrix, (float) cp1R.x, (float) cp1R.y, (float) cp1R.z).color(pass2R, pass2G, pass2B, coreAlphaEdge1);
+                consumer.vertex(positionMatrix, (float) cp2R.x, (float) cp2R.y, (float) cp2R.z).color(pass2R, pass2G, pass2B, coreAlphaEdge2);
+                consumer.vertex(positionMatrix, (float) p2.x, (float) p2.y, (float) p2.z).color(pass2R, pass2G, pass2B, coreAlphaCenter2);
+            }
+        }
+    }
+
+    private static void renderDome(VertexConsumer consumer, DomeRenderState state) {
+        Matrix4f positionMatrix = state.pose();
+        int r = state.r();
+        int g = state.g();
+        int b = state.b();
+        float pulseFactor = state.pulseFactor();
+        float fade = state.fade();
+        int maxAlpha = Math.round(PredictionRenderer.MAX_DOME_ALPHA * fade);
+
+        // No sorting needed: every dome quad uses the same RGB, so with a normal alpha blend the
+        // composite result is order independent. Alpha is capped so the cracking overlay of the
+        // blocks inside the dome stays visible (the hemisphere is drawn twice per pixel: no culling).
+        for (PredictionRenderData.DomeQuad quad : state.domeQuads()) {
+            int alpha1 = MathHelper.clamp((int) (quad.alpha1() * pulseFactor * fade), 0, maxAlpha);
+            int alpha2 = MathHelper.clamp((int) (quad.alpha2() * pulseFactor * fade), 0, maxAlpha);
+
+            consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).color(r, g, b, alpha1);
+            consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).color(r, g, b, alpha1);
+            consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).color(r, g, b, alpha2);
+            consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).color(r, g, b, alpha2);
+        }
+    }
+}
+
+record PredictionSubmit(
+    float distanceToCameraSq,
+    TrailRenderState trailState,
+    DomeRenderState domeState
+) {}
+
+record TrailRenderState(
+    List<Vec3d> path,
+    int elapsedTicks,
+    float width,
+    int r,
+    int g,
+    int b,
+    Vec3d camLook,
+    Matrix4f pose,
+    TrajectoryStyle style,
+    boolean renderCoreGlow,
+    boolean enableRibbonPulse,
+    double animTime,
+    float fade
+) {}
+
+record DomeRenderState(
+    Vec3d hitPos,
+    List<PredictionRenderData.DomeQuad> domeQuads,
+    int r,
+    int g,
+    int b,
+    float pulseFactor,
+    Matrix4f pose,
+    float fade
+) {}

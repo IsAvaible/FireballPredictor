@@ -1,10 +1,9 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.List;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Vec3d;
 
 public class PredictionData {
     public final List<Vec3d> path;

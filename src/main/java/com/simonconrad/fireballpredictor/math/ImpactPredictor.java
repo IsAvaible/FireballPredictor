@@ -1,18 +1,15 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.BlockView;
-
-import net.minecraft.entity.projectile.WitherSkullEntity;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.WitherSkullEntity;
+import net.minecraft.world.BlockView;
+import net.minecraft.block.BlockState;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.util.math.Vec3d;
 
 public class ImpactPredictor {
 

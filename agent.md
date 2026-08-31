@@ -1,79 +1,63 @@
-# Fireball Predictor Mod - Agent Documentation
+# FireballPredictor — 1.21.11 Backport Agent Notes
 
-This file serves as a reference for AI coding agents and human developers working on the `Fireball Predictor` Minecraft mod. It describes the project structure, history, configuration, and developer environment.
+This branch backports the 26.2 (Mojang-mappings) master line onto **Minecraft 1.21.11
+with Yarn mappings**. Keep these adaptation notes in mind when working on this branch.
 
-## Project Overview
+## Build environment
 
-`Fireball Predictor` is a Minecraft Fabric mod built on Minecraft **1.21.11** that predicts and visualizes the trajectory and explosion impact of fireballs, wither skulls, and wind charges in real-time, client-side.
+- **Java 21** (Gradle toolchain), Gradle wrapper 9.6.1, Fabric Loom 1.17-SNAPSHOT.
+- Low-memory sandbox: run builds with `-Dorg.gradle.jvmargs=-Xmx1280m` and keep a
+  swapfile active. `./gradlew build` must pass and `./gradlew runGameTest` must be
+  green (baseline: 14/14) before a port commit is made.
+- `genSources` produces Yarn-named sources; the merged named jar under
+  `~/.cache/gradle/caches/fabric-loom/minecraftMaven/.../minecraft-merged-...-v2.jar`
+  is the `javap` ground truth for the MC API surface.
 
-### Architecture Flow
+## Mapping conventions (Mojang → Yarn)
 
-```mermaid
-graph TD
-    A[ExplosiveProjectileEntity Spawn / Modify / NBT Load] --> B[Server Event / Mixin Hook]
-    B --> C[Retrieve explosion power via FireballEntityAccessor]
-    C --> D[Send FireballPowerPayload to client]
-    E[Client receives payload] --> F[Store in ClientPowerCache]
-    G[ClientTickEvents.END_CLIENT_TICK / State Change] --> H[Run TrajectoryPredictor]
-    H --> I[Generate Flight Path]
-    I --> J[Run ImpactPredictor if impact is found]
-    J --> K[Compute predicted broken blocks]
-    K --> L[Highlight broken blocks & trigger ambient particles]
-    M[WorldRenderEvents.END_MAIN] --> N[Render Ribbon Trail & Shockwave Dome]
-```
+- `AbstractHurtingProjectile` → `ExplosiveProjectileEntity`; `LargeFireball` → `FireballEntity`;
+  `WitherSkull` → `WitherSkullEntity` (`isDangerous` → `isCharged`); `AbstractWindCharge` →
+  `AbstractWindChargeEntity`; `tickCount` → `age`.
+- `Level` → `World`; `ClientLevel` → `ClientWorld`; `Minecraft` → `MinecraftClient`;
+  `getCurrentServer` → `getCurrentServerEntry` (`.ip` → `.address`).
+- `Vec3` → `Vec3d`; `BlockPos.containing` → `ofFloored`; `AABB` → `Box`;
+  `clip(ClipContext)` → `raycast(RaycastContext)`; `.level()` → `.getEntityWorld()`;
+  `getDeltaMovement` → `getVelocity`; `getLocation` → `getPos`; `.lengthSqr` → `.lengthSquared`;
+  `atCenterOf` → `ofCenter`.
+- Client: `getDeltaTracker().getGameTimeDeltaPartialTick(true)` →
+  `getRenderTickCounter().getTickProgress(true)`; `Camera.getPosition()` → `getCameraPos()`;
+  `GuiGraphics` → `DrawContext`; `Font` → `TextRenderer` (`font` → `textRenderer`).
+- Payloads: `CustomPacketPayload` → `CustomPayload` (`Type/type()` → `Id/getId()`);
+  `StreamCodec.composite` → `PacketCodec.tuple` + `PacketCodecs`; `RegistryFriendlyByteBuf` →
+  `RegistryByteBuf`; `PayloadTypeRegistry.clientboundPlay` → `playS2C`.
+- Mixins on this branch: `ClientPlayNetworkHandlerMixin`, `FireballEntityMixin`.
 
----
+## Rendering (1.21.11 specifics)
 
-## File Directory Map
+1.21.11 has the **RenderPipeline** API (`com.mojang.blaze3d.pipeline.RenderPipeline` +
+`RenderSetup` builders, `RenderPipelines` static finals) but **no public RenderLayer factory
+and no `RenderPipeline.register()`**. `RenderLayer.of(name, setup)` is package-private.
 
-Here are the key source files and resources in the project:
+- `PredictionPipelines` builds the mod pipeline with `RenderPipeline.builder()` and exposes
+  `PREDICTION` through the `RenderLayerAccessor` invoker mixin
+  (`@Invoker("of") static RenderLayer fireballpredictor$create(String, RenderSetup)`).
+- `PredictionFeatureRenderer` is a plain static emitter (no 26.2 feature-renderer API):
+  `VertexConsumer` (`net.minecraft.client.render.VertexConsumer`), vertices end without `.next()`.
+- Events: `WorldRenderEvents.END_MAIN` (vs `LevelRenderEvents`), `HudRenderCallback`
+  (vs `HudElementRegistry`), `context.matrices()`/`context.consumers()`.
+- GUI (1.21.11 `DrawContext`): `getMatrices()` returns `org.joml.Matrix3x2fStack`
+  (`pushMatrix/popMatrix/translate(x,y)/scale(x,y)`); `drawText(..., boolean shadow)` requires
+  the shadow flag; item icons render via `drawItem` under a 3x2 transform;
+  `blitSprite` does not exist → `SpriteBlitter` helper resolves gui-atlas
+  `SpriteIdentifier`s and calls `drawSpriteStretched`.
+- Iris: reflection-only access (no compile dep) — internal
+  `IrisPipelines.assignPipeline(pipeline, ShaderKey.LIGHTNING)`, fallback public
+  `IrisApi.assignPipeline(pipeline, IrisProgram.BASIC)`.
 
-### 1. Main Entrypoint & Configuration
-* [FireballPredictor.java](src/main/java/com/simonconrad/fireballpredictor/FireballPredictor.java): Root server/mod entrypoint. Syncs fireball size/power to clients.
-* [ModConfig.java](src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java): Annotation-based config handling via YetAnotherConfigLib (YACL) v3. Configures fireball, wither skull, and wind charge tracking toggles, ribbon/dome colors (including separate white defaults for wind charges), global fallback fireball power (`globalFallbackFireballPower`), per-server power fallbacks (`serverFallbackPowers`), and dynamic config GUI building via `createScreen`, HUD badge settings, and ray power multipliers. (See [yacl3.md](docs/yacl3.md) for full YACL v3 navigation guide).
+## Port workflow
 
-### 2. Client Logic
-* [FireballPredictorClient.java](src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java): Handles client ticks, filters tracked entities (fireballs, wither skulls, wind charges), updates prediction data, triggers ambient particles, manages block breaking overlays, and tracks HUD warning states.
-* [ModMenuIntegration.java](src/main/java/com/simonconrad/fireballpredictor/client/compat/ModMenuIntegration.java): Registers the config screen with ModMenu using `ModConfig::createScreen`.
-
-### 3. Math & Logic Simulators
-* [TrajectoryPredictor.java](src/main/java/com/simonconrad/fireballpredictor/math/TrajectoryPredictor.java): Simulates projectile kinematics, raycasting, and entity-specific drag (`0.95` for fireballs, `0.73` for charged skulls, `1.0` for wind charges).
-* [ImpactPredictor.java](src/main/java/com/simonconrad/fireballpredictor/math/ImpactPredictor.java): Replicates the vanilla explosion raycasting algorithm deterministically using custom config multipliers. Short-circuits block destruction for wind charges (`List.of()`).
-* [PredictionData.java](src/main/java/com/simonconrad/fireballpredictor/math/PredictionData.java): Data class encapsulating path, hit result, broken blocks, and initial velocity.
-
-### 4. Networking & Mixins
-* [FireballPowerPayload.java](src/main/java/com/simonconrad/fireballpredictor/network/FireballPowerPayload.java): Packet format for syncing fireball explosion power.
-* [ClientPowerCache.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerCache.java): Caches tracked entity powers client-side.
-* [ClientPowerLookup.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ClientPowerLookup.java): 5-tier power resolution router (`POWER_CACHE` -> `serverFallbackPowers` -> `inferredPacketRadius` -> `inferredBlockEstimation` -> `globalFallbackFireballPower`).
-* [ExplosionInferenceHandler.java](src/main/java/com/simonconrad/fireballpredictor/client/network/ExplosionInferenceHandler.java): Infers fireball explosion power from incoming `ExplosionS2CPacket` radii (`radius > 0`) or destroyed block distance $d_{\max} / 1.3$ / block count when servers (e.g. Hypixel) zero out explosion radii or send inflated radii (e.g. GommeHD), retaining session-wide maximum estimation.
-
-* [FireballInferenceTracker.java](src/main/java/com/simonconrad/fireballpredictor/client/network/FireballInferenceTracker.java): Side-safe tracker managing `lastPos` and `hitPos` for fireballs with 3.0-block radius matching and 3000ms record retention. Includes explicit `isFireball` classification.
-* [ClientPlayNetworkHandlerMixin.java](src/main/java/com/simonconrad/fireballpredictor/mixin/ClientPlayNetworkHandlerMixin.java): Intercepts `ExplosionS2CPacket` on main render thread (`client.isOnThread()`) and delegates to `ExplosionInferenceHandler`.
-* [FireballEntityAccessor.java](src/main/java/com/simonconrad/fireballpredictor/FireballEntityAccessor.java): Interface to extract and dynamically set `explosionPower` on fireball instances.
-* [FireballEntityMixin.java](src/main/java/com/simonconrad/fireballpredictor/mixin/FireballEntityMixin.java): Mixin implementing `FireballEntityAccessor` to dynamically sync power modifications/NBT loads to tracking clients.
-
-### 5. Client Rendering
-* [PredictionRenderer.java](src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java): Draws the translucent trajectory ribbon and shockwave dome with entity-specific colors, as well as the HUD impact warning badge (using `Items.WIND_CHARGE` icon and `#cfd6f7` progress bar for wind charges).
-
-### 6. Automated Testing (GameTest)
-* [FireballPredictorGameTest.java](src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java): Regression test suite checking predicted trajectories and block-destruction counts against real in-game detonations across 11 test scenarios. Validates normal fireballs, normal/charged wither skulls, obsidian/waterlogged slab interactions, high-power fireballs, wind charges, and zero-radius explosion power estimation & hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`).
-
-### 7. Build & Publishing Infrastructure
-* [libs.versions.toml](gradle/libs.versions.toml): Central Gradle version catalog for Minecraft `1.21.11`, Loom, Fabric API, YACL, ModMenu, and publishing plugins.
-* [CHANGELOG.md](CHANGELOG.md): Keep a Changelog document parsed automatically by `build.gradle` (`getLatestChangelog()`) to extract version release notes.
-* [publish.yml](.github/workflows/publish.yml): GitHub Actions release pipeline triggered on version tags (`v*`) to build and publish to Modrinth, CurseForge, and GitHub Releases.
-* [build.yml](.github/workflows/build.yml): Continuous Integration workflow verifying PRs and branch pushes with Gradle action caching.
-
----
-
-## Build and Run Details
-
-* **JDK Target**: Java 21 (configured in [build.gradle](build.gradle) under source and target compatibility, as well as compile release options).
-* **Gradle Toolchain**: Uses Gradle 9.6.1 wrapper.
-* **Commands**:
-  * Build: `.\gradlew build`
-  * Run Client (Vanilla): `.\gradlew runClient`
-  * Run Client (Sodium + Iris + Shaders): `.\gradlew runClient -Pshaders` or `.\gradlew runClientWithShaders`
-  * Run Server: `.\gradlew runServer`
-  * Run GameTests: `.\gradlew runGameTest`
-  * Publish Release: `.\gradlew publishMods` (Requires `MODRINTH_TOKEN` & `CURSEFORGE_TOKEN` environment variables)
+1. Translate with `/home/user/port/translate.py` (deterministic rule set, reviewed against
+   javap ground truth), hand-adapt rendering/client/pipeline files.
+2. `./gradlew build` + `./gradlew runGameTest` green, then one commit per version.
+3. Upload `git format-patch` of the ported commits to 0x0.st and record the URL in
+   `backport-patches.md` at the repo root.

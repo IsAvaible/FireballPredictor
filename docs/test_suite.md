@@ -69,17 +69,17 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 * **Details**: Asserts that Wind Charges calculate drag of `1.0` (no drag), predict 0 broken blocks upon impact, and break 0 actual blocks in the world upon detonation (`assertNoDestruction`).
 
 ### 10. Inferred Explosion Power Fallback (`testInferredExplosionPowerFallback`)
-* **Entity**: `FireballEntity` (unsynced entity ID)
+* **Entity**: `LargeFireball` (unsynced entity ID)
 * **Starting State**: Clears `ClientPowerCache` and resets `inferredFireballPower`. Spawns a fireball with default properties.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
 
 ### 11. Zero-Radius Affected Block Estimation and Hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`)
-* **Entity**: `FireballEntity`
+* **Entity**: `LargeFireball`
 * **Starting State**: Clears `ClientPowerCache` and resets inferred power state. Registers a fireball location in `FireballInferenceTracker`.
 * **Environment**: Headless mock position simulation.
 * **Details**: 
-  1. Simulates zero-radius `ExplosionS2CPacket` (`radius = 0.0f`) with affected block list extending 3.9 blocks away. Verifies power estimation via $d_{\max} / 1.3$ yields $\sim 3.0\text{f}$.
+  1. Simulates zero-radius `ClientboundExplodePacket` (`radius = 0.0f`) with affected block list extending 3.9 blocks away. Verifies power estimation via $d_{\max} / 1.3$ yields $\sim 3.0\text{f}$.
   2. Verifies session max power retention ($P_{\text{session}}$ does not decrease when subsequent smaller explosions occur).
   3. Verifies fallback hierarchy precedence: Tier 2 explicit packet radius inference (`2.5f`) overrides Tier 4 block estimation (`3.0f`).
 
@@ -91,8 +91,8 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 Because the GameTest framework randomly rotates and mirrors test structures when positioning them in the batch grid, a static absolute velocity vector like `(0.5, 0.0, 0.0)` would cause projectiles to fly in wrong directions. 
 We solve this by translating the velocity vector using the structure's rotation origin dynamically:
 ```java
-Vec3d rotatedVelocity = context.getAbsolute(new Vec3d(0.5, 0.0, 0.0))
-                               .subtract(context.getAbsolute(Vec3d.ZERO));
+Vec3 rotatedVelocity = context.getAbsolute(new Vec3(0.5, 0.0, 0.0))
+                              .subtract(context.getAbsolute(Vec3.ZERO));
 ```
 
 ### High-Drag Projectile Range Capping

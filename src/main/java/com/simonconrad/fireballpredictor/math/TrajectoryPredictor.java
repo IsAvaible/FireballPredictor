@@ -1,18 +1,17 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.World;
-import net.minecraft.entity.projectile.ProjectileUtil;
-
-import net.minecraft.util.math.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.WitherSkullEntity;
+import net.minecraft.world.RaycastContext;
+import net.minecraft.world.World;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Vec3d;
 
 public class TrajectoryPredictor {
 
@@ -48,7 +47,7 @@ public class TrajectoryPredictor {
         double drag = 0.95;
         if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
             drag = 1.0;
-        } else if (fireball instanceof net.minecraft.entity.projectile.WitherSkullEntity skull && skull.isCharged()) {
+        } else if (fireball instanceof WitherSkullEntity skull && skull.isCharged()) {
             drag = 0.73;
         }
         

@@ -3,17 +3,17 @@ package com.simonconrad.fireballpredictor.gametest;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.BlockState;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.test.TestContext;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
-import net.minecraft.test.TestContext;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.Vec3d;
-
 import com.simonconrad.fireballpredictor.FireballEntityAccessor;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
@@ -239,13 +239,12 @@ public class FireballPredictorGameTest {
 
         Vec3d explosionPos = new Vec3d(10.0, 64.0, 10.0);
         FireballEntity fireball = new FireballEntity(EntityType.FIREBALL, context.getWorld());
-        fireball.setPosition(explosionPos);
+        fireball.setPosition(explosionPos.x, explosionPos.y, explosionPos.z);
         FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
 
         // 1. Simulate Explosion packet with radius = 0 and affected blocks extending 3.9 blocks away
-        // explosionPos = (10.0, 64.0, 10.0), BlockPos center = (13.9, 64.0, 10.0) -> block origin = (13, 63, 9)
-        // Vec3d.ofCenter(BlockPos(13, 63, 9)) = (13.5, 63.5, 9.5) -> dist = sqrt((3.5)^2 + (-0.5)^2 + (-0.5)^2) = 3.5707 -> 3.5707 / 1.3 = 2.7467
-        // To get exact center distance 3.9: BlockPos(13, 63, 9) with explosionPos (9.6, 63.5, 9.5) -> dist = 13.5 - 9.6 = 3.9 -> 3.9 / 1.3 = 3.0f
+        // explosionPos = (9.6, 63.5, 9.5), testBlockPos = (13, 63, 9)
+        // Vec3d.ofCenter(BlockPos(13, 63, 9)) = (13.5, 63.5, 9.5) -> dist = 13.5 - 9.6 = 3.9 -> 3.9 / 1.3 = 3.0f
         Vec3d testExplosionPos = new Vec3d(9.6, 63.5, 9.5);
         BlockPos testBlockPos = new BlockPos(13, 63, 9);
         FireballInferenceTracker.registerFireballLocation(fireball, testExplosionPos);
@@ -257,7 +256,6 @@ public class FireballPredictorGameTest {
         if (blockEst == null || Math.abs(blockEst - 3.0f) > 0.01f) {
             throw new RuntimeException("Expected inferred block estimation ~3.0f, but got: " + blockEst);
         }
-
 
         // 2. Test session max retention: smaller explosion (dMax = 1.3 -> 1.0f) should not decrease retained estimation (3.0f)
         List<BlockPos> smallerAffected = List.of(
@@ -286,7 +284,7 @@ public class FireballPredictorGameTest {
 
         Vec3d explosionPos = new Vec3d(10.0, 64.0, 10.0);
         FireballEntity fireball = new FireballEntity(EntityType.FIREBALL, context.getWorld());
-        fireball.setPosition(explosionPos);
+        fireball.setPosition(explosionPos.x, explosionPos.y, explosionPos.z);
         FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
 
         // 1. Simulate GommeHD packet: radius = 4.0, but blockCount = 2 (estimates power ~1.44f)
@@ -342,6 +340,3 @@ public class FireballPredictorGameTest {
         context.complete();
     }
 }
-
-
-

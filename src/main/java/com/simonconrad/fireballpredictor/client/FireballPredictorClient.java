@@ -1,8 +1,10 @@
 package com.simonconrad.fireballpredictor.client;
 
+import com.simonconrad.fireballpredictor.client.compat.IrisCompat;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
@@ -10,7 +12,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
@@ -61,24 +62,9 @@ public class FireballPredictorClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ModConfig.load();
+        PredictionPipelines.class.getName();
+        IrisCompat.init();
         ClientPowerCache.registerReceivers();
-
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            ClientPowerLookup.resetInferredPower();
-            ClientPowerCache.POWER_CACHE.clear();
-            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
-            activePredictions.clear();
-            currentlyHighlightedBlocks.clear();
-            impactWarningVisible = false;
-            impactWarningProgress = 0.0f;
-            impactWarningIsWindCharge = false;
-            trackedWorld = null;
-        });
-
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            ClientPowerLookup.resetInferredPower();
-            com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
-        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
@@ -96,10 +82,6 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             if (client.world != trackedWorld) {
                 resetWorldState(client.world);
-            }
-
-            if (client.isPaused()) {
-                return;
             }
 
             long worldTime = client.world.getTime();
@@ -198,7 +180,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     boolean isVisible = (age % period) < ((period * 3) / 4);
                     int currentStage = isVisible ? baseStage : -1;
                     
-                    if (ModConfig.instance().renderParticleAccents && client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
+                    if (!client.isPaused() && ModConfig.instance().renderParticleAccents && client.world.random.nextInt(2) == 0 && !data.brokenBlocks.isEmpty()) {
                         int particleCount = 1 + client.world.random.nextInt(3);
                         for (int i = 0; i < particleCount; i++) {
                             net.minecraft.util.math.BlockPos randomPos = data.brokenBlocks.get(client.world.random.nextInt(data.brokenBlocks.size()));
@@ -281,6 +263,9 @@ public class FireballPredictorClient implements ClientModInitializer {
         currentlyHighlightedBlocks.clear();
         com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
         com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
+        impactWarningVisible = false;
+        impactWarningProgress = 0.0f;
+        impactWarningIsWindCharge = false;
 
         for (Entity entity : world.getEntities()) {
             handleEntityAdded(entity);

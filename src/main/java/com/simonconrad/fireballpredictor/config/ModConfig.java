@@ -49,8 +49,6 @@ public class ModConfig {
         }
     }
 
-
-
     @SerialEntry
     @AutoGen(category = "general")
     @FloatField(min = 0.7f, max = 1.3f)
@@ -146,6 +144,7 @@ public class ModConfig {
     @IntField(min = -1000, max = 1000, format = "%d")
     public int impactWarningBadgeOffsetY = 0;
 
+    // 3. Helper methods to match your existing client initialization calls
     public static net.minecraft.client.gui.screen.Screen createScreen(net.minecraft.client.gui.screen.Screen parentScreen) {
         dev.isxander.yacl3.api.YetAnotherConfigLib baseGui = HANDLER.generateGui();
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
@@ -176,7 +175,6 @@ public class ModConfig {
                     .formatValue(v -> v <= 0.0f
                             ? net.minecraft.text.Text.literal("0.00 (Auto / None)")
                             : net.minecraft.text.Text.literal(String.format("%.2f", v))))
-
             .build();
 
         dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
@@ -195,7 +193,7 @@ public class ModConfig {
                 categoryBuilder.group(group);
             }
 
-            if (category.name().getContent() instanceof net.minecraft.text.TranslatableTextContent translatable) {
+            if (category.name().getContents() instanceof net.minecraft.text.TranslatableTextContent translatable) {
                 if (translatable.getKey().endsWith("general")) {
                     categoryBuilder.option(serverOption);
                 }
@@ -203,7 +201,6 @@ public class ModConfig {
 
             builder.category(categoryBuilder.build());
         }
-
 
         return builder.build().generateScreen(parentScreen);
     }
@@ -220,5 +217,4 @@ public class ModConfig {
         return HANDLER.instance();
     }
 }
-
 

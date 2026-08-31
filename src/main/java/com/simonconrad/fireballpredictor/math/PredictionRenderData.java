@@ -1,8 +1,7 @@
 package com.simonconrad.fireballpredictor.math;
 
-import net.minecraft.util.math.Vec3d;
-
 import java.util.List;
+import net.minecraft.util.math.Vec3d;
 
 public record PredictionRenderData(List<DomeQuad> domeQuads) {
     public static final PredictionRenderData EMPTY = new PredictionRenderData(List.of());

@@ -52,4 +52,3 @@ To publish a new version to **Modrinth**, **CurseForge**, and **GitHub Releases*
    git push origin v1.3.0+1.21.11
    ```
 The GitHub Actions workflow will automatically build the mod and publish the binary and changelog to Modrinth, CurseForge, and GitHub Releases.
-

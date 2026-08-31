@@ -1,11 +1,11 @@
 package com.simonconrad.fireballpredictor.client.network;
 
-import net.minecraft.entity.projectile.AbstractWindChargeEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.SmallFireballEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
+import net.minecraft.entity.projectile.AbstractWindChargeEntity;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Map;

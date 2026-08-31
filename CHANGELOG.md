@@ -7,6 +7,10 @@
 - **Enhanced Rendering:** Upgraded ribbon visuals with dual-pass rendering featuring a distinct inner core and soft outer glow.
 - **Reorganized Settings:** Streamlined the YACL configuration menu into distinct sub-groups for easier navigation.
 
+### Iris Shaderpack Compatibility
+- **Shader Support:** Added full integration with Iris so prediction ribbons and impact domes render correctly with shaders enabled.
+- **Visual Clarity:** Implemented double-sided rendering and balanced alpha transparency caps to maintain visibility of block breaking overlays.
+
 ### Bug Fixes & Optimizations
 - **Pause State:** Paused ambient particle accent animations when the game client is paused.
 - **Asset Optimization:** Reduced mod JAR size by optimizing icon resolution.
@@ -22,7 +26,6 @@
 - Added automated release publishing to Modrinth, CurseForge, and GitHub.
 
 ## 1.3.0
-
 
 ### Wind Charge Support
 - Added trajectory prediction and impact dome rendering for Wind Charges.
