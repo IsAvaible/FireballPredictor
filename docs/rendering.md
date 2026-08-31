@@ -63,9 +63,19 @@ Center Line (Alpha = Max) ══════════════════
 Outer Edge (Alpha = 0)  ──────────────────────────────────────────  p2 - r2
 ```
 
-* **Width & Taper**: Width starts at `ModConfig.trajectoryWidth` (default: $0.12$ blocks) and tapers to $0$ over the final 20% of the flight path.
+* **Width & Taper**: Width starts at `ModConfig.trajectoryWidth` (default: $0.5$ blocks, matching master) and tapers to $0$ over the final 20% of the flight path.
 * **Alpha Attenuation**: Alpha decays quadratically from origin to impact point:
-  $$\alpha(\text{prog}) = \left(200 - 140 \times \text{prog}^2\right) \times \alpha_{\text{blend}}$$
+  $$\alpha(\text{prog}) = \left(200 - 140 \times \text{prog}^2\right) \times \alpha_{\text{blend}} \times \text{pulse} \times \text{dash} \;\; (\text{clamped to } \le 190)$$
+  with the optional pulse $= 0.85 + 0.15\,\sin(9\,t - 6\,\text{prog})$ (game-time seconds, `enableRibbonPulse`) and dash $\in \{1, 0.15\}$ for the `dashed` style.
+
+### 2.3 Two-Pass Ribbon: Shroud + Core Glow (master parity)
+
+Each segment is drawn twice, like master's `PredictionFeatureRenderer.renderTrail`:
+
+1. **Outer shroud pass** - the full-width dual-quad strip with alpha fading from the bright center line to $0$ at the edges (soft glow envelope).
+2. **Core glow pass** (`renderCoreGlow`) - a narrower strip at $35\%$ of the segment width, with $1.25\times$ the center alpha and edges kept at $40\%$ alpha, giving the ribbon its bright "energy beam" core.
+
+The `core_only` trajectory style drops the shroud pass and draws only the core strip at $60\%$ width; `dashed` additionally alternates segment brightness ($2$ bright : $1$ dark).
 
 ---
 

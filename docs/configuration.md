@@ -28,8 +28,11 @@ The configuration is managed by [ModConfig.java](../src/main/java/com/simonconra
 | Option | Type | Default | Range | Description |
 |---|---|---|---|---|
 | `renderTrajectory` | `boolean` | `true` | `true` / `false` | Enables or disables the 3D in-world trajectory ribbon. |
-| `trajectoryWidth` | `float` | `0.12` | `0.02` – `1.0` | Width of the trajectory ribbon in blocks. |
+| `trajectoryWidth` | `float` | `0.5` | `0.1` – `2.0` | Width of the trajectory ribbon in blocks (master default `0.5`; configs still on the old `0.12` default are migrated once). |
 | `trajectoryColor` | `String` | `FF8000` | Hex RRGGBB | Hexadecimal color code for the trajectory ribbon (default: vibrant orange). |
+| `trajectoryStyle` | `String` | `solid` | `solid` / `dashed` / `core_only` | Ribbon style: soft shroud + bright core, dashed variant, or core strip only. |
+| `renderCoreGlow` | `boolean` | `true` | `true` / `false` | Extra bright core layer on top of the soft outer shroud (master's `renderCoreGlow`). |
+| `enableRibbonPulse` | `boolean` | `true` | `true` / `false` | Subtle travelling brightness wave along the ribbon (master's `enableRibbonPulse`). |
 
 ### 2.3 Shockwave Blast Dome (`dome`)
 
@@ -37,6 +40,7 @@ The configuration is managed by [ModConfig.java](../src/main/java/com/simonconra
 |---|---|---|---|---|
 | `renderShockwaveDome` | `boolean` | `true` | `true` / `false` | Enables or disables the 3D spherical shockwave blast dome at the predicted impact point. |
 | `domeColor` | `String` | `FF8000` | Hex RRGGBB | Hexadecimal color code for the shockwave blast dome. |
+| `domeFresnelStrength` | `float` | `0.3` | `0.0` – `1.0` | Strength of the fresnel rim shading; the rim glow keeps the dome visible from the inside. |
 
 ### 2.4 Block Destruction Highlights (`blocks`)
 

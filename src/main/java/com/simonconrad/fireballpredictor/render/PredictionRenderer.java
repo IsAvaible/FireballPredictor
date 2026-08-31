@@ -2,6 +2,7 @@ package com.simonconrad.fireballpredictor.render;
 
 import com.simonconrad.fireballpredictor.client.FireballPredictorClient;
 import com.simonconrad.fireballpredictor.config.ModConfig;
+import com.simonconrad.fireballpredictor.config.TrajectoryStyle;
 import com.simonconrad.fireballpredictor.math.DomeMesh;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import net.minecraft.client.Minecraft;
@@ -102,6 +103,21 @@ public final class PredictionRenderer {
 
     // ------------------------------------------------------------------ trail
 
+    /**
+     * Renders the trajectory ribbon as a camera-facing billboard strip, mirroring master's
+     * PredictionFeatureRenderer.renderTrail:
+     *
+     * <ul>
+     *   <li><b>Outer shroud pass</b> - full width, alpha fading from the bright center line
+     *       to zero at the edges (soft glow).</li>
+     *   <li><b>Core glow pass</b> - a 35%-width core strip at 1.25x center alpha (edges keep
+     *       40% alpha) that makes the ribbon read as a bright energy beam instead of a thin
+     *       translucent line.</li>
+     *   <li>Alpha fades along the flight path (200 - 140 * progress^2), width/alpha blend in
+     *       over the first tick, the tail tapers out over the last 20%.</li>
+     *   <li>Optional 0.85..1.15 travelling brightness pulse and dashed styles.</li>
+     * </ul>
+     */
     private static void renderTrail(FireballPredictorClient.Tracked t,
                                     Vec3 camLook, double viewerX, double viewerY, double viewerZ,
                                     double animSeconds) {
@@ -119,6 +135,18 @@ public final class PredictionRenderer {
         float baseWidth = ModConfig.trajectoryWidth;
 
         int elapsed = Math.max(0, fireball.ticksExisted - t.predictionAge);
+
+        TrajectoryStyle style = ModConfig.trajectoryStyle == null ? TrajectoryStyle.SOLID : ModConfig.trajectoryStyle;
+        boolean isDashed = style == TrajectoryStyle.DASHED;
+        boolean isCoreOnly = style == TrajectoryStyle.CORE_ONLY;
+        boolean drawCore = ModConfig.renderCoreGlow || isCoreOnly;
+        boolean drawShroud = !isCoreOnly;
+
+        // The legacy ribbon pulse was tuned at 0.45 rad/tick; animSeconds is in seconds, so
+        // scale by 20 tps to stay visually identical to master's DEFAULT theme.
+        double pulseSpeed = 0.45 * 20.0;
+
+        int maxAlpha = MAX_TRAIL_ALPHA;
 
         setupTranslucent();
         Tessellator tessellator = Tessellator.getInstance();
@@ -177,28 +205,77 @@ public final class PredictionRenderer {
             float width1 = baseWidth * widthBlend1 * endTaper1;
             float width2 = baseWidth * widthBlend2 * endTaper2;
 
-            int centerAlpha1 = clampAlpha((int) ((200.0 - 140.0 * progress1 * progress1) * alphaBlend1));
-            int centerAlpha2 = clampAlpha((int) ((200.0 - 140.0 * progress2 * progress2) * alphaBlend2));
-            int edgeAlpha = 0;
+            float pulse1 = ModConfig.enableRibbonPulse
+                    ? 0.85F + 0.15F * (float) Math.sin(animSeconds * pulseSpeed - progress1 * 6.0F)
+                    : 1.0F;
+            float pulse2 = ModConfig.enableRibbonPulse
+                    ? 0.85F + 0.15F * (float) Math.sin(animSeconds * pulseSpeed - progress2 * 6.0F)
+                    : 1.0F;
 
-            double r1x = px * width1, r1y = py * width1, r1z = pz * width1;
-            double r2x = px * width2, r2y = py * width2, r2z = pz * width2;
+            float dash1 = isDashed ? (i % 3 < 2 ? 1.0F : 0.15F) : 1.0F;
+            float dash2 = isDashed ? ((i + 1) % 3 < 2 ? 1.0F : 0.15F) : 1.0F;
 
-            // Two quads: [p1+r1, p1, p2, p2+r2] and [p1, p1-r1, p2-r2, p2]
-            // (center vertices get the bright center alpha, outer ones fade to 0).
-            wr.pos(p1.xCoord + r1x, p1.yCoord + r1y, p1.zCoord + r1z).color(r, g, b, edgeAlpha).endVertex();
-            wr.pos(p1.xCoord, p1.yCoord, p1.zCoord).color(r, g, b, centerAlpha1).endVertex();
-            wr.pos(p2.xCoord, p2.yCoord, p2.zCoord).color(r, g, b, centerAlpha2).endVertex();
-            wr.pos(p2.xCoord + r2x, p2.yCoord + r2y, p2.zCoord + r2z).color(r, g, b, edgeAlpha).endVertex();
+            int baseCenterAlpha1 = (int) (200.0F - 140.0F * progress1 * progress1);
+            int baseCenterAlpha2 = (int) (200.0F - 140.0F * progress2 * progress2);
 
-            wr.pos(p1.xCoord, p1.yCoord, p1.zCoord).color(r, g, b, centerAlpha1).endVertex();
-            wr.pos(p1.xCoord - r1x, p1.yCoord - r1y, p1.zCoord - r1z).color(r, g, b, edgeAlpha).endVertex();
-            wr.pos(p2.xCoord - r2x, p2.yCoord - r2y, p2.zCoord - r2z).color(r, g, b, edgeAlpha).endVertex();
-            wr.pos(p2.xCoord, p2.yCoord, p2.zCoord).color(r, g, b, centerAlpha2).endVertex();
+            // Clamped against MAX_TRAIL_ALPHA: with the translucent (non-additive) pipeline a
+            // high alpha would paint over the cracking overlay of blocks the ribbon crosses.
+            int centerAlpha1 = clamp((int) (baseCenterAlpha1 * alphaBlend1 * pulse1 * dash1), 0, maxAlpha);
+            int centerAlpha2 = clamp((int) (baseCenterAlpha2 * alphaBlend2 * pulse2 * dash2), 0, maxAlpha);
+
+            // Pass 1: outer shroud (bright center line fading to zero at the edges).
+            if (drawShroud) {
+                emitRibbonQuad(wr, p1, p2, px, py, pz, width1, width2,
+                        r, g, b, 0, 0, centerAlpha1, centerAlpha2);
+            }
+
+            // Pass 2: inner core layer (narrower, brighter - the "energy beam" core).
+            if (drawCore) {
+                float coreWidthRatio = isCoreOnly ? 0.6F : 0.35F;
+                int coreCenterAlpha1 = isCoreOnly ? centerAlpha1 : clamp((int) (centerAlpha1 * 1.25F), 0, maxAlpha);
+                int coreCenterAlpha2 = isCoreOnly ? centerAlpha2 : clamp((int) (centerAlpha2 * 1.25F), 0, maxAlpha);
+                int coreEdgeAlpha1 = isCoreOnly ? 0 : (int) (centerAlpha1 * 0.4F);
+                int coreEdgeAlpha2 = isCoreOnly ? 0 : (int) (centerAlpha2 * 0.4F);
+
+                emitRibbonQuad(wr, p1, p2, px, py, pz, width1 * coreWidthRatio, width2 * coreWidthRatio,
+                        r, g, b, coreEdgeAlpha1, coreEdgeAlpha2, coreCenterAlpha1, coreCenterAlpha2);
+            }
         }
 
         tessellator.draw();
         restoreTranslucent();
+    }
+
+    /**
+     * Emits one ribbon segment as two quads (upper/lower half) around the path line p1..p2,
+     * offset along the billboard perpendicular (px, py, pz) - the 1.8.9 port of master's
+     * emitRibbonQuad. Center vertices carry the bright center alpha, outer vertices the edge
+     * alpha, giving the ribbon its soft-glow cross-section.
+     */
+    private static void emitRibbonQuad(WorldRenderer wr, Vec3 p1, Vec3 p2,
+                                       double px, double py, double pz,
+                                       float width1, float width2,
+                                       int r, int g, int b,
+                                       int edgeAlpha1, int edgeAlpha2,
+                                       int centerAlpha1, int centerAlpha2) {
+        double r1x = px * width1, r1y = py * width1, r1z = pz * width1;
+        double r2x = px * width2, r2y = py * width2, r2z = pz * width2;
+
+        // Upper half: [p1+r1, p1, p2, p2+r2]
+        wr.pos(p1.xCoord + r1x, p1.yCoord + r1y, p1.zCoord + r1z).color(r, g, b, edgeAlpha1).endVertex();
+        wr.pos(p1.xCoord, p1.yCoord, p1.zCoord).color(r, g, b, centerAlpha1).endVertex();
+        wr.pos(p2.xCoord, p2.yCoord, p2.zCoord).color(r, g, b, centerAlpha2).endVertex();
+        wr.pos(p2.xCoord + r2x, p2.yCoord + r2y, p2.zCoord + r2z).color(r, g, b, edgeAlpha2).endVertex();
+
+        // Lower half: [p1, p1-r1, p2-r2, p2]
+        wr.pos(p1.xCoord, p1.yCoord, p1.zCoord).color(r, g, b, centerAlpha1).endVertex();
+        wr.pos(p1.xCoord - r1x, p1.yCoord - r1y, p1.zCoord - r1z).color(r, g, b, edgeAlpha1).endVertex();
+        wr.pos(p2.xCoord - r2x, p2.yCoord - r2y, p2.zCoord - r2z).color(r, g, b, edgeAlpha2).endVertex();
+        wr.pos(p2.xCoord, p2.yCoord, p2.zCoord).color(r, g, b, centerAlpha2).endVertex();
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return value < min ? min : (value > max ? max : value);
     }
 
     // ------------------------------------------------------------------- dome
@@ -347,10 +424,4 @@ public final class PredictionRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static int clampAlpha(int alpha) {
-        if (alpha < 0) {
-            return 0;
-        }
-        return Math.min(alpha, MAX_TRAIL_ALPHA);
-    }
 }

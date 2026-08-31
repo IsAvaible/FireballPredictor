@@ -18,8 +18,14 @@ public final class ModConfig {
 
     // ---- trajectory ribbon -------------------------------------------------
     public static boolean renderTrajectory = true;
-    public static float trajectoryWidth = 0.12F;
+    /** Width in blocks; master's default is 0.5 (the old backport default of 0.12 looked thin). */
+    public static float trajectoryWidth = 0.5F;
     public static int trajectoryColor = 0xFFFF8000; // orange
+    public static TrajectoryStyle trajectoryStyle = TrajectoryStyle.SOLID;
+    /** Extra bright core layer on top of the soft outer shroud (master's renderCoreGlow). */
+    public static boolean renderCoreGlow = true;
+    /** Subtle travelling brightness wave along the ribbon (master's enableRibbonPulse). */
+    public static boolean enableRibbonPulse = true;
 
     // ---- shockwave dome ----------------------------------------------------
     public static boolean renderShockwaveDome = true;
@@ -58,10 +64,22 @@ public final class ModConfig {
 
             renderTrajectory = cfg.getBoolean("renderTrajectory", "trajectory", renderTrajectory,
                     "Render the predicted flight path ribbon.");
-            trajectoryWidth = cfg.getFloat("trajectoryWidth", "trajectory", trajectoryWidth, 0.02F, 1.0F,
-                    "Width of the trajectory ribbon in blocks.");
+            trajectoryWidth = cfg.getFloat("trajectoryWidth", "trajectory", trajectoryWidth, 0.1F, 2.0F,
+                    "Width of the trajectory ribbon in blocks (master default: 0.5).");
+            // One-time migration: installations still on the old 0.12 default are moved to
+            // master's 0.5 default so existing users see the improved ribbon.
+            if (trajectoryWidth == 0.12F) {
+                trajectoryWidth = 0.5F;
+            }
             trajectoryColor = parseColor(cfg.getString("trajectoryColor", "trajectory", "FF8000",
                     "Trajectory ribbon color as RRGGBB hex."));
+            trajectoryStyle = TrajectoryStyle.byName(
+                    cfg.getString("trajectoryStyle", "trajectory", trajectoryStyle.getKey(),
+                            "Trajectory ribbon style: solid | dashed | core_only."));
+            renderCoreGlow = cfg.getBoolean("renderCoreGlow", "trajectory", renderCoreGlow,
+                    "Draw the extra bright core layer on top of the soft outer shroud.");
+            enableRibbonPulse = cfg.getBoolean("enableRibbonPulse", "trajectory", enableRibbonPulse,
+                    "Animate a subtle travelling brightness wave along the ribbon.");
 
             renderShockwaveDome = cfg.getBoolean("renderShockwaveDome", "dome", renderShockwaveDome,
                     "Render the shockwave dome at the predicted impact point.");
