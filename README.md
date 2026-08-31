@@ -1,65 +1,129 @@
-# Fireball Predictor — 1.8.9 Forge backport
+# Fireball Predictor — 1.8.9 Forge Backport
 
-A rough, from-scratch backport of [IsAvaible/FireballPredictor](https://github.com/IsAvaible/FireballPredictor)
-(a client-side Fabric mod for Minecraft 26.2) to **Minecraft 1.8.9 + Forge**.
+A client-side backport of [IsAvaible/FireballPredictor](https://github.com/IsAvaible/FireballPredictor) (originally a modern Fabric mod for Minecraft 26.2) to **Minecraft 1.8.9 + Forge**.
 
-The original predicts fireball trajectories, explosion impacts, block destruction and damage
-and renders all of it in real time. This backport re-implements the core of that feature set
-against the 1.8.9 codebase (MCP `stable_22` mappings), porting the *algorithms* rather than
-the code — the original uses modern mappings and 26.x APIs which do not exist in 1.8.9.
+The mod deterministically simulates and renders projectile flight paths, impact points, explosion blast domes, destroyed blocks, and combat damage for fireballs and wither skulls in real time.
 
-## What is ported
+---
 
-| Feature | Status |
-|---|---|
-| Trajectory prediction (ribbon) | ✅ Replicates 1.8.9 `EntityFireball.onUpdate` kinematics (acceleration, 0.95/0.73 drag, water drag, block + entity raycasts) |
-| Impact prediction (block & entity collisions) | ✅ |
-| Shockwave dome at the impact point | ✅ Low-poly sphere, fresnel-style rim, lat-band alpha profile like the original |
-| Explosion block destruction prediction | ✅ Exact 1.8.9 `Explosion.doExplosionA` raycast replica (1352 rays, 0.3 step, 0.225 decay), charged-skull 0.8 resistance cap, `rayPowerMultiplier` = vanilla upper bound |
-| Block crack highlights (`destroyBlockProgress`) | ✅ Staged + blinking like the original |
-| Impact warning badge (HUD) | ✅ Top-left badge, projectile icon, travel-progress bar |
-| Damage & knockback readout | ✅ 1.8.9 pipeline: `(int)((d²+d)/2·8·r+1)`, blocking, difficulty scaling, armor, Resistance, EPF (Protection / Blast / Projectile / Fire Protection), absorption; knockback incl. Blast Protection reduction + Resistance |
-| Cracking hearts overlay | ✅ Painted over the vanilla health bar, absorption-first damage allocation, blinking (original 9×9 textures reused, LGPL) |
-| Projectile types | ✅ Ghast fireball, blaze small fireball, wither skull (charged drag/resistance). Dragon fireballs and wind charges don't exist in 1.8.9. |
-| Refresh on deflection / world change | ✅ Prediction re-simulated when the entity deviates from the path, the impact block disappears, or blocks appear in the path |
+## Features
 
-## What is intentionally NOT ported
+| Feature | Description | Reference |
+|---|---|---|
+| **Trajectory Ribbon** | Real-time 3D flight path ribbon with billboard camera extrusion, soft faded edges, and quadratic alpha decay. Replicates 1.8.9 `EntityFireball.onUpdate` kinematics. | [docs/trajectory.md](docs/trajectory.md) |
+| **Shockwave Blast Dome** | Low-poly 3D sphere rendered at the predicted detonation point with dynamic Fresnel rim shading and latitudinal alpha profile. | [docs/impact.md](docs/impact.md) |
+| **Block Destruction Prediction** | Exact replica of 1.8.9 `Explosion.doExplosionA` (1,352 rays across a $16 \times 16 \times 16$ cube, $0.3$ step, $0.225$ decay, charged wither skull $0.8$ resistance cap). | [docs/impact.md](docs/impact.md) |
+| **Block Crack Highlights** | Animated, staged vanilla destruction crack overlays (`sendBlockBreakProgress`) on blocks predicted to be broken. | [docs/rendering.md](docs/rendering.md) |
+| **Impact Threat Warning Badge** | HUD badge displaying projectile type icon, flight countdown progress bar, and damage/knockback readout. | [docs/rendering.md](docs/rendering.md) |
+| **Cracking Hearts Health Overlay** | Animated cracking overlay rendered directly over the player's health and absorption hearts on the vanilla HUD bar. | [docs/rendering.md](docs/rendering.md) |
+| **1.8.9 Damage & Knockback Pipeline** | Precise client-side damage calculation: difficulty scaling $\to$ sword blocking $\to$ armor $\to$ Resistance potion $\to$ Enchantment Protection Factor (EPF) $\to$ absorption hearts. | [docs/impact.md](docs/impact.md) |
+| **Multiplayer Velocity Delta Derivation** | Automatically derives real velocity from successive synced position deltas to overcome 1.8.9's lack of server velocity packets for projectiles. | [docs/trajectory.md](docs/trajectory.md) |
+| **Deflection & World Invalidation** | Instantly re-simulates trajectory upon player deflections, block destructions, or new obstructions placed in the flight path. | [docs/trajectory.md](docs/trajectory.md) |
 
-* **Themes / theme animation** (DEFAULT theme visuals only)
-* **Config GUI & live previews** (YACL/ModMenu don't exist for 1.8.9; config is the Forge `config/FireballPredictor.cfg`)
-* **Server-side config enforcement & networking** (owner/power sync payloads) — the 1.8.9
-  client cannot learn ghast-fireball explosion power, so power is read from the fireball's
-  own field (always 1 on a vanilla client; a server companion mod could set it)
-* **Smart owner inference/filters** — everything hostile is tracked. `shootingEntity` is
-  not synced to 1.8.9 clients in multiplayer, so owner filtering is not possible client-side.
-* **Iris shader compat, particles, multi-language**
+---
 
-## Known limitations
+## Documentation
 
-* **Velocity drift in multiplayer**: 1.8.9 does not sync per-tick projectile velocity, so the
-  client estimates it from consecutive synced positions; a deflection causes a brief
-  re-convergence (usually ≤ 1 tick).
-* **Explosion power**: ghast fireball power defaults to 1 (radius 2 blocks). Servers that
-  modify `field_92057_e` (ExplosionPower) are not reflected unless they ship a companion mod.
-* **Wither skull direct-hit damage** assumes 8.0 (shooter known) / 5.0 (magic); on a pure
-  client the shooter is unknown, so 5.0 is used.
-* **Damage is an estimate**: it assumes worst-case explosion ray power (like the original)
-  and ignores armor durability loss, fire ticks and the 0.5s damage-cooldown.
+Comprehensive technical documentation is available in the `docs/` directory:
 
-## Fair play
+* **[Trajectory Prediction](docs/trajectory.md)**: Kinematics equations, velocity delta estimation, drag coefficients (0.95 air, 0.73 charged skull, 0.8 water), and refresh triggers.
+* **[Impact & Damage Estimation](docs/impact.md)**: 1,352-ray block destruction algorithm, dome geometry, and the full 1.8.9 damage/knockback pipeline.
+* **[World & HUD Rendering](docs/rendering.md)**: OpenGL state management, billboard ribbon extrusion, Fresnel rim shading, crack progress, and HUD overlays.
+* **[Configuration Guide](docs/configuration.md)**: Detailed breakdown of all `.cfg` options, categories, defaults, and ranges.
+* **[Project Architecture & Scaffold](docs/scaffold.md)**: ForgeGradle 2.1 setup, MCP `stable_22` mappings, mod lifecycle, and comparison with the `master` branch.
+* **[Developer & Agent Guide](agent.md)**: Technical reference for autonomous agents and contributors.
 
-The original mod's warning applies: some servers classify trajectory prediction as ESP and
-may ban for it. Only use this mod where it is allowed.
+---
 
-## Building
+## Configuration
 
-This is a ForgeGradle 2.1 project and requires **JDK 8** and **Gradle 2.14** (FG 2.1 cannot
-run on modern Gradle/JDK). On a machine with JDK 8:
+Settings can be customized in `.minecraft/config/FireballPredictor.cfg`:
 
+```ini
+# General mod switch
+general {
+    B:masterEnabled=true
+}
+
+# Trajectory ribbon visuals
+trajectory {
+    B:renderTrajectory=true
+    S:trajectoryColor=FF8000
+    D:trajectoryWidth=0.12
+}
+
+# Shockwave blast dome
+dome {
+    B:renderShockwaveDome=true
+    S:domeColor=FF8000
+}
+
+# Block destruction
+blocks {
+    B:renderBlockHighlights=true
+}
+
+# HUD warning & damage overlays
+hud {
+    B:renderImpactWarning=true
+    B:renderDamageText=true
+    B:renderHeartsOverlay=true
+    I:badgeOffsetX=0
+    I:badgeOffsetY=0
+}
+
+# Prediction parameters
+prediction {
+    I:maxTrackedProjectiles=16
+    I:maxTicks=200
+    D:rayPowerMultiplier=1.3
+}
+```
+
+See [docs/configuration.md](docs/configuration.md) for full configuration details.
+
+---
+
+## Key Differences from Modern Fabric (`master` Branch)
+
+* **Architecture**: Implemented for Minecraft Forge 1.8.9 (Java 8 / ForgeGradle 2.1 / MCP `stable_22`) rather than Fabric on modern Minecraft.
+* **Combat Mechanics**: Replicates 1.8.9 combat (classic armor reduction, sword blocking, 1.8.9 EPF calculations, no armor toughness).
+* **Rendering**: Utilizes immediate-mode OpenGL with `GlStateManager`, `Tessellator`, and `WorldRenderer`.
+* **Visuals & Config**: Focuses on the core `DEFAULT` theme and Forge `.cfg` file rather than YACL3 GUI screens and custom theme shaders.
+* **Projectiles**: Supports 1.8.9 projectile entities (Ghast Fireballs, Blaze Fireballs, Normal/Charged Wither Skulls).
+
+---
+
+## Building and Installation
+
+### Requirements
+* **Java Development Kit (JDK)**: JDK 8 (Java 1.8)
+* **Minecraft**: 1.8.9 with Minecraft Forge installed
+
+### Build from Source
 ```bash
+# Setup decompiled workspace
 ./gradlew setupDecompWorkspace
+
+# Compile and package release JAR
 ./gradlew build
 ```
 
-The built jar lands in `build/libs/fireballpredictor-1.8.9-1.0.0.jar` (reobfuscated, ready for
-production). Run `./gradlew runClient` to test in a dev client.
+The compiled mod JAR will be located at:
+```
+build/libs/fireballpredictor-1.8.9-1.0.0.jar
+```
+
+Place the JAR in your `.minecraft/mods` directory.
+
+---
+
+## Fair Play Notice
+
+Some competitive multiplayer servers classify projectile trajectory prediction as ESP and may disallow client-side trajectory mods. Use responsibly and ensure compliance with your server's rules.
+
+---
+
+## License
+
+This project is licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**, preserving the license of the original [IsAvaible/FireballPredictor](https://github.com/IsAvaible/FireballPredictor).
