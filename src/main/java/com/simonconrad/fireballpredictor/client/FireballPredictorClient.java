@@ -49,8 +49,9 @@ public final class FireballPredictorClient {
         public boolean dangerous;
         public List<BlockPos> brokenBlocks = new ArrayList<BlockPos>();
         public DomeMesh dome = DomeMesh.EMPTY;
-        public Vec3 impactPos;                 // impact point used for warning/damage
+        public Vec3 impactPos;                 // block impact point used for dome, trajectory, and broken blocks
         public boolean directHitPlayer;
+        public Vec3 playerInterceptPos;        // interception point on player for direct damage estimation
         public final Set<BlockPos> lastHighlighted = new HashSet<BlockPos>();
 
         /**
@@ -267,18 +268,18 @@ public final class FireballPredictorClient {
             List<Vec3> path = prediction.path;
             int ticksToImpact = Math.max(0, path.size() - 1 - elapsed);
 
-            // --- direct hit / impact point ---
-            Vec3 intercept = path.size() > 1 ? TrajectoryPredictor.findEntityIntercept(prediction, elapsed, player) : null;
-            t.directHitPlayer = intercept != null;
-            if (intercept != null) {
-                t.impactPos = intercept;
-            } else if (prediction.impact != null) {
+            // --- impact point & player intercept ---
+            if (prediction.impact != null) {
                 t.impactPos = prediction.impact.hitVec;
             } else if (!path.isEmpty()) {
                 t.impactPos = path.get(path.size() - 1);
             } else {
                 t.impactPos = null;
             }
+
+            Vec3 intercept = path.size() > 1 ? TrajectoryPredictor.findEntityIntercept(prediction, elapsed, player) : null;
+            t.directHitPlayer = intercept != null;
+            t.playerInterceptPos = intercept;
 
             // --- warning badge ---
             if (t.impactPos != null && path.size() > 1 && isThreateningPlayer(player, t, elapsed, ticksToImpact)) {
@@ -532,11 +533,12 @@ public final class FireballPredictorClient {
         EntityFireball fireball = t.fireball;
         if (t.directHitPlayer) {
             DamageCalculator.SourceType directType = directSourceType(fireball);
-            return DamageCalculator.estimateDirectHit(world, player, t.impactPos, t.power,
+            Vec3 hitPos = t.playerInterceptPos != null ? t.playerInterceptPos : t.impactPos;
+            return DamageCalculator.estimateDirectHit(world, player, hitPos, t.power,
                     directDamage(fireball), directType);
         }
 
-        if (t.power <= 0.0F) {
+        if (t.power <= 0.0F || t.impactPos == null) {
             return DamageCalculator.DamageEstimate.NONE;
         }
         double distSq = player.getDistanceSq(t.impactPos.xCoord, t.impactPos.yCoord, t.impactPos.zCoord);

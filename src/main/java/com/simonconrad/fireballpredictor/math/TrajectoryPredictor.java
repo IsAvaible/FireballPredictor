@@ -121,21 +121,8 @@ public final class TrajectoryPredictor {
             Vec3 start = new Vec3(posX, posY, posZ);
             Vec3 end = new Vec3(nextX, nextY, nextZ);
 
-            // Block raycast, exactly like vanilla: rayTraceBlocks(vec3, vec31)
+            // Block raycast: rayTraceBlocks(vec3, vec31)
             MovingObjectPosition blockHit = world.rayTraceBlocks(start, end);
-
-            // Vanilla clamps the entity raycast to the block hit point (if any).
-            Vec3 rayEnd = blockHit != null && blockHit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK
-                    ? blockHit.hitVec : end;
-
-            MovingObjectPosition entityHit = raycastEntities(fireball, world, start, rayEnd, halfSize, velX, velY, velZ);
-
-            if (entityHit != null) {
-                prediction.path.add(entityHit.hitVec);
-                prediction.impact = entityHit;
-                prediction.entityImpact = true;
-                return prediction;
-            }
 
             if (blockHit != null && blockHit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
                 prediction.path.add(blockHit.hitVec);

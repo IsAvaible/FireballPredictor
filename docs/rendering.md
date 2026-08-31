@@ -36,68 +36,45 @@ GlStateManager.popMatrix();
 
 ---
 
-## 2. Trajectory Ribbon Geometry
+## 2. Trajectory Beam Geometry (3D Volumetric Cylinder)
 
-The trajectory is rendered as an animated, camera-facing billboard ribbon with soft edge falloff.
+The trajectory is rendered as a smooth, 3D volumetric cylindrical energy beam with soft outer falloff and an inner concentrated laser core.
 
-### 2.1 Billboard Normal Calculation
+### 2.1 3D Cylindrical Geometry & Rotation-Minimizing Frame (RMF)
 
-For each segment between trajectory points $\vec{p}_1$ and $\vec{p}_2$:
-1. Direction vector:
-   $$\hat{d} = \frac{\vec{p}_2 - \vec{p}_1}{\|\vec{p}_2 - \vec{p}_1\|}$$
-2. Perpendicular billboard vector relative to camera look vector $\hat{l}$:
-   $$\vec{p} = \hat{d} \times \hat{l}$$
-   If $\|\vec{p}\| < 10^{-3}$ (camera looking directly along the flight line), falls back to the horizontal perpendicular $\vec{p} = (d_z, 0, -d_x)$.
-3. Normalized perpendicular:
-   $$\hat{p} = \frac{\vec{p}}{\|\vec{p}\|}$$
+To eliminate 2D flat-tape billboard distortion and maintain consistent volumetric thickness from all camera angles:
+1. **Catmull-Rom Spline Sub-stepping**: Trajectory waypoints between discrete simulation ticks are sub-sampled smoothly with Catmull-Rom splines ($\le 0.20$ blocks/sub-step).
+2. **Parallel Transport (RMF)**: Generates an orthonormal 3D reference frame $(\hat{t}_m, \hat{u}_m, \hat{w}_m)$ along the beam curve, ensuring zero axial twist.
+3. **8-Sided Cylinder Extrusion**: Extrudes an 8-sided prism around the flight path using radial basis offsets:
+   $$\vec{d}_{m, k} = \cos(k \pi / 4) \hat{u}_m + \sin(k \pi / 4) \hat{w}_m \quad (k = 0 \dots 7)$$
+   Adjacent rings share exact radial vertices $(Q_m + \vec{d}_{m, k} R_m)$, forming a seamless, continuous 3D tube.
 
-### 2.2 Dual-Quad Soft Edge Profile
+### 2.2 Two-Pass Volumetric Shading
 
-Each segment is extruded into two quads using 4 vertices across: $[\vec{p}_1 + \hat{p} w_1, \vec{p}_1, \vec{p}_2, \vec{p}_2 + \hat{p} w_2]$ and $[\vec{p}_1, \vec{p}_1 - \hat{p} w_1, \vec{p}_2 - \hat{p} w_2, \vec{p}_2]$.
+1. **Outer Shroud Cylinder** - full radius ($R = \frac{1}{2} w$), translucent soft glow envelope.
+2. **Inner Core Cylinder** (`renderCoreGlow`) - concentrated inner core beam at $35\%$ radius with bright alpha.
 
-```
-Outer Edge (Alpha = 0)  ──────────────────────────────────────────  p2 + r2
-                              ▲ Quad 1 (Fading)
-Center Line (Alpha = Max) ══════════════════════════════════════════  p2 (Center)
-                              ▼ Quad 2 (Fading)
-Outer Edge (Alpha = 0)  ──────────────────────────────────────────  p2 - r2
-```
-
-* **Width & Taper**: Width starts at `ModConfig.trajectoryWidth` (default: $0.5$ blocks, matching master) and tapers to $0$ over the final 20% of the flight path.
-* **Alpha Attenuation**: Alpha decays quadratically from origin to impact point:
-  $$\alpha(\text{prog}) = \left(200 - 140 \times \text{prog}^2\right) \times \alpha_{\text{blend}} \times \text{pulse} \times \text{dash} \;\; (\text{clamped to } \le 190)$$
-  with the optional pulse $= 0.85 + 0.15\,\sin(9\,t - 6\,\text{prog})$ (game-time seconds, `enableRibbonPulse`) and dash $\in \{1, 0.15\}$ for the `dashed` style.
-
-### 2.3 Two-Pass Ribbon: Shroud + Core Glow (master parity)
-
-Each segment is drawn twice, like master's `PredictionFeatureRenderer.renderTrail`:
-
-1. **Outer shroud pass** - the full-width dual-quad strip with alpha fading from the bright center line to $0$ at the edges (soft glow envelope).
-2. **Core glow pass** (`renderCoreGlow`) - a narrower strip at $35\%$ of the segment width, with $1.25\times$ the center alpha and edges kept at $40\%$ alpha, giving the ribbon its bright "energy beam" core.
-
-The `core_only` trajectory style drops the shroud pass and draws only the core strip at $60\%$ width; `dashed` additionally alternates segment brightness ($2$ bright : $1$ dark).
+* **Width & Taper**: Radius tapers to a point over the final 20% of the flight path to the impact epicenter.
+* **Alpha Attenuation**: Alpha decays quadratically from origin to impact point, with smooth tick blend-in and optional travelling pulse.
 
 ---
 
 ## 3. Shockwave Blast Dome Rendering
 
-The blast dome is drawn using the pre-computed `DomeMesh` geometry centered at the predicted impact coordinate $\vec{c}$. Domes are emitted **before** the trajectory ribbons (into the same translucent GL state), so ribbons blend on top of the blast spheres — the same ordering as master's shared prediction render type.
-
-The dome also "breathes" with a 0.5 Hz pulse driven by game time (pauses with the game):
-
-$$\text{pulse}(t) = 0.8 + 0.2 \times \sin(\pi \, t_{\text{seconds}})$$
+The blast dome is drawn using the pre-computed `DomeMesh` geometry (32 latitude $\times$ 48 longitude bands forming a hemisphere $y \ge 0$) centered at the predicted block impact coordinate $\vec{c}$. Domes are emitted **before** the trajectory ribbons (into the same translucent GL state), so ribbons blend on top of the blast spheres — the same ordering as master's shared prediction render type.
 
 ### 3.1 Fresnel Rim Calculation (Schlick approximation)
 
-To create a holographic energy sphere appearance where the rim shines brighter than the center (port of master's `PredictionFeatureRenderer.fresnelAlpha`):
+To create a holographic energy sphere appearance where the rim shines brighter than the center:
 
-1. Dome-space vertex position: $\vec{v}$ (dome centre at origin).
+1. Dome-space vertex position: $\vec{v}$ on the upper hemispherical surface $x = R\sin\theta\cos\phi, y = R\cos\theta, z = R\sin\theta\sin\phi$ with $\theta \in [0, \pi/2]$.
 2. Surface normal unit vector: $\hat{n} = \frac{\vec{v}}{\|\vec{v}\|}$.
 3. View direction: $\hat{u} = \frac{\vec{c}_{\text{cam}} - \vec{v}}{\|\vec{c}_{\text{cam}} - \vec{v}\|}$ (camera position relative to the dome centre).
 4. Schlick fresnel coefficient ($F_0 = 0.04$, exponent 5):
    $$F = F_0 + (1 - F_0) \times (1 - |\hat{n} \cdot \hat{u}|)^5$$
-5. Final vertex alpha ($s$ = `domeFresnelStrength` config, $g = 55$ fixed rim glow, $\alpha_{\text{base}} = \alpha_{\text{mesh}} \times \text{pulse}$):
-   $$\alpha_{\text{final}} = \mathrm{clamp}_{[0,\,110]}\Big(\alpha_{\text{base}} \times \big(1 - s + s\,F\big) + g \times s \times F\Big)$$
+5. Final vertex alpha:
+   - When outside: $\alpha_{\text{final}} = \mathrm{clamp}_{[0,\,110]}\Big(\alpha_{\text{base}} \times \big(1 - s + s\,F\big) + g \times s \times F\Big)$
+   - When inside: an ambient visibility floor ($F_{\text{inside}} = 0.45 + 0.55 F$) ensures the dome ceiling and walls remain clearly visible without fading to zero.
 
 The fixed rim glow term is what keeps the silhouette readable where the latitude profile fades to zero (poles), and — because back-face culling is disabled — makes the far/inner side of the shell glow when the camera is **inside** the blast sphere, which the previous plain-multiplier approach rendered almost invisible.
 

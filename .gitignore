@@ -1,6 +1,7 @@
-﻿# Gradle
+# Gradle
 .gradle/
 build/
+gradle.properties
 !gradle/wrapper/gradle-wrapper.jar
 
 # Environment secrets

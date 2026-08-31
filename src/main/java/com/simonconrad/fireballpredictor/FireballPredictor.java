@@ -1,6 +1,8 @@
 package com.simonconrad.fireballpredictor;
 
+import com.simonconrad.fireballpredictor.client.ClientCommandFireballPredictor;
 import com.simonconrad.fireballpredictor.client.FireballPredictorClient;
+import com.simonconrad.fireballpredictor.client.ModKeyBindings;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.config.ServerConfig;
 import com.simonconrad.fireballpredictor.network.FireballSyncMessage;
@@ -32,12 +34,19 @@ import org.apache.logging.log4j.Logger;
  * https://github.com/IsAvaible/FireballPredictor
  * The original is licensed LGPL-3.0; this backport keeps that license.
  */
-@Mod(modid = FireballPredictor.MODID, name = FireballPredictor.NAME, version = FireballPredictor.VERSION, acceptedMinecraftVersions = "[1.8.9]")
+@Mod(
+        modid = FireballPredictor.MODID,
+        name = FireballPredictor.NAME,
+        version = FireballPredictor.VERSION,
+        acceptedMinecraftVersions = "[1.8.9]",
+        guiFactory = FireballPredictor.GUI_FACTORY
+)
 public class FireballPredictor {
 
     public static final String MODID = "fireballpredictor";
     public static final String NAME = "Fireball Predictor";
     public static final String VERSION = "1.0.0";
+    public static final String GUI_FACTORY = "com.simonconrad.fireballpredictor.client.gui.ModConfigGuiFactory";
 
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
@@ -88,7 +97,10 @@ public class FireballPredictor {
         FMLCommonHandler.instance().bus().register(serverHandler);
 
         if (event.getSide().isClient()) {
+            ModKeyBindings.register();
             MinecraftForge.EVENT_BUS.register(new FireballPredictorClient());
+            net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(
+                    new ClientCommandFireballPredictor());
         }
     }
 

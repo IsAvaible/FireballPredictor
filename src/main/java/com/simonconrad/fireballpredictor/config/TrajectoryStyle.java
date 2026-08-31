@@ -6,13 +6,11 @@ package com.simonconrad.fireballpredictor.config;
  *
  * <ul>
  *   <li>{@link #SOLID} - full ribbon: soft outer shroud plus bright core layer.</li>
- *   <li>{@link #DASHED} - like {@link #SOLID} but alternating bright/dark segments.</li>
  *   <li>{@link #CORE_ONLY} - only the narrow bright core layer, 60% width.</li>
  * </ul>
  */
 public enum TrajectoryStyle {
     SOLID("solid"),
-    DASHED("dashed"),
     CORE_ONLY("core_only");
 
     private final String key;

@@ -1,15 +1,15 @@
 [
   {
     "modid": "fireballpredictor",
-    "name": "Fireball Predictor (1.8.9 backport)",
-    "description": "Client-side backport of IsAvaible's Fireball Predictor for Minecraft 1.8.9 Forge. Predicts and visualizes the trajectory, impact point, explosion radius, destroyed blocks and resulting damage of fireballs, small fireballs and wither skulls.",
+    "name": "Fireball Predictor",
+    "description": "Client-side Fireball Predictor for Minecraft Forge 1.8.9. Predicts and visualizes the trajectory, impact point, explosion radius, destroyed blocks and resulting damage of fireballs, small fireballs and wither skulls.",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "",
+    "url": "https://modrinth.com/mod/fireball-predictor",
     "updateUrl": "",
-    "authorList": ["IsAvaible (original 26.2 mod)"],
-    "credits": "Original mod: https://github.com/IsAvaible/FireballPredictor (LGPL-3.0)",
-    "logoFile": "",
+    "authorList": ["Simon Conrad"],
+    "credits": "",
+    "logoFile": "assets/fireballpredictor/icon.png",
     "screenshots": [],
     "dependencies": []
   }

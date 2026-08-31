@@ -95,7 +95,7 @@ public final class ModConfig {
                     "Trajectory ribbon color as RRGGBB hex."));
             trajectoryStyle = TrajectoryStyle.byName(
                     cfg.getString("trajectoryStyle", "trajectory", trajectoryStyle.getKey(),
-                            "Trajectory ribbon style: solid | dashed | core_only."));
+                            "Trajectory ribbon style: solid | core_only."));
             renderCoreGlow = cfg.getBoolean("renderCoreGlow", "trajectory", renderCoreGlow,
                     "Draw the extra bright core layer on top of the soft outer shroud.");
             enableRibbonPulse = cfg.getBoolean("enableRibbonPulse", "trajectory", enableRibbonPulse,

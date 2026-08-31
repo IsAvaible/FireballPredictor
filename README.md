@@ -1,6 +1,6 @@
 # Fireball Predictor — 1.8.9 Forge Backport
 
-A client-side backport of [IsAvaible/FireballPredictor](https://github.com/IsAvaible/FireballPredictor) (originally a modern Fabric mod for Minecraft 26.2) to **Minecraft 1.8.9 + Forge**.
+A client-side backport of fireball predictor to **Minecraft 1.8.9 + Forge**.
 
 The mod deterministically simulates and renders projectile flight paths, impact points, explosion blast domes, destroyed blocks, and combat damage for fireballs and wither skulls in real time.
 
@@ -135,4 +135,4 @@ Some competitive multiplayer servers classify projectile trajectory prediction a
 
 ## License
 
-This project is licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**, preserving the license of the original [IsAvaible/FireballPredictor](https://github.com/IsAvaible/FireballPredictor).
+This project is licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**.
