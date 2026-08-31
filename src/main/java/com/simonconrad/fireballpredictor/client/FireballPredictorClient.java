@@ -1,5 +1,6 @@
 package com.simonconrad.fireballpredictor.client;
 
+import com.simonconrad.fireballpredictor.client.network.ClientFireballSync;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.hud.HudRenderer;
 import com.simonconrad.fireballpredictor.math.DamageCalculator;
@@ -7,6 +8,8 @@ import com.simonconrad.fireballpredictor.math.DomeMesh;
 import com.simonconrad.fireballpredictor.math.ImpactPredictor;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.render.PredictionRenderer;
+import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
+import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.Entity;
@@ -58,6 +61,10 @@ public final class FireballPredictorClient {
         public double anchorX, anchorY, anchorZ;
         public boolean anchorValid;
 
+        /** Owner classification used by the tracking filters (server packet > inference). */
+        public ProjectileOwner owner = ProjectileOwner.UNKNOWN;
+        public boolean ownerFromPacket;
+
         // Velocity estimation: the 1.8.9 client never receives velocity updates for
         // projectiles after spawn, so the current velocity is derived from the last two
         // synced positions. lastPos* holds the previous tick's anchor once hasDelta.
@@ -96,11 +103,15 @@ public final class FireballPredictorClient {
             if (lastWorld != null) {
                 resetAll(mc);
             }
+            // Fully disconnected: drop server rules and per-fireball sync data.
+            ClientFireballSync.clear();
             lastWorld = null;
             return;
         }
         if (mc.theWorld != lastWorld) {
             resetAll(mc);
+            // Dimension/world switch: per-entity sync data is stale, rules stay valid.
+            ClientFireballSync.clearFireballs();
             lastWorld = mc.theWorld;
         }
         if (!ModConfig.masterEnabled) {
@@ -143,7 +154,13 @@ public final class FireballPredictorClient {
                 Entity entity = entities.get(i);
                 if (entity instanceof EntityFireball && entity.isEntityAlive()
                         && !tracked.containsKey(entity.getEntityId())) {
-                    tracked.put(entity.getEntityId(), new Tracked((EntityFireball) entity));
+                    Tracked t = new Tracked((EntityFireball) entity);
+                    // Owner-based tracking filter (server rules + client config). Filtered
+                    // projectiles stay in the map without a prediction so they can be
+                    // re-admitted when a rule/filter flips back, like master's tracker.
+                    t.owner = inferOwner(world, t.fireball);
+                    t.ownerFromPacket = ClientFireballSync.getOwner(entity.getEntityId()) != ProjectileOwner.UNKNOWN;
+                    tracked.put(entity.getEntityId(), t);
                 }
             }
         }
@@ -158,6 +175,27 @@ public final class FireballPredictorClient {
             if (fireball.isDead || !fireball.isEntityAlive() || fireball.worldObj != world) {
                 clearHighlights(world, t);
                 it.remove();
+                continue;
+            }
+
+            // Authoritative owner may arrive after discovery (sync packet).
+            if (!t.ownerFromPacket) {
+                ProjectileOwner synced = ClientFireballSync.getOwner(fireball.getEntityId());
+                if (synced != ProjectileOwner.UNKNOWN) {
+                    t.owner = synced;
+                    t.ownerFromPacket = true;
+                }
+            }
+
+            // Owner filter (server-pushed rules take precedence over the client config).
+            if (!shouldTrackOwner(t.owner)) {
+                if (t.prediction != null) {
+                    clearHighlights(world, t);
+                    t.prediction = null;
+                    t.impactPos = null;
+                    t.dome = DomeMesh.EMPTY;
+                }
+                t.hasDelta = false;
                 continue;
             }
 
@@ -178,12 +216,27 @@ public final class FireballPredictorClient {
                 continue;
             }
 
-            double velX = t.hasDelta ? t.anchorX - t.lastPosX : finiteOrZero(fireball.motionX);
-            double velY = t.hasDelta ? t.anchorY - t.lastPosY : finiteOrZero(fireball.motionY);
-            double velZ = t.hasDelta ? t.anchorZ - t.lastPosZ : finiteOrZero(fireball.motionZ);
+            // Velocity: a fresh server sync (modded server) beats the estimates; otherwise
+            // derive it from consecutive anchor positions, falling back to the client
+            // motion field on the very first tick.
+            ClientFireballSync.Entry sync = ClientFireballSync.get(fireball.getEntityId());
+            boolean freshSyncVelocity = sync != null
+                    && ClientFireballSync.hasFreshVelocity(fireball.getEntityId(), world.getTotalWorldTime());
+            double velX = freshSyncVelocity ? sync.motionX
+                    : t.hasDelta ? t.anchorX - t.lastPosX : finiteOrZero(fireball.motionX);
+            double velY = freshSyncVelocity ? sync.motionY
+                    : t.hasDelta ? t.anchorY - t.lastPosY : finiteOrZero(fireball.motionY);
+            double velZ = freshSyncVelocity ? sync.motionZ
+                    : t.hasDelta ? t.anchorZ - t.lastPosZ : finiteOrZero(fireball.motionZ);
+
+            // Acceleration: the server-synced raw value (correct for any summon NBT power
+            // magnitude); otherwise the client field, which the spawn packet normalized.
+            double accX = sync != null ? sync.accelX : finiteOrZero(fireball.accelerationX);
+            double accY = sync != null ? sync.accelY : finiteOrZero(fireball.accelerationY);
+            double accZ = sync != null ? sync.accelZ : finiteOrZero(fireball.accelerationZ);
 
             if (needsRefresh(world, t)) {
-                refreshPrediction(world, t, velX, velY, velZ);
+                refreshPrediction(world, t, velX, velY, velZ, accX, accY, accZ);
             }
 
             t.lastPosX = t.anchorX;
@@ -307,6 +360,57 @@ public final class FireballPredictorClient {
         t.anchorValid = false;
     }
 
+    // -------------------------------------------------------------- owner filter
+
+    /**
+     * Whether the given projectile owner passes the tracking filters: first the
+     * server-pushed restrictions (fair-play rules), then the client config groups
+     * (simplified port of master's TrackedProjectile.evaluateFilter).
+     */
+    private static boolean shouldTrackOwner(ProjectileOwner owner) {
+        if (ClientFireballSync.isOwnerDisabled(owner)) {
+            return false;
+        }
+        switch (owner) {
+            case BLAZE:
+            case GHAST:
+            case WITHER:
+                return ModConfig.trackMobProjectiles;
+            case PLAYER:
+                return ModConfig.trackOtherOwnerProjectiles && ModConfig.trackPlayerProjectiles;
+            case DISPENSER:
+                return ModConfig.trackOtherOwnerProjectiles && ModConfig.trackDispenserProjectiles;
+            case COMMAND:
+            case UNKNOWN:
+            default:
+                return ModConfig.trackOtherOwnerProjectiles && ModConfig.trackCommandProjectiles;
+        }
+    }
+
+    /**
+     * Client-side owner inference (master's OwnerInferenceEngine fallback chain):
+     * server packet &gt; native shootingEntity (singleplayer) &gt; environmental sweep
+     * over nearby capable shooters &gt; facing-dispenser adjacency &gt; command/unmatched.
+     */
+    private static ProjectileOwner inferOwner(WorldClient world, EntityFireball fireball) {
+        ProjectileOwner synced = ClientFireballSync.getOwner(fireball.getEntityId());
+        if (synced != ProjectileOwner.UNKNOWN) {
+            return synced;
+        }
+        ProjectileOwner nativeOwner = OwnerClassifier.classifyEntity(fireball.shootingEntity);
+        if (nativeOwner != ProjectileOwner.UNKNOWN) {
+            return nativeOwner;
+        }
+        ProjectileOwner swept = OwnerClassifier.sweepEnvironment(fireball, world);
+        if (swept != null) {
+            return swept;
+        }
+        if (OwnerClassifier.isNearFacingDispenser(fireball)) {
+            return ProjectileOwner.DISPENSER;
+        }
+        return ProjectileOwner.COMMAND;
+    }
+
     private boolean needsRefresh(WorldClient world, Tracked t) {
         EntityFireball fireball = t.fireball;
         TrajectoryPredictor.Prediction prediction = t.prediction;
@@ -315,7 +419,7 @@ public final class FireballPredictorClient {
             return true;
         }
         // Power or charged-skull state changed.
-        float power = TrajectoryPredictor.resolvePower(fireball);
+        float power = resolvePowerSynced(fireball);
         boolean dangerous = TrajectoryPredictor.isDangerous(fireball);
         if (power != t.power || dangerous != t.dangerous) {
             return true;
@@ -359,21 +463,40 @@ public final class FireballPredictorClient {
         return false;
     }
 
-    private void refreshPrediction(WorldClient world, Tracked t, double velX, double velY, double velZ) {
+    /**
+     * Explosion power: server-synced value first (a modded server knows the summon NBT
+     * {@code ExplosionPower}), per-type vanilla defaults otherwise.
+     */
+    private static float resolvePowerSynced(EntityFireball fireball) {
+        float synced = ClientFireballSync.getPower(fireball.getEntityId());
+        if (synced > 0.0F) {
+            return synced;
+        }
+        return TrajectoryPredictor.resolvePower(fireball);
+    }
+
+    private void refreshPrediction(WorldClient world, Tracked t,
+                                   double velX, double velY, double velZ,
+                                   double accX, double accY, double accZ) {
         EntityFireball fireball = t.fireball;
-        t.power = TrajectoryPredictor.resolvePower(fireball);
+        t.power = resolvePowerSynced(fireball);
         t.dangerous = TrajectoryPredictor.isDangerous(fireball);
 
         TrajectoryPredictor.Prediction prediction = TrajectoryPredictor.simulate(
                 fireball, world, ModConfig.maxTicks,
-                t.anchorX, t.anchorY, t.anchorZ, velX, velY, velZ);
+                t.anchorX, t.anchorY, t.anchorZ, velX, velY, velZ, accX, accY, accZ);
         t.prediction = prediction;
         t.predictionAge = fireball.ticksExisted;
 
         if (t.power > 0.0F && prediction.impact != null
                 && DamageCalculator.isFinite(prediction.impact.hitVec)) {
-            t.brokenBlocks = ImpactPredictor.predictBrokenBlocks(
-                    world, prediction.impact.hitVec, t.power, t.dangerous, ModConfig.rayPowerMultiplier);
+            // With mobGriefing off, 1.8.9 fireball explosions do not destroy blocks
+            // (EntityLargeFireball.onImpact passes the gamerule as the "smoking" flag),
+            // so no block destruction is predicted - the dome and damage still apply.
+            t.brokenBlocks = ClientFireballSync.explosionsBreakBlocks()
+                    ? ImpactPredictor.predictBrokenBlocks(
+                            world, prediction.impact.hitVec, t.power, t.dangerous, ModConfig.rayPowerMultiplier)
+                    : new ArrayList<BlockPos>();
             t.dome = DomeMesh.build(t.power);
         } else {
             t.brokenBlocks = new ArrayList<BlockPos>();

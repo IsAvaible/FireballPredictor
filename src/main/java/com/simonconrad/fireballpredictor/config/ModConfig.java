@@ -54,6 +54,18 @@ public final class ModConfig {
     public static int maxTrackedProjectiles = 16;
     public static int maxTicks = 200;
 
+    // ---- owner-based tracking filters (simplified port of master's tracking section)
+    /** Track projectiles fired by hostile mobs (ghast, blaze, wither). */
+    public static boolean trackMobProjectiles = true;
+    /** Master for the non-mob source group (player, dispenser, command). */
+    public static boolean trackOtherOwnerProjectiles = true;
+    /** Track projectiles fired (or deflected) by players. */
+    public static boolean trackPlayerProjectiles = true;
+    /** Track dispenser-fired projectiles. */
+    public static boolean trackDispenserProjectiles = true;
+    /** Track command-summoned / unmatched projectiles. */
+    public static boolean trackCommandProjectiles = true;
+
     public static void load(File file) {
         Configuration cfg = new Configuration(file);
         try {
@@ -107,6 +119,17 @@ public final class ModConfig {
                     "Maximum number of simultaneously tracked projectiles.");
             maxTicks = cfg.getInt("maxTicks", "prediction", maxTicks, 20, 600,
                     "Maximum number of ticks to simulate ahead.");
+
+            trackMobProjectiles = cfg.getBoolean("trackMobProjectiles", "tracking", trackMobProjectiles,
+                    "Track projectiles fired by hostile mobs (ghast, blaze, wither).");
+            trackOtherOwnerProjectiles = cfg.getBoolean("trackOtherOwnerProjectiles", "tracking", trackOtherOwnerProjectiles,
+                    "Master for the non-mob source group (player, dispenser, command).");
+            trackPlayerProjectiles = cfg.getBoolean("trackPlayerProjectiles", "tracking", trackPlayerProjectiles,
+                    "Track projectiles fired (or deflected) by players.");
+            trackDispenserProjectiles = cfg.getBoolean("trackDispenserProjectiles", "tracking", trackDispenserProjectiles,
+                    "Track dispenser-fired projectiles.");
+            trackCommandProjectiles = cfg.getBoolean("trackCommandProjectiles", "tracking", trackCommandProjectiles,
+                    "Track command-summoned / unmatched projectiles.");
         } finally {
             if (cfg.hasChanged()) {
                 cfg.save();

@@ -58,7 +58,19 @@ The configuration is managed by [ModConfig.java](../src/main/java/com/simonconra
 | `badgeOffsetX` | `int` | `0` | `-1000` – `1000` | Horizontal pixel offset for the HUD warning badge. |
 | `badgeOffsetY` | `int` | `0` | `-1000` – `1000` | Vertical pixel offset for the HUD warning badge. |
 
-### 2.6 Prediction Parameters (`prediction`)
+### 2.6 Owner Tracking Filters (`tracking`)
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `trackMobProjectiles` | `boolean` | `true` | Track projectiles fired by hostile mobs (ghast, blaze, wither). |
+| `trackOtherOwnerProjectiles` | `boolean` | `true` | Master for the non-mob source group (player, dispenser, command). |
+| `trackPlayerProjectiles` | `boolean` | `true` | Track projectiles fired (or deflected) by players. |
+| `trackDispenserProjectiles` | `boolean` | `true` | Track dispenser-fired projectiles. |
+| `trackCommandProjectiles` | `boolean` | `true` | Track command-summoned / unmatched projectiles. |
+
+These client filters are enforced **in addition** to the server-pushed restrictions from [docs/server.md](server.md); a server can always restrict further (`config/fireballpredictor-server.json` + `/fireballpredictor reload`), never widen.
+
+### 2.7 Prediction Parameters (`prediction`)
 
 | Option | Type | Default | Range | Description |
 |---|---|---|---|---|
