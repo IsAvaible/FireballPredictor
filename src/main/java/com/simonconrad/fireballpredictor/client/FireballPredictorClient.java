@@ -50,9 +50,17 @@ public final class FireballPredictorClient {
         public boolean directHitPlayer;
         public final Set<BlockPos> lastHighlighted = new HashSet<BlockPos>();
 
+        /**
+         * Finite position anchor used for simulation, refresh checks and rendering.
+         * Normally the entity position; falls back to the packet-maintained
+         * serverPosX/Y/Z (in 1/32 blocks) when the client position went NaN.
+         */
+        public double anchorX, anchorY, anchorZ;
+        public boolean anchorValid;
+
         // Velocity estimation: the 1.8.9 client never receives velocity updates for
         // projectiles after spawn, so the current velocity is derived from the last two
-        // synced positions. lastPos* holds the previous tick's position once hasDelta.
+        // synced positions. lastPos* holds the previous tick's anchor once hasDelta.
         private double lastPosX, lastPosY, lastPosZ;
         private boolean hasDelta;
 
@@ -153,17 +161,34 @@ public final class FireballPredictorClient {
                 continue;
             }
 
-            double velX = t.hasDelta ? fireball.posX - t.lastPosX : fireball.motionX;
-            double velY = t.hasDelta ? fireball.posY - t.lastPosY : fireball.motionY;
-            double velZ = t.hasDelta ? fireball.posZ - t.lastPosZ : fireball.motionZ;
+            // Resolve a finite position anchor for this tick. Fireballs summoned without a
+            // shooter and without a "power" NBT tag (e.g. plain /summon Fireball) make the
+            // vanilla client construct EntityFireball(World, x, y, z, 0, 0, 0), whose
+            // constructor normalizes the zero acceleration vector into NaN; the NaN then
+            // spreads through onUpdate() into posX/posY/posZ and the motion fields, which
+            // previously poisoned the whole prediction. serverPosX/Y/Z are maintained by
+            // the vanilla spawn/movement packets and always stay finite, so they serve as
+            // the fallback anchor and keep command-summoned projectiles trackable.
+            resolveAnchor(t);
+            if (!t.anchorValid) {
+                // No usable position at all this tick: drop any stale prediction.
+                t.prediction = null;
+                t.impactPos = null;
+                t.hasDelta = false;
+                continue;
+            }
+
+            double velX = t.hasDelta ? t.anchorX - t.lastPosX : finiteOrZero(fireball.motionX);
+            double velY = t.hasDelta ? t.anchorY - t.lastPosY : finiteOrZero(fireball.motionY);
+            double velZ = t.hasDelta ? t.anchorZ - t.lastPosZ : finiteOrZero(fireball.motionZ);
 
             if (needsRefresh(world, t)) {
                 refreshPrediction(world, t, velX, velY, velZ);
             }
 
-            t.lastPosX = fireball.posX;
-            t.lastPosY = fireball.posY;
-            t.lastPosZ = fireball.posZ;
+            t.lastPosX = t.anchorX;
+            t.lastPosY = t.anchorY;
+            t.lastPosZ = t.anchorZ;
             t.hasDelta = true;
         }
 
@@ -250,6 +275,38 @@ public final class FireballPredictorClient {
 
     // -------------------------------------------------------------- refresh
 
+    /** NaN/infinity -> 0.0 (see Tracked.anchorX for why motion can be NaN). */
+    private static double finiteOrZero(double value) {
+        return DamageCalculator.isFinite(value) ? value : 0.0;
+    }
+
+    /**
+     * Stores a finite position anchor on the tracked entry, preferring the entity position
+     * and falling back to the packet-maintained server position (1/32 blocks).
+     */
+    private static void resolveAnchor(Tracked t) {
+        EntityFireball fireball = t.fireball;
+        if (DamageCalculator.isFinite(fireball.posX) && DamageCalculator.isFinite(fireball.posY)
+                && DamageCalculator.isFinite(fireball.posZ)) {
+            t.anchorX = fireball.posX;
+            t.anchorY = fireball.posY;
+            t.anchorZ = fireball.posZ;
+            t.anchorValid = true;
+            return;
+        }
+        double sx = fireball.serverPosX / 32.0;
+        double sy = fireball.serverPosY / 32.0;
+        double sz = fireball.serverPosZ / 32.0;
+        if (DamageCalculator.isFinite(sx) && DamageCalculator.isFinite(sy) && DamageCalculator.isFinite(sz)) {
+            t.anchorX = sx;
+            t.anchorY = sy;
+            t.anchorZ = sz;
+            t.anchorValid = true;
+            return;
+        }
+        t.anchorValid = false;
+    }
+
     private boolean needsRefresh(WorldClient world, Tracked t) {
         EntityFireball fireball = t.fireball;
         TrajectoryPredictor.Prediction prediction = t.prediction;
@@ -272,9 +329,9 @@ public final class FireballPredictorClient {
 
         // The entity deviated from the predicted path (deflection, wrong velocity, lag).
         Vec3 expected = path.get(elapsed);
-        double dx = fireball.posX - expected.xCoord;
-        double dy = fireball.posY - expected.yCoord;
-        double dz = fireball.posZ - expected.zCoord;
+        double dx = t.anchorX - expected.xCoord;
+        double dy = t.anchorY - expected.yCoord;
+        double dz = t.anchorZ - expected.zCoord;
         if (dx * dx + dy * dy + dz * dz > 0.25 * 0.25) {
             return true;
         }
@@ -308,7 +365,8 @@ public final class FireballPredictorClient {
         t.dangerous = TrajectoryPredictor.isDangerous(fireball);
 
         TrajectoryPredictor.Prediction prediction = TrajectoryPredictor.simulate(
-                fireball, world, ModConfig.maxTicks, velX, velY, velZ);
+                fireball, world, ModConfig.maxTicks,
+                t.anchorX, t.anchorY, t.anchorZ, velX, velY, velZ);
         t.prediction = prediction;
         t.predictionAge = fireball.ticksExisted;
 

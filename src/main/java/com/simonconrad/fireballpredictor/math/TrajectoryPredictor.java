@@ -59,15 +59,59 @@ public final class TrajectoryPredictor {
      */
     public static Prediction simulate(EntityFireball fireball, World world, int maxTicks,
                                       double velX, double velY, double velZ) {
+        return simulate(fireball, world, maxTicks, fireball.posX, fireball.posY, fireball.posZ,
+                velX, velY, velZ);
+    }
+
+    /**
+     * Same simulation with an explicit, finite starting position (see
+     * {@code FireballPredictorClient.resolveAnchor}) and velocity. Non-finite acceleration
+     * components are treated as zero: a fireball summoned without shooter and without a
+     * {@code power} tag gives the vanilla client a NaN acceleration vector
+     * ({@code EntityFireball(World, x, y, z, 0, 0, 0)} normalizes 0/0), which must not
+     * poison the predicted path.
+     */
+    public static Prediction simulate(EntityFireball fireball, World world, int maxTicks,
+                                      double startX, double startY, double startZ,
+                                      double velX, double velY, double velZ) {
+        return simulate(fireball, world, maxTicks, startX, startY, startZ, velX, velY, velZ,
+                finiteOrZero(fireball.accelerationX), finiteOrZero(fireball.accelerationY),
+                finiteOrZero(fireball.accelerationZ));
+    }
+
+    /**
+     * Full simulation with explicit position, velocity AND acceleration overrides.
+     * The acceleration is constant for a fireball, so callers that know the true
+     * server-side acceleration (custom sync packets) can correct the client-side value,
+     * which the spawn packet normalizes to a length of 0.1 regardless of the summon NBT.
+     */
+    public static Prediction simulate(EntityFireball fireball, World world, int maxTicks,
+                                      double startX, double startY, double startZ,
+                                      double velX, double velY, double velZ,
+                                      double accX, double accY, double accZ) {
         Prediction prediction = new Prediction();
 
-        double posX = fireball.posX, posY = fireball.posY, posZ = fireball.posZ;
-        final double accX = fireball.accelerationX, accY = fireball.accelerationY, accZ = fireball.accelerationZ;
+        // Reject non-finite inputs outright: comparisons with NaN are always false, so an
+        // unguarded simulation would happily walk a NaN path through every range check.
+        if (!isFinite(startX) || !isFinite(startY) || !isFinite(startZ)
+                || !isFinite(velX) || !isFinite(velY) || !isFinite(velZ)
+                || !isFinite(accX) || !isFinite(accY) || !isFinite(accZ)) {
+            return prediction; // empty path, no impact -> callers render nothing
+        }
+
+        double posX = startX, posY = startY, posZ = startZ;
 
         final double airDrag = getAirDrag(fireball);
         final double halfSize = fireball.width / 2.0;
 
         prediction.path.add(new Vec3(posX, posY, posZ));
+
+        // Stationary projectile (no motion, no acceleration): it only detonates when
+        // something collides with it; predicting maxTicks of identical points is pointless.
+        if (velX * velX + velY * velY + velZ * velZ < 1.0E-12
+                && accX * accX + accY * accY + accZ * accZ < 1.0E-12) {
+            return prediction;
+        }
 
         for (int tick = 1; tick <= maxTicks; tick++) {
             double nextX = posX + velX;
@@ -229,11 +273,26 @@ public final class TrajectoryPredictor {
         AxisAlignedBB aabb = target.getEntityBoundingBox()
                 .expand(0.30000001192092896D, 0.30000001192092896D, 0.30000001192092896D);
         for (int i = Math.max(0, elapsedTicks); i < path.size() - 1; i++) {
-            MovingObjectPosition mop = aabb.calculateIntercept(path.get(i), path.get(i + 1));
+            Vec3 from = path.get(i);
+            Vec3 to = path.get(i + 1);
+            // Never feed a degenerate (NaN) segment into the AABB intercept math.
+            if (!DamageCalculator.isFinite(from) || !DamageCalculator.isFinite(to)) {
+                continue;
+            }
+            MovingObjectPosition mop = aabb.calculateIntercept(from, to);
             if (mop != null) {
                 return mop.hitVec;
             }
         }
         return null;
+    }
+
+    /** NaN/infinity -> 0.0; command-summoned fireballs can carry NaN acceleration/motion. */
+    static double finiteOrZero(double value) {
+        return DamageCalculator.isFinite(value) ? value : 0.0;
+    }
+
+    private static boolean isFinite(double value) {
+        return DamageCalculator.isFinite(value);
     }
 }

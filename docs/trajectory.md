@@ -60,6 +60,18 @@ $$\vec{v}_{\text{derived}} = \begin{cases} \vec{x}_{\text{current}} - \vec{x}_{\
 
 This ensures that deflections (e.g., player hitting a fireball with a sword, punch, or arrow) are detected immediately on the next received position packet, re-aligning the trajectory ribbon within $\le 1$ tick.
 
+### 2.2 Position Anchoring & NaN Robustness (command-summoned projectiles)
+
+A fireball spawned **without a shooter** (e.g. `/summon Fireball`, command blocks) and **without a `power` NBT tag** makes the vanilla 1.8.9 client construct `EntityFireball(World, x, y, z, 0, 0, 0)` from the spawn packet. That constructor normalizes the zero acceleration vector — `0 / 0` — into **NaN**, and `onUpdate()` then spreads the NaN through `motionX/Y/Z` and `posX/Y/Z`, making the entity invisible and previously poisoning the whole prediction pipeline (NaN silently passes every `>` / `<=` range check).
+
+The tracker therefore resolves a finite **anchor** each tick:
+
+1. Prefer the entity position when finite.
+2. Otherwise fall back to `serverPosX/Y/Z / 32.0` — the packet-maintained server position (set by `S0EPacketSpawnObject`, updated by `S0EPacketSpawnObject`/`S14`/`S18` movement packets), which always stays finite.
+3. If neither is finite, the entry is left without a prediction for that tick.
+
+Velocity deltas, deviation checks and the simulation start point all use the anchor; non-finite acceleration/motion components are treated as `0`, and `simulate` rejects non-finite inputs outright (returning an empty path instead of a NaN path). Stationary projectiles (no motion **and** no acceleration) short-circuit to an empty path — they only detonate on contact.
+
 ---
 
 ## 3. Dynamic Refresh & Invalidation ([FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java))

@@ -75,12 +75,12 @@ public final class PredictionRenderer {
         // Pass 2: trajectory ribbons.
         if (ModConfig.renderTrajectory) {
             for (FireballPredictorClient.Tracked t : tracked.values()) {
-                if (t.prediction == null) {
+                if (t.prediction == null || !t.anchorValid) {
                     continue;
                 }
-                double distSq = (t.fireball.posX - viewerX) * (t.fireball.posX - viewerX)
-                        + (t.fireball.posY - viewerY) * (t.fireball.posY - viewerY)
-                        + (t.fireball.posZ - viewerZ) * (t.fireball.posZ - viewerZ);
+                double distSq = (t.anchorX - viewerX) * (t.anchorX - viewerX)
+                        + (t.anchorY - viewerY) * (t.anchorY - viewerY)
+                        + (t.anchorZ - viewerZ) * (t.anchorZ - viewerZ);
                 if (distSq > 512.0 * 512.0) {
                     continue;
                 }
