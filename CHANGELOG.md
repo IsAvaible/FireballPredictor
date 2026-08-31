@@ -12,6 +12,9 @@
 ### Configuration Options
 - **Damage Estimation Settings:** Added options in the visual settings menu to independently toggle the cracking hearts health bar overlay and the damage/knockback numerical readout.
 
+### Bug Fixes
+- **Vanilla Rendering & HUD Overlays:** Fixed trajectory and shockwave dome overlays failing to render without Iris/Sodium installed, and restored cracking damage heart sprite rendering on the health bar.
+
 ## 1.6.2
 
 ### Projectile Owner & Filter Priority
