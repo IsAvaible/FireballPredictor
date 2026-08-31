@@ -86,33 +86,82 @@ public final class DamageCalculator {
     }
 
     /**
+     * True when every coordinate of the vector is a finite number (not NaN / infinity).
+     *
+     * <p>Needed because clients can end up with NaN-poisoned fireball state: a fireball spawned
+     * without a shooter and without a {@code power} NBT tag makes the vanilla client construct
+     * {@code EntityFireball(World, x, y, z, 0, 0, 0)}, whose constructor normalizes the zero
+     * acceleration vector (0/0) into NaN. The NaN then spreads through
+     * {@code onUpdate()} into the entity position and - via the predicted impact point - into
+     * the damage estimate, where every comparison with NaN is {@code false}, so plain range
+     * checks silently pass NaN values through to the HUD (which would print "nan").
+     */
+    public static boolean isFinite(Vec3 vec) {
+        return vec != null
+                && isFinite(vec.xCoord) && isFinite(vec.yCoord) && isFinite(vec.zCoord);
+    }
+
+    public static boolean isFinite(double value) {
+        return !Double.isNaN(value) && !Double.isInfinite(value);
+    }
+
+    /**
+     * Returns {@code estimate} with all components verified finite, or {@link
+     * DamageEstimate#NONE} when any component is NaN/infinite. Belt-and-suspenders guard so a
+     * degenerate prediction can never reach the HUD readout.
+     */
+    private static DamageEstimate sanitize(DamageEstimate estimate) {
+        if (!isFinite((double) estimate.rawDamage) || !isFinite((double) estimate.finalDamage)
+                || !isFinite((double) estimate.heartsLost)
+                || !isFinite(estimate.knockbackBlocksPerSecond)
+                || !isFinite((double) estimate.seenPercent)) {
+            return DamageEstimate.NONE;
+        }
+        return estimate;
+    }
+
+    /**
+     * Clamps the block-density ("seen percent") between 0 and 1, treating NaN as fully exposed.
+     */
+    private static float clampDensity(float density) {
+        if (Float.isNaN(density)) {
+            return 1.0F;
+        }
+        return MathHelper.clamp_float(density, 0.0F, 1.0F);
+    }
+
+    /**
      * Estimates the damage the player would take from an explosion at the given position.
      */
     public static DamageEstimate estimateExplosion(World world, EntityPlayer player, Vec3 explosionPos, float power) {
-        if (power <= 0.0F || player == null || explosionPos == null) {
+        // Note: "!(power > 0)" instead of "power <= 0" so NaN power is rejected too.
+        if (!(power > 0.0F) || player == null || !isFinite(explosionPos)) {
             return DamageEstimate.NONE;
         }
 
         float radius = power * BLAST_RADIUS_MULTIPLIER;
         double distance = Math.sqrt(player.getDistanceSq(explosionPos.xCoord, explosionPos.yCoord, explosionPos.zCoord));
 
-        if (distance > radius) {
+        if (!isFinite(distance) || distance > (double) radius) {
             return DamageEstimate.NONE;
         }
 
         // Vanilla 1.8.9: World.getBlockDensity (line-of-sight exposure).
-        float density = world.getBlockDensity(explosionPos, player.getEntityBoundingBox());
+        float density = clampDensity(world.getBlockDensity(explosionPos, player.getEntityBoundingBox()));
 
         // vanilla: (int)((d10*d10 + d10) / 2.0 * 8.0 * radius + 1.0)
         double d10 = (1.0 - distance / (double) radius) * density;
+        if (!isFinite(d10)) {
+            return DamageEstimate.NONE;
+        }
         float raw = (float) ((int) ((d10 * d10 + d10) / 2.0 * 8.0 * (double) radius + 1.0));
 
         float finalDamage = applyPlayerPipeline(raw, player, world, SourceType.EXPLOSION);
         double knockback = computeKnockback(player, d10);
 
-        return new DamageEstimate(raw, finalDamage,
+        return sanitize(new DamageEstimate(raw, finalDamage,
                 Math.min(finalDamage, player.getHealth() + player.getAbsorptionAmount()) / 2.0F,
-                knockback * 20.0, density, true);
+                knockback * 20.0, density, true));
     }
 
     /**
@@ -122,9 +171,13 @@ public final class DamageCalculator {
      */
     public static DamageEstimate estimateDirectHit(World world, EntityPlayer player, Vec3 hitPos,
                                                    float power, float directDamage, SourceType directType) {
+        if (player == null || !isFinite(hitPos)) {
+            return DamageEstimate.NONE;
+        }
         DamageEstimate direct = applyDirect(player, directDamage, world, directType);
 
         // The projectile detonates at the hit point: explosion estimate as well.
+        // (estimateExplosion already rejects non-finite hit positions / NaN power.)
         DamageEstimate blast = estimateExplosion(world, player, hitPos, power);
 
         float raw = Math.max(direct.rawDamage, blast.inRange ? blast.rawDamage : 0.0F);
@@ -132,16 +185,16 @@ public final class DamageCalculator {
         double knockback = blast.inRange ? blast.knockbackBlocksPerSecond : 0.0;
         float seen = blast.inRange ? blast.seenPercent : 1.0F;
 
-        return new DamageEstimate(raw, total,
+        return sanitize(new DamageEstimate(raw, total,
                 Math.min(total, player.getHealth() + player.getAbsorptionAmount()) / 2.0F,
-                knockback, seen, true);
+                knockback, seen, true));
     }
 
     private static DamageEstimate applyDirect(EntityPlayer player, float damage, World world, SourceType type) {
         float finalDamage = applyPlayerPipeline(damage, player, world, type);
-        return new DamageEstimate(damage, finalDamage,
+        return sanitize(new DamageEstimate(damage, finalDamage,
                 Math.min(finalDamage, player.getHealth() + player.getAbsorptionAmount()) / 2.0F,
-                0.0, 1.0F, damage > 0.0F);
+                0.0, 1.0F, damage > 0.0F));
     }
 
     /**

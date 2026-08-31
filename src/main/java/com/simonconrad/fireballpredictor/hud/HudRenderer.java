@@ -117,16 +117,25 @@ public final class HudRenderer {
 
         if (drawText) {
             DamageCalculator.DamageEstimate estimate = state.currentEstimate;
-            String text;
-            if (estimate.finalDamage > 0.0F && estimate.knockbackBlocksPerSecond > 0.0) {
-                text = String.format(Locale.ROOT, "-%.1f\u2764  %.1fb/s",
-                        estimate.heartsLost, estimate.knockbackBlocksPerSecond);
-            } else if (estimate.finalDamage > 0.0F) {
-                text = String.format(Locale.ROOT, "-%.1f\u2764", estimate.heartsLost);
-            } else {
-                text = String.format(Locale.ROOT, "%.1fb/s", estimate.knockbackBlocksPerSecond);
+            float finalDamage = estimate.finalDamage;
+            double knockback = estimate.knockbackBlocksPerSecond;
+
+            // Mirrors master's HeartOverlayRenderer: the readout only draws when the estimate is
+            // in range AND predicts actual damage or knockback (NaN fails both > 0 checks).
+            if (estimate.inRange && DamageCalculator.isFinite((double) finalDamage)
+                    && DamageCalculator.isFinite(knockback)
+                    && (finalDamage > 0.0F || knockback > 0.0)) {
+                String text;
+                if (finalDamage > 0.0F && knockback > 0.0) {
+                    text = String.format(Locale.ROOT, "-%.1f\u2764  \u26a1%.1fb/s",
+                            estimate.heartsLost, knockback);
+                } else if (finalDamage > 0.0F) {
+                    text = String.format(Locale.ROOT, "-%.1f\u2764", estimate.heartsLost);
+                } else {
+                    text = String.format(Locale.ROOT, "\u26a1%.1fb/s", knockback);
+                }
+                mc.fontRendererObj.drawStringWithShadow(text, x + size + 5, y + 6, fill);
             }
-            mc.fontRendererObj.drawStringWithShadow(text, x + size + 5, y + 6, fill);
         }
     }
 
@@ -137,7 +146,9 @@ public final class HudRenderer {
             return;
         }
         DamageCalculator.DamageEstimate estimate = state.currentEstimate;
-        if (estimate.finalDamage <= 0.0F) {
+        // NaN hearts-lost (degenerate prediction) fails both the > 0 and the finiteness check.
+        if (!(estimate.finalDamage > 0.0F)
+                || !DamageCalculator.isFinite((double) estimate.heartsLost)) {
             return;
         }
         EntityPlayer player = mc.thePlayer;

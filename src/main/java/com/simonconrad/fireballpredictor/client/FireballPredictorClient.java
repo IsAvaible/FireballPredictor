@@ -214,7 +214,8 @@ public final class FireballPredictorClient {
             }
 
             // --- damage estimation ---
-            if ((ModConfig.renderDamageText || ModConfig.renderHeartsOverlay) && t.impactPos != null) {
+            if ((ModConfig.renderDamageText || ModConfig.renderHeartsOverlay) && t.impactPos != null
+                    && DamageCalculator.isFinite(t.impactPos)) {
                 DamageCalculator.DamageEstimate estimate = estimateDamage(world, player, t);
                 if (estimate.inRange) {
                     if (!estimateFound
@@ -311,7 +312,8 @@ public final class FireballPredictorClient {
         t.prediction = prediction;
         t.predictionAge = fireball.ticksExisted;
 
-        if (t.power > 0.0F && prediction.impact != null) {
+        if (t.power > 0.0F && prediction.impact != null
+                && DamageCalculator.isFinite(prediction.impact.hitVec)) {
             t.brokenBlocks = ImpactPredictor.predictBrokenBlocks(
                     world, prediction.impact.hitVec, t.power, t.dangerous, ModConfig.rayPowerMultiplier);
             t.dome = DomeMesh.build(t.power);
