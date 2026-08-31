@@ -4,7 +4,21 @@ This document details the configuration options available for the Minecraft 1.8.
 
 ---
 
-## 1. Configuration File
+## 1. In-Game Configuration Screen
+
+All options below can be edited **in game** (recommended):
+
+* **Mods list** → select *Fireball Predictor* → **Config** button,
+* the **`/fireballpredictor`** client command, or
+* the *Open configuration* keybind (**Controls → Fireball Predictor**, unbound by default).
+
+The screen groups the options into categories (General, Trajectory, Shockwave Dome,
+Blocks, HUD, Tracking, Prediction) with toggle buttons, sliders, color cyclers and a
+trajectory-style cycler. Every change applies immediately; **Done** persists to the
+`.cfg` file, **Cancel**/ESC reverts unsaved edits. A *Toggle tracking* keybind with
+chat feedback mirrors master's keybinding.
+
+## 1b. Configuration File
 
 Settings are saved in the standard Forge configuration format at:
 ```

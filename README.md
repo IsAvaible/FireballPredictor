@@ -19,6 +19,9 @@ The mod deterministically simulates and renders projectile flight paths, impact 
 | **1.8.9 Damage & Knockback Pipeline** | Precise client-side damage calculation: difficulty scaling $\to$ sword blocking $\to$ armor $\to$ Resistance potion $\to$ Enchantment Protection Factor (EPF) $\to$ absorption hearts. | [docs/impact.md](docs/impact.md) |
 | **Multiplayer Velocity Delta Derivation** | Automatically derives real velocity from successive synced position deltas to overcome 1.8.9's lack of server velocity packets for projectiles. | [docs/trajectory.md](docs/trajectory.md) |
 | **Deflection & World Invalidation** | Instantly re-simulates trajectory upon player deflections, block destructions, or new obstructions placed in the flight path. | [docs/trajectory.md](docs/trajectory.md) |
+| **In-Game Config Screen** | Categorized configuration GUI (toggles, sliders, color & style cyclers) reachable from the Mods list, `/fireballpredictor`, or a keybind; changes apply live. | [docs/configuration.md](docs/configuration.md) |
+| **Command-Summoned Projectiles** | NaN-safe position anchoring keeps `/summon`-ed fireballs trackable even when the vanilla client poisons their motion/position. | [docs/trajectory.md](docs/trajectory.md) |
+| **Optional Server Component** | Install on a server for authoritative explosion power, velocity/acceleration, owner, tracking-restriction and `mobGriefing` gamerule syncing. | [docs/server.md](docs/server.md) |
 
 ---
 
@@ -37,7 +40,13 @@ Comprehensive technical documentation is available in the `docs/` directory:
 
 ## Configuration
 
-Settings can be customized in `.minecraft/config/FireballPredictor.cfg`:
+Settings can be edited **in game** through the config screen (Mods list → Config, the
+`/fireballpredictor` client command, or the *Open configuration* keybind in Controls)
+or directly in `.minecraft/config/FireballPredictor.cfg`:
+
+Servers can additionally install the mod to sync powers/velocities and enforce
+tracking restrictions via `config/fireballpredictor-server.json` (see
+[docs/server.md](docs/server.md)).
 
 ```ini
 # General mod switch

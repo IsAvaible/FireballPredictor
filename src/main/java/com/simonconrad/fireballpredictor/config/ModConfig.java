@@ -5,13 +5,19 @@ import net.minecraftforge.common.config.Configuration;
 import java.io.File;
 
 /**
- * Minimal client configuration for the 1.8.9 backport.
- * (The original 26.2 mod's themes/config GUI are intentionally not ported.)
+ * Client configuration for the 1.8.9 backport, backed by the standard Forge
+ * {@code .cfg} format. Values live in public statics that the runtime reads every
+ * frame/tick, so changes made in the in-game config screen ({@code ModConfigGui})
+ * apply immediately; {@link #save()} persists them to disk.
  */
 public final class ModConfig {
 
     private ModConfig() {
     }
+
+    /** Backing Forge configuration (kept for saving after in-game edits). */
+    private static Configuration configuration;
+    private static File configFile;
 
     // ---- master switch -----------------------------------------------------
     public static boolean masterEnabled = true;
@@ -68,6 +74,8 @@ public final class ModConfig {
 
     public static void load(File file) {
         Configuration cfg = new Configuration(file);
+        configuration = cfg;
+        configFile = file;
         try {
             cfg.load();
 
@@ -135,6 +143,67 @@ public final class ModConfig {
                 cfg.save();
             }
         }
+    }
+
+    /** Persists the current values to the config file (called by the in-game GUI's Done). */
+    public static void save() {
+        if (configuration == null) {
+            return;
+        }
+        configuration.get(Configuration.CATEGORY_GENERAL, "masterEnabled", masterEnabled)
+                .set(masterEnabled);
+
+        configuration.get("trajectory", "renderTrajectory", renderTrajectory).set(renderTrajectory);
+        configuration.get("trajectory", "trajectoryWidth", trajectoryWidth).set(trajectoryWidth);
+        configuration.get("trajectory", "trajectoryColor", formatColor(trajectoryColor))
+                .set(formatColor(trajectoryColor));
+        configuration.get("trajectory", "trajectoryStyle", trajectoryStyle.getKey())
+                .set(trajectoryStyle.getKey());
+        configuration.get("trajectory", "renderCoreGlow", renderCoreGlow).set(renderCoreGlow);
+        configuration.get("trajectory", "enableRibbonPulse", enableRibbonPulse).set(enableRibbonPulse);
+
+        configuration.get("dome", "renderShockwaveDome", renderShockwaveDome).set(renderShockwaveDome);
+        configuration.get("dome", "domeColor", formatColor(domeColor)).set(formatColor(domeColor));
+        configuration.get("dome", "domeFresnelStrength", domeFresnelStrength).set(domeFresnelStrength);
+
+        configuration.get("blocks", "renderBlockHighlights", renderBlockHighlights)
+                .set(renderBlockHighlights);
+
+        configuration.get("hud", "renderImpactWarning", renderImpactWarning).set(renderImpactWarning);
+        configuration.get("hud", "renderDamageText", renderDamageText).set(renderDamageText);
+        configuration.get("hud", "renderHeartsOverlay", renderHeartsOverlay).set(renderHeartsOverlay);
+        configuration.get("hud", "badgeOffsetX", badgeOffsetX).set(badgeOffsetX);
+        configuration.get("hud", "badgeOffsetY", badgeOffsetY).set(badgeOffsetY);
+
+        configuration.get("tracking", "trackMobProjectiles", trackMobProjectiles).set(trackMobProjectiles);
+        configuration.get("tracking", "trackOtherOwnerProjectiles", trackOtherOwnerProjectiles)
+                .set(trackOtherOwnerProjectiles);
+        configuration.get("tracking", "trackPlayerProjectiles", trackPlayerProjectiles)
+                .set(trackPlayerProjectiles);
+        configuration.get("tracking", "trackDispenserProjectiles", trackDispenserProjectiles)
+                .set(trackDispenserProjectiles);
+        configuration.get("tracking", "trackCommandProjectiles", trackCommandProjectiles)
+                .set(trackCommandProjectiles);
+
+        configuration.get("prediction", "rayPowerMultiplier", rayPowerMultiplier).set(rayPowerMultiplier);
+        configuration.get("prediction", "maxTrackedProjectiles", maxTrackedProjectiles)
+                .set(maxTrackedProjectiles);
+        configuration.get("prediction", "maxTicks", maxTicks).set(maxTicks);
+
+        if (configuration.hasChanged()) {
+            configuration.save();
+        }
+    }
+
+    /** Reloads the configuration from disk (reverts unsaved in-game edits). */
+    public static void reload() {
+        if (configFile != null) {
+            load(configFile);
+        }
+    }
+
+    private static String formatColor(int argb) {
+        return String.format("%06X", argb & 0xFFFFFF);
     }
 
     private static int parseColor(String hex) {

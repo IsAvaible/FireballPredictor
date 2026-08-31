@@ -118,6 +118,7 @@ public final class FireballPredictorClient {
             resetAll(mc);
             return;
         }
+        ModKeyBindings.handleInput(mc);
         tick(mc);
     }
 

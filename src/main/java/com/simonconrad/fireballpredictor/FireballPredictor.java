@@ -44,6 +44,21 @@ public class FireballPredictor {
     /** FML simple channel used for all server -> client sync traffic. */
     public static SimpleNetworkWrapper network;
 
+    /** Dedicated-server stand-in handler (these messages are only ever handled on clients). */
+    private static final net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler<
+            net.minecraftforge.fml.common.network.simpleimpl.IMessage,
+            net.minecraftforge.fml.common.network.simpleimpl.IMessage> NOOP_HANDLER =
+            new net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler<
+                    net.minecraftforge.fml.common.network.simpleimpl.IMessage,
+                    net.minecraftforge.fml.common.network.simpleimpl.IMessage>() {
+                @Override
+                public net.minecraftforge.fml.common.network.simpleimpl.IMessage onMessage(
+                        net.minecraftforge.fml.common.network.simpleimpl.IMessage message,
+                        net.minecraftforge.fml.common.network.simpleimpl.MessageContext ctx) {
+                    return null;
+                }
+            };
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER.info("Fireball Predictor {} loading", VERSION);
@@ -57,8 +72,16 @@ public class FireballPredictor {
 
         // Custom channel for power / velocity / acceleration / owner / rules syncing.
         network = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
-        network.registerMessage(FireballSyncMessage.Handler.class, FireballSyncMessage.class, 0, Side.CLIENT);
-        network.registerMessage(ServerRulesMessage.Handler.class, ServerRulesMessage.class, 1, Side.CLIENT);
+        // FML instantiates handler classes on BOTH sides, so the real handlers (which
+        // reference client-only classes) are only registered in the client process; the
+        // dedicated server registers no-op handlers (it only ever SENDS these messages).
+        if (event.getSide().isClient()) {
+            network.registerMessage(FireballSyncMessage.Handler.class, FireballSyncMessage.class, 0, Side.CLIENT);
+            network.registerMessage(ServerRulesMessage.Handler.class, ServerRulesMessage.class, 1, Side.CLIENT);
+        } else {
+            network.registerMessage(NOOP_HANDLER, FireballSyncMessage.class, 0, Side.CLIENT);
+            network.registerMessage(NOOP_HANDLER, ServerRulesMessage.class, 1, Side.CLIENT);
+        }
 
         FireballPredictorServer serverHandler = new FireballPredictorServer();
         MinecraftForge.EVENT_BUS.register(serverHandler);

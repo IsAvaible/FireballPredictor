@@ -1,0 +1,5 @@
+key.categories.fireballpredictor=Fireball Predictor
+key.fireballpredictor.config=Open configuration
+key.fireballpredictor.toggle_tracking=Toggle tracking
+fireballpredictor.message.tracking_enabled=Fireball Predictor tracking enabled
+fireballpredictor.message.tracking_disabled=Fireball Predictor tracking disabled
