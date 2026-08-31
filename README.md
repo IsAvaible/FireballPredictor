@@ -1,8 +1,14 @@
-# Fireball Predictor — 1.8.9 Forge Backport
+# Fireball Predictor - 1.8.9 Forge Backport
 
 A client-side backport of fireball predictor to **Minecraft 1.8.9 + Forge**.
 
 The mod deterministically simulates and renders projectile flight paths, impact points, explosion blast domes, destroyed blocks, and combat damage for fireballs and wither skulls in real time.
+
+[![Fireball Predictor Video](https://img.youtube.com/vi/_VXAXr188n0/maxresdefault.jpg)](https://www.youtube.com/watch?v=_VXAXr188n0)
+
+
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/fireball-predictor?logo=modrinth&logoColor=white&label=Modrinth)](https://modrinth.com/mod/fireball-predictor)
+[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1613094?logo=curseforge&logoColor=white&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/fireball-predictor/)
 
 ---
 
