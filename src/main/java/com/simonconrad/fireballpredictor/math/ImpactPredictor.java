@@ -4,7 +4,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.DragonFireballEntity;
+import net.minecraft.entity.projectile.SmallFireballEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.world.BlockView;
 import net.minecraft.block.BlockState;
@@ -14,6 +17,10 @@ import net.minecraft.util.math.Vec3d;
 public class ImpactPredictor {
 
     public static float resolveExplosionPower(ExplosiveProjectileEntity fireball) {
+        if (fireball instanceof SmallFireballEntity || fireball instanceof DragonFireballEntity) {
+            return 0.0F;
+        }
+
         if (!fireball.getEntityWorld().isClient()) {
             if (fireball instanceof net.minecraft.entity.projectile.FireballEntity f) {
                 return ((com.simonconrad.fireballpredictor.FireballEntityAccessor) f).getExplosionPower();
@@ -71,7 +78,7 @@ public class ImpactPredictor {
                             
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
                             if (isDangerous) {
-                                if (blockState.getHardness(world, blockPos) >= 0.0F) {
+                                if (WitherEntity.canDestroy(blockState)) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
                             }

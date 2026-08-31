@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1
+
+### Trajectory Physics & Accuracy Fixes
+- **Vanilla Physics Alignment:** Fixed a timing offset in trajectory calculations to align tick-exact with vanilla Minecraft physics, improving prediction accuracy and eliminating unnecessary visual re-renders.
+- **Water Drag Simulation:** Trajectory predictions for fireballs and wither skulls now accurately account for liquid drag when traveling through water.
+- **Unbreakable Block Protections:** Charged wither skulls no longer falsely predict the destruction of unbreakable blocks such as Bedrock and Reinforced Deepslate.
+
+### Explosive Projectile Adjustments
+- **Blaze & Dragon Fireballs:** Small fireballs (from Blazes) and Dragon fireballs no longer display misleading shockwave domes or block destruction highlights, while keeping path ribbons and warning indicators active.
+
 ## 1.6.0
 
 ### Smart Projectile Owner Tracking

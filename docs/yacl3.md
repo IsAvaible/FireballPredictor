@@ -75,7 +75,29 @@ Inspect `dev.isxander.yacl3.config.v2.impl.autogen.DropdownImpl` or `ConfigField
 
 ---
 
-## 5. Recommended Workflow for AI Agents
+## 5. Live Config Preview System (`@CustomImage` + `OptionAccess`)
+
+YACL v3 supports custom description image renderers via `@CustomImage(factory = YourFactory.class)`.
+
+### How Live Pending Values Work
+When building custom description preview panels (such as `ConfigPreviewRenderer`):
+1. **Factory Interface**: Implement `CustomImage.CustomImageFactory<T>`, which provides access to `OptionAccess`.
+2. **Accessing Pending State**: Call `access.getOption("field_name").pendingValue()` to read the uncommitted GUI control state (sliders, color pickers, enum cyclers).
+3. **Immediate-Mode Redraw**: On every frame in `ImageRenderer.render(...)`, read the pending values so edits reflect immediately in side-panel schematics before the user clicks "Save".
+
+Example factory definition:
+```java
+public static final class TrajectoryFactory implements CustomImage.CustomImageFactory<Object> {
+    @Override
+    public CompletableFuture<ImageRenderer> createImage(Object value, ConfigField<Object> field, OptionAccess access) {
+        return CompletableFuture.completedFuture(ConfigPreviewRenderer.of(Mode.TRAJECTORY, access));
+    }
+}
+```
+
+---
+
+## 6. Recommended Workflow for AI Agents
 
 1. **Locate Jar**: Find the cached `yacl-*.jar` under `$HOME/.gradle/caches/`.
 2. **Scan Structure**: Run `jar tf` filtered with ripgrep/select-string to find target classes.

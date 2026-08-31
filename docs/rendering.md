@@ -75,14 +75,26 @@ Shader packs managed by Iris modify the render pipeline lookup mechanism. Custom
 
 ## Config Screen Live Previews
 
-YACL3 description side-panel previews are implemented by [[ConfigPreviewRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ConfigPreviewRenderer.java)] implementing `dev.isxander.yacl3.gui.image.ImageRenderer`.
+YACL3 description side-panel previews are implemented by [ConfigPreviewRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ConfigPreviewRenderer.java) implementing `dev.isxander.yacl3.gui.image.ImageRenderer`.
 
-Options under the **Visuals** category annotate `@CustomImage(factory = …)` so the description panel shows a live schematic while you edit:
+Options under the **Visuals** and **Tracking** categories annotate `@CustomImage(factory = …)` so the description panel shows a live schematic while you edit:
 
 | Mode | Factory | Reflects pending values of |
 | --- | --- | --- |
 | Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
 | Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength` |
 | HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
+| Tracking overviews | `TrackMasterFactory` / `TrackMobMasterFactory` / `TrackOtherMasterFactory` | Master chip overviews & source toggles |
+| Single tracking lock-on | `TrackFireballFactory` / `TrackWitherFactory` / `TrackWindFactory` / etc. | Per-source target tracking toggles |
 
 Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAccess`, so colour pickers, cyclers, and sliders update the schematic immediately without saving.
+
+### Modular Preview Architecture (`com.simonconrad.fireballpredictor.client.gui.preview`)
+- **[Painter.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Painter.java)**: Immediate-mode drawing context handling clipping rects and GUI primitives.
+- **[Arc.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Arc.java)**: Bezier curve computation for 2D schematic flight paths.
+- **[TrajectoryRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrajectoryRenderer.java)**: Renders 2D animated path with ribbon width, color, pulse wave, core glow, and `SOLID`/`DASHED`/`CORE_ONLY` styles.
+- **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc, Fresnel rim shading, and crack overlays.
+- **[HudRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/HudRenderer.java)**: Renders miniature screen frame showing HUD anchor alignment, X/Y pixel offsets, and dynamic progress bar.
+- **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
+- **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers.
+

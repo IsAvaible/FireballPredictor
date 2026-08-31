@@ -29,7 +29,9 @@ import net.minecraft.entity.mob.BlazeEntity;
 import net.minecraft.entity.mob.GhastEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
+import net.minecraft.entity.projectile.SmallFireballEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.entity.projectile.WindChargeEntity;
 import net.minecraft.world.GameMode;
@@ -208,9 +210,16 @@ public class FireballPredictorGameTest {
                 throw fail("Explosion only broke " + actualCount + " blocks, expected at least " + minExpectedActualCount);
             }
 
-            double minRatio = 0.4;
+            // Assert coverage (no false negatives threshold - actual broken blocks must be at least 50% of predicted)
+            double minRatio = 0.5;
             if (actualCount < predictedCount * minRatio) {
                 throw fail("Actual broken blocks count (" + actualCount + ") is too low compared to predicted (" + predictedCount + "). Min expected: " + (int) (predictedCount * minRatio));
+            }
+
+            // Assert over-prediction cap: predicted block count must not exceed 2.0x actual broken count (catching over-prediction regressions)
+            double maxOverPredictionRatio = 2.0;
+            if (predictedCount > actualCount * maxOverPredictionRatio) {
+                throw fail("Over-prediction detected! Predicted " + predictedCount + " blocks, but actual broken was only " + actualCount + " (exceeds max over-prediction factor of " + maxOverPredictionRatio + "x).");
             }
         }, 40);
     }
@@ -240,7 +249,7 @@ public class FireballPredictorGameTest {
     public void testFireballPredictionAndExplosion(TestContext context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.1, false);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 1);
     }
 
@@ -277,11 +286,19 @@ public class FireballPredictorGameTest {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testChargedWitherSkullAgainstReinforcedDeepslate(TestContext context) {
+        resetGlobalState();
+        buildWall(context, Blocks.REINFORCED_DEEPSLATE);
+        WitherSkullEntity skull = spawnProjectile(context, EntityType.WITHER_SKULL, 0.0, true);
+        assertNoDestruction(context, skull, Blocks.REINFORCED_DEEPSLATE);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testNormalFireballAgainstWaterloggedSlab(TestContext context) {
         resetGlobalState();
         BlockState waterloggedSlab = Blocks.OAK_SLAB.getDefaultState().with(net.minecraft.state.property.Properties.WATERLOGGED, true);
         buildWall(context, waterloggedSlab);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.1, false);
         assertNoDestruction(context, fireball, Blocks.OAK_SLAB);
     }
 
@@ -298,7 +315,7 @@ public class FireballPredictorGameTest {
     public void testHighPowerFireballPredictionAndExplosion(TestContext context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
-        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.1, false);
         ((FireballEntityAccessor) fireball).setExplosionPower(3);
         assertExplosionDestruction(context, fireball, Blocks.DIRT, 10);
     }
@@ -312,12 +329,104 @@ public class FireballPredictorGameTest {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testWaterDragPrediction(TestContext context) {
+        resetGlobalState();
+        for (int x = 0; x <= 5; x++) {
+            for (int y = 1; y <= 5; y++) {
+                for (int z = 1; z <= 5; z++) {
+                    context.setBlockState(new BlockPos(x, y, z), Blocks.WATER);
+                }
+            }
+        }
+        FireballEntity fireball = spawnProjectile(context, EntityType.FIREBALL, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(fireball, context.getWorld());
+
+        Vec3d v0 = trajResult.velocities().get(0);
+        Vec3d v1 = trajResult.velocities().get(1);
+        double expectedSpeed1 = v0.length() * 0.8;
+        if (Math.abs(v1.length() - expectedSpeed1) > 1e-4) {
+            throw fail("Expected water drag 0.8 to reduce speed from " + v0.length() + " to " + expectedSpeed1 + ", but got " + v1.length());
+        }
+
+        context.complete();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testWindChargeWaterDragPrediction(TestContext context) {
+        resetGlobalState();
+        for (int x = 0; x <= 5; x++) {
+            for (int y = 1; y <= 5; y++) {
+                for (int z = 1; z <= 5; z++) {
+                    context.setBlockState(new BlockPos(x, y, z), Blocks.WATER);
+                }
+            }
+        }
+        WindChargeEntity windCharge = spawnProjectile(context, EntityType.WIND_CHARGE, 0.0, false);
+
+        TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(windCharge, context.getWorld());
+
+        Vec3d v0 = trajResult.velocities().get(0);
+        Vec3d v1 = trajResult.velocities().get(1);
+        if (Math.abs(v1.length() - v0.length()) > 1e-4) {
+            throw fail("Expected wind charge in water to maintain 1.0 drag (speed " + v0.length() + "), but got " + v1.length());
+        }
+
+        context.complete();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBlockGetterWaterDetection(TestContext context) {
+        resetGlobalState();
+        BlockPos waterPos = context.getAbsolutePos(new BlockPos(2, 2, 2));
+        context.setBlockState(new BlockPos(2, 2, 2), Blocks.WATER);
+
+        com.simonconrad.fireballpredictor.math.BlockStateSnapshot snapshot =
+            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
+                context.getWorld(), waterPos.add(-1, -1, -1), waterPos.add(1, 1, 1)
+            );
+
+        boolean touching = TrajectoryPredictor.isTouchingWater(
+            snapshot, waterPos.getX() + 0.1, waterPos.getY() + 0.1, waterPos.getZ() + 0.1,
+            waterPos.getX() + 0.9, waterPos.getY() + 0.9, waterPos.getZ() + 0.9
+        );
+
+        if (!touching) {
+            throw fail("Expected snapshot BlockView isTouchingWater to return true for water block");
+        }
+
+        context.complete();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testSmallFireballPowerAndNoDestruction(TestContext context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+        SmallFireballEntity fireball = spawnProjectile(context, EntityType.SMALL_FIREBALL, 0.0, false);
+        if (com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball) != 0.0f) {
+            throw fail("SmallFireballEntity explosion power expected to be 0.0f, got: " + com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball));
+        }
+        assertNoDestruction(context, fireball, Blocks.DIRT);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testDragonFireballPowerAndNoDestruction(TestContext context) {
+        resetGlobalState();
+        buildWall(context, Blocks.DIRT);
+        DragonFireballEntity fireball = spawnProjectile(context, EntityType.DRAGON_FIREBALL, 0.0, false);
+        if (com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball) != 0.0f) {
+            throw fail("DragonFireballEntity explosion power expected to be 0.0f, got: " + com.simonconrad.fireballpredictor.math.ImpactPredictor.resolveExplosionPower(fireball));
+        }
+        assertNoDestruction(context, fireball, Blocks.DIRT);
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
     public void testInferredExplosionPowerFallback(TestContext context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
 
         // Spawn fireball 1 and simulate its trajectory
-        FireballEntity fireball1 = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        FireballEntity fireball1 = spawnProjectile(context, EntityType.FIREBALL, 0.1, false);
         TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getWorld());
         PredictionData pred = TrajectoryPredictor.computePrediction(fireball1, traj, fireball1.age);
         Vec3d hitPos = pred.hitResult != null ? pred.hitResult.getPos() : fireball1.getEntityPos();
@@ -336,7 +445,7 @@ public class FireballPredictorGameTest {
         }
 
         // Spawn second unsynced fireball and verify ClientPowerLookup falls back to inferred 3.0f
-        FireballEntity fireball2 = spawnProjectile(context, EntityType.FIREBALL, 0.05, false);
+        FireballEntity fireball2 = spawnProjectile(context, EntityType.FIREBALL, 0.1, false);
         float resolvedPower = ClientPowerLookup.getPower(fireball2);
         if (resolvedPower != 3.0f) {
             throw fail("Expected resolved power for unsynced fireball to be inferred 3.0f, but got: " + resolvedPower);

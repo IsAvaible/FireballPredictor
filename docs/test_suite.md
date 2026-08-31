@@ -10,11 +10,11 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 19 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 25 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`
-* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with an initial relative velocity of `(0.5, 0.0, 0.0)` and an acceleration power of `0.05`.
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with an initial relative velocity of `(0.5, 0.0, 0.0)` and an acceleration power of `0.1` (vanilla ghast fireball standard).
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Asserts that normal fireball explosion power computation and vanilla raycasting math correctly predict which dirt blocks will be destroyed.
 
@@ -44,37 +44,71 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
 * **Environment**: A target wall of `Blocks.OBSIDIAN` at relative `x = 2`.
 * **Details**: Validates that normal wither skulls do *not* break obsidian blocks (predicts 0 broken blocks, actual 0 broken), confirming that the blast resistance capping is correctly restricted to charged skulls.
 
-### 6. Normal Fireball against Waterlogged Slabs (`testNormalFireballAgainstWaterloggedSlab`)
+### 6. Charged Wither Skull against Reinforced Deepslate (`testChargedWitherSkullAgainstReinforcedDeepslate`)
+* **Entity**: `WitherSkullEntity` (charged/blue)
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.REINFORCED_DEEPSLATE` at relative `x = 2`.
+* **Details**: Asserts that charged wither skulls predict 0 broken blocks and break 0 blocks against reinforced deepslate, confirming that blast resistance capping (`0.8F`) does not bypass blast-immune/unbreakable block categories.
+
+### 7. Normal Fireball against Waterlogged Slabs (`testNormalFireballAgainstWaterloggedSlab`)
 * **Entity**: `FireballEntity` (power 1.0)
-* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)` and acceleration `0.05`.
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)` and acceleration `0.1`.
 * **Environment**: A target wall of waterlogged `Blocks.OAK_SLAB` at relative `x = 2`.
 * **Details**: Asserts that a normal fireball correctly predicts 0 broken blocks and breaks 0 blocks, since waterlogged blocks inherit the fluid water's high blast resistance (100.0).
 
-### 7. Charged Wither Skull against Waterlogged Slabs (`testChargedWitherSkullAgainstWaterloggedSlab`)
+### 8. Charged Wither Skull against Waterlogged Slabs (`testChargedWitherSkullAgainstWaterloggedSlab`)
 * **Entity**: `WitherSkullEntity` (charged/blue)
 * **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
 * **Environment**: A target wall of waterlogged `Blocks.OAK_SLAB` at relative `x = 2`.
 * **Details**: Verifies that a charged wither skull correctly predicts and destroys waterlogged slabs, since the capping logic reduces the overall block/fluid blast resistance to `0.8F`.
 
-### 8. High-Power Fireball Prediction (`testHighPowerFireballPredictionAndExplosion`)
+### 9. High-Power Fireball Prediction (`testHighPowerFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity` (configured with explosion power 3)
 * **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Uses the new `setExplosionPower` accessor to simulate a fireball with custom high explosion power (power = 3) and verifies that the mod correctly scales both the predicted block destruction and actual crater size.
 
-### 9. Wind Charge Prediction (`testWindChargePredictionAndExplosion`)
+### 10. Wind Charge Prediction (`testWindChargePredictionAndExplosion`)
 * **Entity**: `WindChargeEntity`
 * **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with an initial relative velocity of `(0.5, 0.0, 0.0)` and zero acceleration.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Asserts that Wind Charges calculate drag of `1.0` (no drag), predict 0 broken blocks upon impact, and break 0 actual blocks in the world upon detonation (`assertNoDestruction`).
 
-### 10. Inferred Explosion Power Fallback (`testInferredExplosionPowerFallback`)
+### 11. Water Drag Prediction (`testWaterDragPrediction`)
+* **Entity**: `LargeFireball`
+* **Starting State**: Spawns inside a 5x5x5 volume of `Blocks.WATER`.
+* **Environment**: Submerged fluid trajectory environment.
+* **Details**: Validates that standard fireballs moving through water correctly experience water drag reduction (speed reduced by a factor of 0.8 per tick in water).
+
+### 12. Wind Charge Water Drag Immunity (`testWindChargeWaterDragPrediction`)
+* **Entity**: `WindChargeEntity`
+* **Starting State**: Spawns inside a 5x5x5 volume of `Blocks.WATER`.
+* **Environment**: Submerged fluid trajectory environment.
+* **Details**: Confirms that Wind Charges retain a 1.0 drag multiplier and maintain full speed without drag degradation even when moving through water.
+
+### 13. BlockGetter Water Detection (`testBlockGetterWaterDetection`)
+* **Environment**: Mock snapshot simulation.
+* **Details**: Asserts that the custom `BlockStateSnapshot` implementation correctly exposes fluid states to `TrajectoryPredictor.isTouchingWater` for accurate drag evaluation.
+
+### 14. Small Fireball Power and Non-Destruction (`testSmallFireballPowerAndNoDestruction`)
+* **Entity**: `SmallFireball`
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.DIRT` at relative `x = 2`.
+* **Details**: Asserts that small fireballs resolve explosion power as `0.0f` and do not break blocks on collision (`assertNoDestruction`).
+
+### 15. Dragon Fireball Power and Non-Destruction (`testDragonFireballPowerAndNoDestruction`)
+* **Entity**: `DragonFireball`
+* **Starting State**: Spawns at relative `(1.5, 3.0, 3.5)` with velocity `(0.5, 0.0, 0.0)`.
+* **Environment**: A target wall of `Blocks.DIRT` at relative `x = 2`.
+* **Details**: Asserts that Ender Dragon fireballs resolve explosion power as `0.0f` (spawning effect clouds rather than block-damaging explosions) and predict/execute 0 broken blocks.
+
+### 16. Inferred Explosion Power Fallback (`testInferredExplosionPowerFallback`)
 * **Entity**: `LargeFireball` (unsynced entity ID)
 * **Starting State**: Clears `ClientPowerCache` and resets `inferredFireballPower`. Spawns a fireball with default properties.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
 * **Details**: Simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
 
-### 11. Zero-Radius Affected Block Estimation and Hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`)
+### 17. Zero-Radius Affected Block Estimation and Hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`)
 * **Entity**: `LargeFireball`
 * **Starting State**: Clears `ClientPowerCache` and resets inferred power state. Registers a fireball location in `FireballInferenceTracker`.
 * **Environment**: Headless mock position simulation.
@@ -83,7 +117,7 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
   2. Verifies session max power retention ($P_{\text{session}}$ does not decrease when subsequent smaller explosions occur).
   3. Verifies fallback hierarchy precedence: Tier 2 explicit packet radius inference (`2.5f`) overrides Tier 4 block estimation (`3.0f`).
 
-### 12. Inflated Packet Radius Sanity Check (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
+### 18. Inflated Packet Radius Sanity Check (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
 * **Entity**: `LargeFireball`
 * **Starting State**: Clears `ClientPowerCache` and resets inferred power state.
 * **Environment**: Headless mock position simulation.
@@ -91,33 +125,33 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
   1. Simulates inflated packet radius (e.g. GommeHD `radius = 4.0f` with low block count), asserting that the inflated radius is rejected and block estimation (~1.44f) is used instead.
   2. Simulates legitimate high block count (40 blocks with `radius = 4.0f`), confirming that the 4.0f packet radius is accepted.
 
-### 13. Server Fallback Power Management (`testServerFallbackPowerSetAndUnset`)
+### 19. Server Fallback Power Management (`testServerFallbackPowerSetAndUnset`)
 * **Environment**: Unit test configuration handling.
 * **Details**: Verifies setting, updating, and clearing (`0.0f` / `null`) per-server fallback power presets in `ModConfig`.
 
-### 14. Native & Environmental Owner Inference (`testOwnerInferenceNativeAndSweep`)
+### 20. Native & Environmental Owner Inference (`testOwnerInferenceNativeAndSweep`)
 * **Entities**: `Ghast`, `Blaze`, `LargeFireball`
 * **Details**:
   1. Validates native owner detection (`setOwner` / `NATIVE_NBT`).
   2. Validates environmental sweep detection when owner NBT is absent, resolving owner by orientation and proximity.
 
-### 15. Dispenser & Player Deflection Inference (`testOwnerInferenceDispenserAndDeflection`)
+### 21. Dispenser & Player Deflection Inference (`testOwnerInferenceDispenserAndDeflection`)
 * **Entities**: `DispenserBlock`, `LargeFireball`, mock `Player`
 * **Details**:
   1. Verifies dispenser adjacency detection (`DISPENSER` owner).
   2. Simulates player hit/punch velocity reversal, confirming owner re-attribution to `PLAYER` (`isDeflected() == true`) and filter evaluation logic.
 
-### 16. Server Tracking Restrictions (`testServerTrackingRestrictions`)
+### 22. Server Tracking Restrictions (`testServerTrackingRestrictions`)
 * **Entities**: `LargeFireball`
 * **Details**: Asserts that server restriction masks (`ServerTrackingRules`) override local client config settings (including deflection bypass) for player, dispenser, command, or group restrictions, and that clearing restrictions restores local settings immediately.
 
-### 17. Server Mask Sanitization (`testPacketSanitization`)
+### 23. Server Mask Sanitization (`testPacketSanitization`)
 * **Details**: Verifies bitmask sanitization, ensuring unsupported or out-of-range bit values in network payloads are stripped cleanly.
 
-### 18. Disconnect Mask Clearing (`testDisconnectReset`)
+### 24. Disconnect Mask Clearing (`testDisconnectReset`)
 * **Details**: Asserts that server tracking restrictions are cleared (`mask = 0`) on server disconnect to prevent cross-server rule contamination.
 
-### 19. GUI Option Server Availability (`testGuiOptionAvailability`)
+### 25. GUI Option Server Availability (`testGuiOptionAvailability`)
 * **Details**: Verifies GUI option lock state calculations under active server restriction bitmasks.
 
 ---
@@ -144,7 +178,7 @@ To ensure the test suite is maintainable and adheres to DRY principles, it is st
 * **`spawnProjectile`**: Spawns any type of `ExplosiveProjectileEntity` (like `FireballEntity`, `WitherSkullEntity`, or `WindChargeEntity`) at a standardized starting relative position `(1.5, 3.0, 3.5)` with rotated velocity `(0.5, 0.0, 0.0)`.
 * **`getBrokenBlocks`**: Scans the target wall area and collects all positions where the block type has changed.
 * **`getPredictedBrokenBlocks`**: Simulates the trajectory of a projectile client-side to generate predicted broken block positions.
-* **`assertExplosionDestruction`**: A parameterized assertion helper that verifies trajectory predictions match actual world impact for destructive test cases.
+* **`assertExplosionDestruction`**: A parameterized assertion helper that verifies trajectory predictions match actual world impact for destructive test cases, enforcing 0 false negatives, a minimum 50% coverage ratio, and a strict 2.0x over-prediction cap.
 * **`assertNoDestruction`**: An assertion helper verifying that no blocks are predicted to break or actually broken (e.g. for non-destructive interactions).
 
 ---
@@ -160,10 +194,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 19 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (19 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 19 GAME TESTS COMPLETE IN 1.502 s ======================
-[Server thread/INFO] (Minecraft) All 19 required tests passed :)
+[Server thread/INFO] (Minecraft) 25 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (25 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 25 GAME TESTS COMPLETE IN 1.502 s ======================
+[Server thread/INFO] (Minecraft) All 25 required tests passed :)
 BUILD SUCCESSFUL
 ```
