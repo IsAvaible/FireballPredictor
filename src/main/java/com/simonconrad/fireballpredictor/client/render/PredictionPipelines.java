@@ -5,6 +5,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.simonconrad.fireballpredictor.mixin.RenderLayerAccessor;
+import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderSetup;
 import net.minecraft.client.render.VertexFormats;
@@ -18,6 +19,7 @@ import net.minecraft.util.Identifier;
  * so the identical state is built explicitly with the pipeline builder:
  * <ul>
  *   <li><b>Format &amp; Program</b>: {@code POSITION_COLOR} quad format, using standard vanilla {@code core/position_color}.</li>
+ *   <li><b>Uniforms</b>: {@code DynamicTransforms} and {@code Projection} uniform buffers required by {@code core/position_color}.</li>
  *   <li><b>Blending</b>: {@code BlendFunction.TRANSLUCENT} for standard alpha blending.</li>
  *   <li><b>Depth Testing &amp; Writing</b>: {@code LEQUAL} depth testing with {@code depthWrite = false}.
  *       Leaving {@code depthWrite = false} ensures depth buffer writes do not hide block breaking crack
@@ -40,6 +42,8 @@ public final class PredictionPipelines {
      */
     public static final RenderPipeline PIPELINE = RenderPipeline.builder()
         .withLocation(PREDICTION_PIPELINE_ID)
+        .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+        .withUniform("Projection", UniformType.UNIFORM_BUFFER)
         .withVertexShader("core/position_color")
         .withFragmentShader("core/position_color")
         .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.QUADS)
