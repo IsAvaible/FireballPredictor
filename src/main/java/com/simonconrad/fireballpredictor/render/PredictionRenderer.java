@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.EntityFireball;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 
@@ -22,6 +23,9 @@ import java.util.Map;
  * Called from RenderWorldLastEvent, draws with immediate-mode quads (POSITION_COLOR),
  * additive-free translucent blending and depth write disabled - the 1.8.9 equivalent
  * of the original mod's translucent prediction pipeline.
+ *
+ * <p>Like master's PredictionFeatureRenderer, domes are emitted before trails into the
+ * same translucent state, so ribbons blend on top of the blast spheres.
  */
 public final class PredictionRenderer {
 
@@ -30,6 +34,15 @@ public final class PredictionRenderer {
 
     private static final int MAX_TRAIL_ALPHA = 190;
     private static final int MAX_DOME_ALPHA = 110;
+
+    /**
+     * Fresnel rim parameters for the shockwave dome (Schlick approximation), identical
+     * to master: F = F0 + (1 - F0) * (1 - |dot(N, V)|)^5, plus a fixed rim glow that
+     * keeps the silhouette (and with culling disabled the inner/far side of the shell)
+     * readable even where the latitude alpha profile fades to zero.
+     */
+    private static final float FRESNEL_F0 = 0.04F;
+    private static final int FRESNEL_RIM_GLOW = 55;
 
     public static void render(Minecraft mc, Map<Integer, FireballPredictorClient.Tracked> tracked, float partialTicks) {
         if (mc == null || mc.theWorld == null || mc.getRenderViewEntity() == null) {
@@ -45,30 +58,53 @@ public final class PredictionRenderer {
         Vec3 camLook = viewEntity.getLook(partialTicks);
         Vec3 camPos = new Vec3(viewerX, viewerY, viewerZ);
 
-        for (FireballPredictorClient.Tracked t : tracked.values()) {
-            if (t.prediction == null) {
-                continue;
-            }
-            double distSq = (t.fireball.posX - viewerX) * (t.fireball.posX - viewerX)
-                    + (t.fireball.posY - viewerY) * (t.fireball.posY - viewerY)
-                    + (t.fireball.posZ - viewerZ) * (t.fireball.posZ - viewerZ);
-            if (distSq > 512.0 * 512.0) {
-                continue;
-            }
+        // Game-time driven animation clock (seconds); pauses with the game like master.
+        double animSeconds = (mc.theWorld.getTotalWorldTime() + partialTicks) / 20.0;
+        float domePulse = computePulseFactor(animSeconds);
 
-            if (ModConfig.renderTrajectory) {
-                renderTrail(mc, t, camLook, viewerX, viewerY, viewerZ);
+        // Pass 1: shockwave domes (drawn first so trajectories stay readable on top).
+        if (ModConfig.renderShockwaveDome) {
+            for (FireballPredictorClient.Tracked t : tracked.values()) {
+                if (t.prediction != null && t.dome.quadCount > 0 && t.impactPos != null) {
+                    renderDome(t, camPos, domePulse);
+                }
             }
-            if (ModConfig.renderShockwaveDome && t.dome.quadCount > 0 && t.impactPos != null) {
-                renderDome(mc, t, camPos, viewerX, viewerY, viewerZ);
+        }
+
+        // Pass 2: trajectory ribbons.
+        if (ModConfig.renderTrajectory) {
+            for (FireballPredictorClient.Tracked t : tracked.values()) {
+                if (t.prediction == null) {
+                    continue;
+                }
+                double distSq = (t.fireball.posX - viewerX) * (t.fireball.posX - viewerX)
+                        + (t.fireball.posY - viewerY) * (t.fireball.posY - viewerY)
+                        + (t.fireball.posZ - viewerZ) * (t.fireball.posZ - viewerZ);
+                if (distSq > 512.0 * 512.0) {
+                    continue;
+                }
+                renderTrail(t, camLook, viewerX, viewerY, viewerZ, animSeconds);
             }
         }
     }
 
+    /**
+     * Dome breathing pulse at 0.5 Hz (period 2 s), same rate and curve as master's
+     * {@code VisualTheme.computePulseFactor}: 0.8 + 0.2 * sin(2*pi*t / 2s).
+     */
+    private static float computePulseFactor(double animSeconds) {
+        if (animSeconds <= 0.0) {
+            return 1.0F;
+        }
+        double angle = animSeconds * Math.PI; // 2*PI per 2 s
+        return 0.8F + 0.2F * (float) Math.sin(angle);
+    }
+
     // ------------------------------------------------------------------ trail
 
-    private static void renderTrail(Minecraft mc, FireballPredictorClient.Tracked t,
-                                    Vec3 camLook, double viewerX, double viewerY, double viewerZ) {
+    private static void renderTrail(FireballPredictorClient.Tracked t,
+                                    Vec3 camLook, double viewerX, double viewerY, double viewerZ,
+                                    double animSeconds) {
         EntityFireball fireball = t.fireball;
         List<Vec3> path = t.prediction.path;
         int totalSteps = path.size() - 1;
@@ -167,8 +203,7 @@ public final class PredictionRenderer {
 
     // ------------------------------------------------------------------- dome
 
-    private static void renderDome(Minecraft mc, FireballPredictorClient.Tracked t,
-                                   Vec3 camPos, double viewerX, double viewerY, double viewerZ) {
+    private static void renderDome(FireballPredictorClient.Tracked t, Vec3 camPos, float pulseFactor) {
         DomeMesh mesh = t.dome;
         int color = ModConfig.domeColor;
         int r = (color >> 16) & 0xFF;
@@ -178,6 +213,15 @@ public final class PredictionRenderer {
         double cx = t.impactPos.xCoord;
         double cy = t.impactPos.yCoord;
         double cz = t.impactPos.zCoord;
+
+        // Camera position relative to the dome centre (dome space: centre at origin).
+        double camLocalX = camPos.xCoord - cx;
+        double camLocalY = camPos.yCoord - cy;
+        double camLocalZ = camPos.zCoord - cz;
+
+        float strength = MathHelper.clamp_float(ModConfig.domeFresnelStrength, 0.0F, 1.0F);
+        float fade = 1.0F;
+        int maxAlpha = Math.round(MAX_DOME_ALPHA * fade);
 
         setupTranslucent();
         Tessellator tessellator = Tessellator.getInstance();
@@ -197,24 +241,17 @@ public final class PredictionRenderer {
                 float vy = vertices[off + 1];
                 float vz = vertices[off + 2];
 
-                // Fresnel-style rim: quads facing away from the camera get boosted alpha.
-                double wx = cx + vx, wy = cy + vy, wz = cz + vz;
-                double nl = Math.sqrt((double) vx * vx + (double) vy * vy + (double) vz * vz);
-                double ndx = vx / nl, ndy = vy / nl, ndz = vz / nl;
-                double vdx = wx - camPos.xCoord, vdy = wy - camPos.yCoord, vdz = wz - camPos.zCoord;
-                double vdl = Math.sqrt(vdx * vdx + vdy * vdy + vdz * vdz);
-                if (vdl < 1.0E-4) {
-                    vdl = 1.0;
+                // Profile alpha: latitude shading * breathing pulse (master's base term).
+                int profileAlpha = (int) (alphas[abase + v] * pulseFactor * fade);
+                if (profileAlpha < 0) {
+                    profileAlpha = 0;
                 }
-                double ndv = (ndx * vdx + ndy * vdy + ndz * vdz) / vdl;
-                if (ndv < 0.0) {
-                    ndv = -ndv;
+                if (profileAlpha > maxAlpha) {
+                    profileAlpha = maxAlpha;
                 }
-                double fresnel = 0.35 + 0.65 * (1.0 - ndv) * (1.0 - ndv);
-                int alpha = (int) Math.min(MAX_DOME_ALPHA, alphas[abase + v] * fresnel);
-                if (alpha < 0) {
-                    alpha = 0;
-                }
+
+                int alpha = fresnelAlpha(vx, vy, vz, profileAlpha,
+                        camLocalX, camLocalY, camLocalZ, strength, maxAlpha, fade);
 
                 wr.pos(cx + vx, cy + vy, cz + vz).color(r, g, b, alpha).endVertex();
             }
@@ -222,6 +259,69 @@ public final class PredictionRenderer {
 
         tessellator.draw();
         restoreTranslucent();
+    }
+
+    /**
+     * Bakes the Schlick fresnel term for a single dome vertex into an alpha value
+     * (port of master's PredictionFeatureRenderer.fresnelAlpha):
+     *
+     * <pre>
+     *   F = F0 + (1 - F0) * (1 - dot(N, V))^5
+     * </pre>
+     *
+     * <p>Surface patches facing the camera become transparent while the silhouette rim
+     * (grazing angle) is pushed toward the alpha ceiling. Because culling is disabled,
+     * the far side of the sphere also receives the full rim term, which reads as the
+     * bright shell of the blast when the camera is INSIDE the dome - the backport
+     * previously multiplied the latitude profile by a plain fresnel factor without the
+     * rim glow, leaving the dome effectively invisible from the inside.
+     *
+     * @param vx          dome-space vertex position (dome centre at origin; normal = vertex direction)
+     * @param base        profile alpha (latitude shading, pulse and fade already applied)
+     * @param camLocalXzy camera position relative to the dome centre
+     * @param strength    config strength: 0 keeps the legacy latitude profile, 1 applies full fresnel
+     * @param maxAlpha    alpha ceiling
+     * @param fade        global fade factor
+     */
+    private static int fresnelAlpha(float vx, float vy, float vz, int base,
+                                    double camLocalX, double camLocalY, double camLocalZ,
+                                    float strength, int maxAlpha, float fade) {
+        if (strength <= 0.0F) {
+            return base;
+        }
+
+        double nLenSq = (double) (vx * vx) + (double) (vy * vy) + (double) (vz * vz);
+        double invNLen = nLenSq > 1.0E-7 ? 1.0 / Math.sqrt(nLenSq) : 0.0;
+        double nx = invNLen != 0.0 ? vx * invNLen : 0.0;
+        double ny = invNLen != 0.0 ? vy * invNLen : 1.0;
+        double nz = invNLen != 0.0 ? vz * invNLen : 0.0;
+
+        double dx = camLocalX - vx;
+        double dy = camLocalY - vy;
+        double dz = camLocalZ - vz;
+        double vLenSq = dx * dx + dy * dy + dz * dz;
+        double invVLen = vLenSq > 1.0E-7 ? 1.0 / Math.sqrt(vLenSq) : 0.0;
+        double viewX = invVLen != 0.0 ? dx * invVLen : 0.0;
+        double viewY = invVLen != 0.0 ? dy * invVLen : 1.0;
+        double viewZ = invVLen != 0.0 ? dz * invVLen : 0.0;
+
+        double dot = nx * viewX + ny * viewY + nz * viewZ;
+        float ndv = (float) Math.max(0.0, Math.abs(dot));
+        // Schlick: F = F0 + (1 - F0) * (1 - ndv)^5 (expanded below).
+        float tt = 1.0F - ndv;
+        float fresnel = FRESNEL_F0 + (1.0F - FRESNEL_F0) * tt * tt * tt * tt * tt;
+
+        // Blend between the legacy profile (strength 0) and pure fresnel shading (strength 1),
+        // then add a fixed rim glow so the silhouette reads even where the latitude profile is 0.
+        float alpha = base * (1.0F - strength + strength * fresnel)
+                + FRESNEL_RIM_GLOW * fade * strength * fresnel;
+        if (alpha < 0.0F) {
+            return 0;
+        }
+        if (alpha > (float) maxAlpha) {
+            return maxAlpha;
+        }
+        return (int) alpha;
     }
 
     // ---------------------------------------------------------------- gl state

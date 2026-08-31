@@ -24,6 +24,13 @@ public final class ModConfig {
     // ---- shockwave dome ----------------------------------------------------
     public static boolean renderShockwaveDome = true;
     public static int domeColor = 0xFFFF8000;
+    /**
+     * Strength of the Schlick fresnel rim shading (0 = legacy latitude profile,
+     * 1 = full fresnel). Because the dome is rendered without back-face culling,
+     * the rim term also makes the far side of the shell readable when the camera
+     * is inside the blast sphere (mirrors master's PredictionFeatureRenderer).
+     */
+    public static float domeFresnelStrength = 0.3F;
 
     // ---- block destruction highlight ---------------------------------------
     public static boolean renderBlockHighlights = true;
@@ -60,6 +67,9 @@ public final class ModConfig {
                     "Render the shockwave dome at the predicted impact point.");
             domeColor = parseColor(cfg.getString("domeColor", "dome", "FF8000",
                     "Shockwave dome color as RRGGBB hex."));
+            domeFresnelStrength = cfg.getFloat("domeFresnelStrength", "dome", domeFresnelStrength, 0.0F, 1.0F,
+                    "Strength of the fresnel rim shading (0 = legacy latitude profile, 1 = full fresnel)."
+                            + " The rim glow keeps the dome visible from the inside.");
 
             renderBlockHighlights = cfg.getBoolean("renderBlockHighlights", "blocks", renderBlockHighlights,
                     "Highlight blocks that are predicted to be destroyed.");

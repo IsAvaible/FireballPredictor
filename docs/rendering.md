@@ -71,19 +71,25 @@ Outer Edge (Alpha = 0)  ──────────────────�
 
 ## 3. Shockwave Blast Dome Rendering
 
-The blast dome is drawn using the pre-computed `DomeMesh` geometry centered at the predicted impact coordinate $\vec{c}$.
+The blast dome is drawn using the pre-computed `DomeMesh` geometry centered at the predicted impact coordinate $\vec{c}$. Domes are emitted **before** the trajectory ribbons (into the same translucent GL state), so ribbons blend on top of the blast spheres — the same ordering as master's shared prediction render type.
 
-### 3.1 Fresnel Rim Calculation
+The dome also "breathes" with a 0.5 Hz pulse driven by game time (pauses with the game):
 
-To create a holographic energy sphere appearance where the rim shines brighter than the center:
+$$\text{pulse}(t) = 0.8 + 0.2 \times \sin(\pi \, t_{\text{seconds}})$$
 
-1. Vertex world position: $\vec{w} = \vec{c} + \vec{v}$.
+### 3.1 Fresnel Rim Calculation (Schlick approximation)
+
+To create a holographic energy sphere appearance where the rim shines brighter than the center (port of master's `PredictionFeatureRenderer.fresnelAlpha`):
+
+1. Dome-space vertex position: $\vec{v}$ (dome centre at origin).
 2. Surface normal unit vector: $\hat{n} = \frac{\vec{v}}{\|\vec{v}\|}$.
-3. View direction vector: $\hat{u} = \frac{\vec{w} - \vec{c}_{\text{cam}}}{\|\vec{w} - \vec{c}_{\text{cam}}\|}$.
-4. Fresnel coefficient:
-   $$F = 0.35 + 0.65 \times (1.0 - |\hat{n} \cdot \hat{u}|)^2$$
-5. Final Vertex Alpha:
-   $$\alpha_{\text{final}} = \min(110, \alpha_{\text{mesh}} \times F)$$
+3. View direction: $\hat{u} = \frac{\vec{c}_{\text{cam}} - \vec{v}}{\|\vec{c}_{\text{cam}} - \vec{v}\|}$ (camera position relative to the dome centre).
+4. Schlick fresnel coefficient ($F_0 = 0.04$, exponent 5):
+   $$F = F_0 + (1 - F_0) \times (1 - |\hat{n} \cdot \hat{u}|)^5$$
+5. Final vertex alpha ($s$ = `domeFresnelStrength` config, $g = 55$ fixed rim glow, $\alpha_{\text{base}} = \alpha_{\text{mesh}} \times \text{pulse}$):
+   $$\alpha_{\text{final}} = \mathrm{clamp}_{[0,\,110]}\Big(\alpha_{\text{base}} \times \big(1 - s + s\,F\big) + g \times s \times F\Big)$$
+
+The fixed rim glow term is what keeps the silhouette readable where the latitude profile fades to zero (poles), and — because back-face culling is disabled — makes the far/inner side of the shell glow when the camera is **inside** the blast sphere, which the previous plain-multiplier approach rendered almost invisible.
 
 ---
 
