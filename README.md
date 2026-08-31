@@ -59,6 +59,10 @@ Restrictions are pushed to clients when they join and override their local setti
 | **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) | In-game configuration screen button |
 | | [Iris Shaders](https://modrinth.com/mod/iris) + [Sodium](https://modrinth.com/mod/sodium) | Soft-loaded fullbright translucent pipeline integration |
 
+## A Note on 1.8.9
+
+A legacy Forge backport for Minecraft 1.8.9 is maintained on the `forge-1.8.9` branch. Please note that the 1.8.9 version is a rough backport and no feature parity with the main mod is guaranteed.
+
 ## Setup & Build Instructions
 
 This mod requires **Java 25** and uses the Gradle toolchain.
