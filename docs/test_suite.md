@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of three scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/simonconrad/fireballpredictor/gametest/FireballPredictorGameTest.java) and consists of 19 scenarios using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`
@@ -83,6 +83,43 @@ The suite is defined in [FireballPredictorGameTest.java](../src/main/java/com/si
   2. Verifies session max power retention ($P_{\text{session}}$ does not decrease when subsequent smaller explosions occur).
   3. Verifies fallback hierarchy precedence: Tier 2 explicit packet radius inference (`2.5f`) overrides Tier 4 block estimation (`3.0f`).
 
+### 12. Inflated Packet Radius Sanity Check (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
+* **Entity**: `LargeFireball`
+* **Starting State**: Clears `ClientPowerCache` and resets inferred power state.
+* **Environment**: Headless mock position simulation.
+* **Details**:
+  1. Simulates inflated packet radius (e.g. GommeHD `radius = 4.0f` with low block count), asserting that the inflated radius is rejected and block estimation (~1.44f) is used instead.
+  2. Simulates legitimate high block count (40 blocks with `radius = 4.0f`), confirming that the 4.0f packet radius is accepted.
+
+### 13. Server Fallback Power Management (`testServerFallbackPowerSetAndUnset`)
+* **Environment**: Unit test configuration handling.
+* **Details**: Verifies setting, updating, and clearing (`0.0f` / `null`) per-server fallback power presets in `ModConfig`.
+
+### 14. Native & Environmental Owner Inference (`testOwnerInferenceNativeAndSweep`)
+* **Entities**: `Ghast`, `Blaze`, `LargeFireball`
+* **Details**:
+  1. Validates native owner detection (`setOwner` / `NATIVE_NBT`).
+  2. Validates environmental sweep detection when owner NBT is absent, resolving owner by orientation and proximity.
+
+### 15. Dispenser & Player Deflection Inference (`testOwnerInferenceDispenserAndDeflection`)
+* **Entities**: `DispenserBlock`, `LargeFireball`, mock `Player`
+* **Details**:
+  1. Verifies dispenser adjacency detection (`DISPENSER` owner).
+  2. Simulates player hit/punch velocity reversal, confirming owner re-attribution to `PLAYER` (`isDeflected() == true`) and filter evaluation logic.
+
+### 16. Server Tracking Restrictions (`testServerTrackingRestrictions`)
+* **Entities**: `LargeFireball`
+* **Details**: Asserts that server restriction masks (`ServerTrackingRules`) override local client config settings (including deflection bypass) for player, dispenser, command, or group restrictions, and that clearing restrictions restores local settings immediately.
+
+### 17. Server Mask Sanitization (`testPacketSanitization`)
+* **Details**: Verifies bitmask sanitization, ensuring unsupported or out-of-range bit values in network payloads are stripped cleanly.
+
+### 18. Disconnect Mask Clearing (`testDisconnectReset`)
+* **Details**: Asserts that server tracking restrictions are cleared (`mask = 0`) on server disconnect to prevent cross-server rule contamination.
+
+### 19. GUI Option Server Availability (`testGuiOptionAvailability`)
+* **Details**: Verifies GUI option lock state calculations under active server restriction bitmasks.
+
 ---
 
 ## Key Technical Solutions
@@ -123,10 +160,10 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 11 tests are now running...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (11 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++]
-[Server thread/INFO] (Minecraft) ========= 11 GAME TESTS COMPLETE IN 1.502 s ======================
-[Server thread/INFO] (Minecraft) All 11 required tests passed :)
+[Server thread/INFO] (Minecraft) 19 tests are now running...
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (19 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 19 GAME TESTS COMPLETE IN 1.502 s ======================
+[Server thread/INFO] (Minecraft) All 19 required tests passed :)
 BUILD SUCCESSFUL
 ```

@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 
 import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class ClientPowerLookup {
@@ -75,16 +76,19 @@ public class ClientPowerLookup {
 
     public static String getCurrentServerIp() {
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            return getClientServerIp();
+            return ClientHelper.getClientServerIp();
         }
         return null;
     }
 
-    private static String getClientServerIp() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.getCurrentServerEntry() != null) {
-            return client.getCurrentServerEntry().address;
+    @Environment(EnvType.CLIENT)
+    private static class ClientHelper {
+        private static String getClientServerIp() {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.getCurrentServerEntry() != null) {
+                return client.getCurrentServerEntry().address;
+            }
+            return null;
         }
-        return null;
     }
 }

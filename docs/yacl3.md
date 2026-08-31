@@ -21,7 +21,7 @@ Get-ChildItem -Path $env:USERPROFILE\.gradle\caches -Recurse -Filter '*yacl*.jar
 Use `jar tf` to inspect the package layout of the YACL3 library:
 
 ```bash
-jar tf "C:\Users\simon\.gradle\caches\modules-2\files-2.1\...\yacl-3.8.2+1.21.11-fabric.jar"
+jar tf "C:\Users\simon\.gradle\caches\modules-2\files-2.1\...\yacl-3.9.5+26.2-fabric.jar"
 ```
 
 ### Key Package Map

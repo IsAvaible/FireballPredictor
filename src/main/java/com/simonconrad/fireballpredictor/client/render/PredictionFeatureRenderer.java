@@ -22,6 +22,18 @@ public final class PredictionFeatureRenderer {
     private PredictionFeatureRenderer() {
     }
 
+    /**
+     * Fresnel rim parameters for the shockwave dome (Schlick approximation).
+     *
+     * <p>The dome is emitted through the shared {@code POSITION_COLOR} pipeline, so instead of a
+     * custom shader the Fresnel term is evaluated per vertex on the CPU and baked into the vertex
+     * alpha ({@link #fresnelAlpha}). Surfaces facing the camera stay transparent while the
+     * silhouette rim is pushed toward {@link PredictionRenderer#MAX_DOME_ALPHA}.
+     */
+    private static final float FRESNEL_F0 = 0.04f;  // dielectric base reflectance at normal incidence
+    private static final int FRESNEL_POWER = 5;      // Schlick exponent
+    private static final int FRESNEL_RIM_GLOW = 55;  // extra alpha added at grazing angles
+
     /** One shared RenderLayer -&gt; one buffer -&gt; emission order == blend order.
      * Dome first, ribbon on top, so the trail stays readable through the blast sphere. */
     public static void render(VertexConsumer consumer, List<PredictionSubmit> submits) {
@@ -54,7 +66,7 @@ public final class PredictionFeatureRenderer {
         int b = state.b();
         Vec3d camLook = state.camLook();
         List<Vec3d> path = state.path();
-        int elapsedTicks = state.elapsedTicks();
+        int elapsedTicks = Math.max(0, state.elapsedTicks());
         int totalPathSteps = path.size() - 1;
         float startBlendSteps = 1.0f;
 
@@ -183,18 +195,70 @@ public final class PredictionFeatureRenderer {
         float fade = state.fade();
         int maxAlpha = Math.round(PredictionRenderer.MAX_DOME_ALPHA * fade);
 
-        // No sorting needed: every dome quad uses the same RGB, so with a normal alpha blend the
-        // composite result is order independent. Alpha is capped so the cracking overlay of the
-        // blocks inside the dome stays visible (the hemisphere is drawn twice per pixel: no culling).
-        for (PredictionRenderData.DomeQuad quad : state.domeQuads()) {
-            int alpha1 = MathHelper.clamp((int) (quad.alpha1() * pulseFactor * fade), 0, maxAlpha);
-            int alpha2 = MathHelper.clamp((int) (quad.alpha2() * pulseFactor * fade), 0, maxAlpha);
+        // Camera position relative to the dome centre. The dome quads are generated as offsets from
+        // the impact point, so in dome space the centre sits at the origin and the surface normal at
+        // a vertex is simply the (normalised) vertex position.
+        Vec3d cameraLocal = state.cameraPos().subtract(state.hitPos());
+        float fresnelStrength = state.fresnelStrength();
 
-            consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z).color(r, g, b, alpha1);
-            consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z).color(r, g, b, alpha1);
-            consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z).color(r, g, b, alpha2);
-            consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z).color(r, g, b, alpha2);
+        // Every dome quad uses the same RGB, so with a normal alpha blend the composite result stays
+        // order independent. Alpha is capped so the cracking overlay of the blocks inside the dome
+        // stays visible (the hemisphere is drawn twice per pixel: no culling). The Fresnel term is
+        // evaluated per vertex and baked into the alpha (see {@link #fresnelAlpha}).
+        for (PredictionRenderData.DomeQuad quad : state.domeQuads()) {
+            int base1 = MathHelper.clamp((int) (quad.alpha1() * pulseFactor * fade), 0, maxAlpha);
+            int base2 = MathHelper.clamp((int) (quad.alpha2() * pulseFactor * fade), 0, maxAlpha);
+
+            consumer.vertex(positionMatrix, (float) quad.p1().x, (float) quad.p1().y, (float) quad.p1().z)
+                    .color(r, g, b, fresnelAlpha(quad.p1(), base1, cameraLocal, fresnelStrength, maxAlpha, fade));
+            consumer.vertex(positionMatrix, (float) quad.p2().x, (float) quad.p2().y, (float) quad.p2().z)
+                    .color(r, g, b, fresnelAlpha(quad.p2(), base1, cameraLocal, fresnelStrength, maxAlpha, fade));
+            consumer.vertex(positionMatrix, (float) quad.p3().x, (float) quad.p3().y, (float) quad.p3().z)
+                    .color(r, g, b, fresnelAlpha(quad.p3(), base2, cameraLocal, fresnelStrength, maxAlpha, fade));
+            consumer.vertex(positionMatrix, (float) quad.p4().x, (float) quad.p4().y, (float) quad.p4().z)
+                    .color(r, g, b, fresnelAlpha(quad.p4(), base2, cameraLocal, fresnelStrength, maxAlpha, fade));
         }
+    }
+
+    /**
+     * Bakes the Schlick Fresnel term for a single dome vertex into an alpha value.
+     *
+     * <p>The dome uses the shared {@code POSITION_COLOR} pipeline (no custom shader), so the Fresnel
+     * term is evaluated on the CPU and written straight into the vertex alpha:
+     * <pre>
+     *   F = F0 + (1 - F0) * (1 - dot(N, V))^POWER
+     * </pre>
+     * Surface patches facing the camera (dot(N,V) close to 1) become transparent while the silhouette
+     * rim (grazing angle, dot(N,V) close to 0) is pushed toward the alpha ceiling, giving the dome a
+     * glass-bubble look that tracks the camera position. Because culling is disabled, the far side of
+     * the hemisphere also receives the full rim term, which reads as the bright shell of the blast.
+     *
+     * @param vertex        dome-space vertex position (dome centre at origin; normal = vertex direction)
+     * @param base          profile alpha (latitude shading, pulse and fade already applied)
+     * @param cameraLocal   camera position relative to the dome centre
+     * @param strength      config strength: 0 keeps the legacy latitude profile, 1 applies full Fresnel
+     * @param maxAlpha      per-submit alpha ceiling (already scaled by {@code fade})
+     * @param fade          global fade factor
+     */
+    private static int fresnelAlpha(Vec3d vertex, int base, Vec3d cameraLocal, float strength,
+                                    int maxAlpha, float fade) {
+        if (strength <= 0.0f) {
+            return base;
+        }
+
+        Vec3d normal = safeNormalize(vertex, new Vec3d(0.0, 1.0, 0.0));
+        Vec3d view = safeNormalize(cameraLocal.subtract(vertex), new Vec3d(0.0, 1.0, 0.0));
+
+        float ndv = (float) Math.max(0.0, Math.abs(normal.dotProduct(view)));
+        // Schlick: F = F0 + (1 - F0) * (1 - dot)^FRESNEL_POWER (expanded below, FRESNEL_POWER = 5).
+        float t = 1.0f - ndv;
+        float fresnel = FRESNEL_F0 + (1.0f - FRESNEL_F0) * t * t * t * t * t;
+
+        // Blend between the legacy profile (strength 0) and pure Fresnel shading (strength 1), then
+        // add a fixed rim glow so the silhouette reads even where the latitude profile is zero.
+        float alpha = base * (1.0f - strength + strength * fresnel)
+                + FRESNEL_RIM_GLOW * fade * strength * fresnel;
+        return MathHelper.clamp((int) alpha, 0, maxAlpha);
     }
 }
 
@@ -228,5 +292,7 @@ record DomeRenderState(
     int b,
     float pulseFactor,
     Matrix4f pose,
-    float fade
+    float fade,
+    Vec3d cameraPos,
+    float fresnelStrength
 ) {}

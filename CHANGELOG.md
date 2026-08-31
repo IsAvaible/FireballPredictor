@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.0
+
+### Smart Projectile Owner Tracking
+- **Multi-Tier Owner Inference Engine:** Client-side 5-tier inference engine (`Native NBT` -> `Server Packet` -> `Environmental Sweep` -> `Dispenser Fallback` -> `Unknown/Command`) that deduces origin for all hostile and neutral projectiles.
+- **Hierarchical Owner Filtering:** Tiered configuration featuring a global master toggle (`trackProjectiles`), mob-master toggle (`trackMobProjectiles`), individual mob switches (Blaze, Ghast, Ender Dragon, Wither), non-mob master toggle (`trackOtherOwnerProjectiles`), and per-source switches (Player, Dispenser, Command).
+- **Player Deflection Re-attribution:** Projectiles punched or hit by players (such as Ghast fireballs) automatically re-attribute ownership to `PLAYER`, hiding prediction highlights unless player tracking is enabled.
+
+### Server-Side Tracking Restrictions
+- **Server Enforcement of Owner Filters:** Servers can now disable prediction tracking for the "other" owner category on their server via `config/fireballpredictor-server.json` — either the whole group (`disableOtherOwnerTracking`) or individual sub-options (`disablePlayerTracking`, `disableDispenserTracking`, `disableCommandTracking`).
+- **Live Rule Sync:** Restrictions are pushed to clients with a new `TrackingRulesPayload` on join and are enforced client-side, overriding local config (including the deflection bypass). `/fireballpredictor reload` reloads the server config and re-syncs all connected players without a restart.
+
+### Performance & Stability
+- **Memory & Thread Safety:** Resolved client-side memory retention in owner caching and ensured background trajectory computations run completely thread-safe.
+
+
 ## 1.5.0
 
 ### Live Config Previews

@@ -2,7 +2,14 @@ package com.simonconrad.fireballpredictor.client;
 
 import com.simonconrad.fireballpredictor.client.compat.IrisCompat;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerCache;
+import com.simonconrad.fireballpredictor.client.network.ClientPowerCacheReceiver;
 import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
+import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCache;
+import com.simonconrad.fireballpredictor.client.tracking.ClientOwnerCacheReceiver;
+import com.simonconrad.fireballpredictor.client.tracking.InferenceResult;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
+import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRulesReceiver;
+import com.simonconrad.fireballpredictor.client.tracking.TrackedProjectile;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import com.simonconrad.fireballpredictor.client.render.PredictionRenderer;
@@ -36,7 +43,8 @@ public class FireballPredictorClient implements ClientModInitializer {
             return thread;
         });
 
-    private final Map<ExplosiveProjectileEntity, TrackedPrediction> activePredictions = new HashMap<>();
+    private final Map<Integer, TrackedPrediction> activePredictions = new HashMap<>();
+    private final Map<Integer, TrackedProjectile> trackedOwners = new HashMap<>();
     private java.util.Map<net.minecraft.util.math.BlockPos, Integer> currentlyHighlightedBlocks = new java.util.HashMap<>();
     private boolean impactWarningVisible;
     private float impactWarningProgress;
@@ -63,14 +71,20 @@ public class FireballPredictorClient implements ClientModInitializer {
     public void onInitializeClient() {
         ModConfig.load();
         PredictionPipelines.class.getName();
-        IrisCompat.init();
-        ClientPowerCache.registerReceivers();
+        IrisCompat.init(); 
+        ClientPowerCacheReceiver.registerReceivers();
+        ClientOwnerCacheReceiver.registerReceivers();
+        ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
+        ServerTrackingRulesReceiver.registerReceivers();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
                 activePredictions.clear();
+                trackedOwners.clear();
                 currentlyHighlightedBlocks.clear();
                 ClientPowerCache.POWER_CACHE.clear();
+                ClientOwnerCache.clear();
+                ServerTrackingRules.clear();
                 com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
                 com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
                 impactWarningVisible = false;
@@ -86,22 +100,83 @@ public class FireballPredictorClient implements ClientModInitializer {
 
             long worldTime = client.world.getTime();
 
-            // Clean up dead fireballs or disabled wither skulls / wind charges
-            Iterator<Map.Entry<ExplosiveProjectileEntity, TrackedPrediction>> it = activePredictions.entrySet().iterator();
+            // Clean up dead projectiles and tick owner attribution / filters
+            Iterator<Map.Entry<Integer, TrackedPrediction>> it = activePredictions.entrySet().iterator();
             while (it.hasNext()) {
-                ExplosiveProjectileEntity fireball = it.next().getKey();
-                boolean isWitherSkull = fireball instanceof WitherSkullEntity;
+                Map.Entry<Integer, TrackedPrediction> entry = it.next();
+                int entityId = entry.getKey();
+                ExplosiveProjectileEntity fireball = getProjectile(client.world, entityId);
+                if (fireball == null || !fireball.isAlive()) {
+                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    ClientOwnerCache.remove(entityId);
+                    trackedOwners.remove(entityId);
+                    it.remove();
+                    continue;
+                }
+
+                TrackedProjectile tracked = trackedOwners.get(entityId);
+                if (tracked != null) {
+                    tracked.tick(client.world);
+                }
+
                 boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
-                if (!fireball.isAlive() || 
-                    (isWitherSkull && !ModConfig.instance().trackWitherSkulls) ||
-                    (isWindCharge && !ModConfig.instance().trackWindCharges)) {
-                    ClientPowerCache.POWER_CACHE.remove(fireball.getId());
+                boolean filteredOut = isWindCharge
+                        ? (!ModConfig.instance().trackProjectiles || !ModConfig.instance().trackWindCharges)
+                        : (TrackedProjectile.isOwnerFilterable(fireball)
+                            && tracked != null
+                            && !tracked.shouldRender());
+
+                if (filteredOut) {
+                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    // Keep owner attribution so re-enabling a filter can restore tracking without re-inferring
                     it.remove();
                 }
             }
 
-            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
-                ExplosiveProjectileEntity fireball = entry.getKey();
+            // Re-admit projectiles whose owner filter was turned back on
+            trackedOwners.entrySet().removeIf(entry -> {
+                int entityId = entry.getKey();
+                ExplosiveProjectileEntity fireball = getProjectile(client.world, entityId);
+                if (fireball == null || !fireball.isAlive()) {
+                    ClientPowerCache.POWER_CACHE.remove(entityId);
+                    ClientOwnerCache.remove(entityId);
+                    return true;
+                }
+                return false;
+            });
+
+            for (Map.Entry<Integer, TrackedProjectile> ownerEntry : trackedOwners.entrySet()) {
+                int entityId = ownerEntry.getKey();
+                TrackedProjectile tracked = ownerEntry.getValue();
+                if (activePredictions.containsKey(entityId)) {
+                    continue;
+                }
+                ExplosiveProjectileEntity fireball = getProjectile(client.world, entityId);
+                if (fireball == null) {
+                    continue;
+                }
+                tracked.tick(client.world);
+                if (!tracked.shouldRender()) {
+                    continue;
+                }
+                TrackedPrediction trackedPrediction = new TrackedPrediction();
+                trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, client.world);
+                trackedPrediction.calculatedPower = ClientPowerLookup.getPower(fireball);
+                trackedPrediction.calculatedDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
+                activePredictions.put(entityId, trackedPrediction);
+                if (trackedPrediction.predictionData != null) {
+                    Vec3d hitPos = trackedPrediction.predictionData.hitResult != null
+                            ? trackedPrediction.predictionData.hitResult.getPos() : null;
+                    com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
+                }
+            }
+
+            for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
+                int entityId = entry.getKey();
+                ExplosiveProjectileEntity fireball = getProjectile(client.world, entityId);
+                if (fireball == null) {
+                    continue;
+                }
                 TrackedPrediction trackedPrediction = entry.getValue();
 
                 if (trackedPrediction.shouldRefresh(fireball, client.world) && !trackedPrediction.isCalculating) {
@@ -113,9 +188,9 @@ public class FireballPredictorClient implements ClientModInitializer {
                     
                     PREDICTION_EXECUTOR.submit(() -> {
                         try {
-                            PredictionData data = TrajectoryPredictor.computePrediction(fireball, result, predictionAge);
+                            PredictionData data = TrajectoryPredictor.computePrediction(result, predictionAge);
                             client.execute(() -> {
-                                if (INSTANCE != null && INSTANCE.activePredictions.get(fireball) == trackedPrediction) {
+                                if (INSTANCE != null && INSTANCE.activePredictions.get(entityId) == trackedPrediction) {
                                     trackedPrediction.predictionData = data;
                                     trackedPrediction.calculatedPower = currentPower;
                                     trackedPrediction.calculatedDangerous = currentDangerous;
@@ -141,8 +216,12 @@ public class FireballPredictorClient implements ClientModInitializer {
             Vec3d playerPosition = player != null ? new Vec3d(player.getX(), player.getY(), player.getZ()) : Vec3d.ZERO;
             Vec3d playerVelocity = player != null ? player.getVelocity() : Vec3d.ZERO;
 
-            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
-                ExplosiveProjectileEntity fireball = entry.getKey();
+            for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
+                int entityId = entry.getKey();
+                ExplosiveProjectileEntity fireball = getProjectile(client.world, entityId);
+                if (fireball == null) {
+                    continue;
+                }
                 PredictionData data = entry.getValue().predictionData;
 
                 if (data == null) {
@@ -245,22 +324,33 @@ public class FireballPredictorClient implements ClientModInitializer {
         WorldRenderEvents.END_MAIN.register(context -> {
             if (activePredictions.isEmpty()) return;
 
-            for (Map.Entry<ExplosiveProjectileEntity, TrackedPrediction> entry : activePredictions.entrySet()) {
-                ExplosiveProjectileEntity fireball = entry.getKey();
-                if (fireball.isAlive()) {
+            ClientWorld level = net.minecraft.client.MinecraftClient.getInstance().world;
+            for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
+                ExplosiveProjectileEntity fireball = getProjectile(level, entry.getKey());
+                if (fireball != null && fireball.isAlive()) {
                     PredictionData predictionData = entry.getValue().predictionData;
                     if (predictionData != null) {
-                        PredictionRenderer.render(context.matrices(), context.consumers(), net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera(), net.minecraft.client.MinecraftClient.getInstance().world, predictionData, fireball);
+                        PredictionRenderer.render(context.matrices(), context.consumers(), net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera(), level, predictionData, fireball);
                     }
                 }
             }
         });
     }
 
+    private static ExplosiveProjectileEntity getProjectile(ClientWorld level, int entityId) {
+        if (level == null) {
+            return null;
+        }
+        Entity entity = level.getEntityById(entityId);
+        return entity instanceof ExplosiveProjectileEntity projectile ? projectile : null;
+    }
+
     private void resetWorldState(ClientWorld world) {
         trackedWorld = world;
         activePredictions.clear();
+        trackedOwners.clear();
         currentlyHighlightedBlocks.clear();
+        ClientOwnerCache.clear();
         com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.clear();
         com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.resetInferredPower();
         impactWarningVisible = false;
@@ -278,20 +368,75 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
 
         if (entity instanceof ExplosiveProjectileEntity fireball) {
-            if (fireball instanceof WitherSkullEntity && !ModConfig.instance().trackWitherSkulls) {
-                return;
+            int entityId = fireball.getId();
+            if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
+                if (!ModConfig.instance().trackProjectiles || !ModConfig.instance().trackWindCharges) {
+                    return;
+                }
             }
-            if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity && !ModConfig.instance().trackWindCharges) {
-                return;
+
+            TrackedProjectile ownerTracked = null;
+            if (TrackedProjectile.isOwnerFilterable(fireball)) {
+                ownerTracked = TrackedProjectile.of(fireball, trackedWorld);
+                trackedOwners.put(entityId, ownerTracked);
+                if (!ownerTracked.shouldRender()) {
+                    // Still keep owner state for live filter toggles / packet upgrades
+                    return;
+                }
             }
+
             TrackedPrediction trackedPrediction = new TrackedPrediction();
             trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
             trackedPrediction.calculatedPower = com.simonconrad.fireballpredictor.client.network.ClientPowerLookup.getPower(fireball);
             trackedPrediction.calculatedDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
-            activePredictions.put(fireball, trackedPrediction);
-            
+            activePredictions.put(entityId, trackedPrediction);
+
             if (trackedPrediction.predictionData != null) {
                 Vec3d hitPos = trackedPrediction.predictionData.hitResult != null ? trackedPrediction.predictionData.hitResult.getPos() : null;
+                com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
+            }
+        }
+    }
+
+    /**
+     * Called when a server owner packet arrives (or is upgraded). Re-evaluates
+     * filter state and starts prediction if the projectile is now allowed.
+     */
+    private void onOwnerPacketReceived(int entityId) {
+        if (trackedWorld == null) {
+            return;
+        }
+        ExplosiveProjectileEntity fireball = getProjectile(trackedWorld, entityId);
+        if (fireball == null || !fireball.isAlive()) {
+            return;
+        }
+
+        InferenceResult packetResult = ClientOwnerCache.get(entityId);
+        if (packetResult == null) {
+            return;
+        }
+
+        TrackedProjectile tracked = trackedOwners.get(entityId);
+        if (tracked == null) {
+            if (!TrackedProjectile.isOwnerFilterable(fireball)) {
+                return;
+            }
+            tracked = TrackedProjectile.of(fireball, trackedWorld);
+            trackedOwners.put(entityId, tracked);
+        }
+        tracked.applyPacketResult(packetResult);
+
+        if (tracked.shouldRender() && !activePredictions.containsKey(entityId)) {
+            // Filter now allows this projectile — begin prediction
+            TrackedPrediction trackedPrediction = new TrackedPrediction();
+            trackedPrediction.predictionData = TrajectoryPredictor.predict(fireball, trackedWorld);
+            trackedPrediction.calculatedPower = ClientPowerLookup.getPower(fireball);
+            trackedPrediction.calculatedDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
+            activePredictions.put(entityId, trackedPrediction);
+
+            if (trackedPrediction.predictionData != null) {
+                Vec3d hitPos = trackedPrediction.predictionData.hitResult != null
+                        ? trackedPrediction.predictionData.hitResult.getPos() : null;
                 com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.registerFireballLocation(fireball, hitPos);
             }
         }
@@ -300,8 +445,11 @@ public class FireballPredictorClient implements ClientModInitializer {
     private void handleEntityRemoved(Entity entity) {
         if (entity instanceof ExplosiveProjectileEntity fireball) {
             com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.unregisterFireballLocation(fireball);
-            activePredictions.remove(fireball);
-            ClientPowerCache.POWER_CACHE.remove(fireball.getId());
+            int entityId = fireball.getId();
+            activePredictions.remove(entityId);
+            trackedOwners.remove(entityId);
+            ClientPowerCache.POWER_CACHE.remove(entityId);
+            ClientOwnerCache.remove(entityId);
         }
     }
 

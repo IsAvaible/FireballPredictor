@@ -20,12 +20,14 @@ public class TrajectoryPredictor {
         List<Vec3d> velocities,
         HitResult hitResult,
         float explosionPower,
-        BlockStateSnapshot snapshot
+        BlockStateSnapshot snapshot,
+        boolean isWindCharge,
+        boolean isDangerous
     ) {}
 
     public static PredictionData predict(ExplosiveProjectileEntity fireball, World world) {
         TrajectoryResult result = simulateTrajectory(fireball, world);
-        return computePrediction(fireball, result, fireball.age);
+        return computePrediction(result, fireball.age);
     }
 
     public static TrajectoryResult simulateTrajectory(ExplosiveProjectileEntity fireball, World world) {
@@ -44,10 +46,13 @@ public class TrajectoryPredictor {
         
         HitResult finalHit = null;
         
+        boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
+        boolean isDangerous = fireball instanceof WitherSkullEntity skull && skull.isCharged();
+
         double drag = 0.95;
-        if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
+        if (isWindCharge) {
             drag = 1.0;
-        } else if (fireball instanceof WitherSkullEntity skull && skull.isCharged()) {
+        } else if (isDangerous) {
             drag = 0.73;
         }
         
@@ -109,19 +114,23 @@ public class TrajectoryPredictor {
             snapshot = new BlockStateSnapshot(world, minPos, maxPos);
         }
         
-        return new TrajectoryResult(path, velocities, finalHit, explosionPower, snapshot);
+        return new TrajectoryResult(path, velocities, finalHit, explosionPower, snapshot, isWindCharge, isDangerous);
     }
 
-    public static PredictionData computePrediction(ExplosiveProjectileEntity fireball, TrajectoryResult result, int predictionAge) {
+    public static PredictionData computePrediction(TrajectoryResult result, int predictionAge) {
         List<BlockPos> brokenBlocks = new ArrayList<>();
         if (result.hitResult != null && result.explosionPower > 0.0f && result.snapshot != null) {
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(fireball, result.hitResult.getPos(), result.snapshot);
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.isWindCharge, result.isDangerous, result.hitResult.getPos(), result.snapshot);
         }
         
         PredictionRenderData renderData = createRenderData(result.path, result.explosionPower);
         Vec3d initialVelocity = result.velocities.isEmpty() ? Vec3d.ZERO : result.velocities.get(0);
         
         return new PredictionData(result.path, result.velocities, result.hitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
+    }
+
+    public static PredictionData computePrediction(ExplosiveProjectileEntity fireball, TrajectoryResult result, int predictionAge) {
+        return computePrediction(result, predictionAge);
     }
 
     private static PredictionRenderData createRenderData(List<Vec3d> path, float explosionPower) {

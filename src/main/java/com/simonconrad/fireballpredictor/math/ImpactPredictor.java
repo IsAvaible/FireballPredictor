@@ -26,13 +26,11 @@ public class ImpactPredictor {
 
 
 
-    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
-        if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
+    public static List<BlockPos> predictBrokenBlocks(float power, boolean isWindCharge, boolean isDangerous, Vec3d explosionPos, BlockView world) {
+        if (isWindCharge || power <= 0.0f) {
             // Wind Charges do not break blocks, so we return an empty list.
             return List.of();
         }
-
-        float power = resolveExplosionPower(fireball);
         
         Set<BlockPos> affectedBlocks = new HashSet<>();
 
@@ -72,7 +70,7 @@ public class ImpactPredictor {
                             float blastResistance = Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance());
                             
                             // Charged wither skulls cap the blast resistance of destructible blocks at 0.8F
-                            if (fireball instanceof WitherSkullEntity witherSkull && witherSkull.isCharged()) {
+                            if (isDangerous) {
                                 if (blockState.getHardness(world, blockPos) >= 0.0F) {
                                     blastResistance = Math.min(0.8F, blastResistance);
                                 }
@@ -96,5 +94,12 @@ public class ImpactPredictor {
         }
         
         return List.copyOf(affectedBlocks);
+    }
+
+    public static List<BlockPos> predictBrokenBlocks(ExplosiveProjectileEntity fireball, Vec3d explosionPos, BlockView world) {
+        boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
+        boolean isDangerous = fireball instanceof WitherSkullEntity witherSkull && witherSkull.isCharged();
+        float power = resolveExplosionPower(fireball);
+        return predictBrokenBlocks(power, isWindCharge, isDangerous, explosionPos, world);
     }
 }
