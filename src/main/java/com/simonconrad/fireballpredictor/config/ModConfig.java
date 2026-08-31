@@ -3,11 +3,14 @@ package com.simonconrad.fireballpredictor.config;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.autogen.AutoGen;
+import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
+import dev.isxander.yacl3.config.v2.api.autogen.CustomImage;
 import dev.isxander.yacl3.config.v2.api.autogen.EnumCycler;
 import dev.isxander.yacl3.config.v2.api.autogen.FloatField;
 import dev.isxander.yacl3.config.v2.api.autogen.IntField;
 import dev.isxander.yacl3.config.v2.api.autogen.ColorField;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
+import com.simonconrad.fireballpredictor.client.gui.preview.ConfigPreviewRenderer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 import java.awt.Color;
@@ -49,6 +52,8 @@ public class ModConfig {
         }
     }
 
+
+
     @SerialEntry
     @AutoGen(category = "general")
     @FloatField(min = 0.7f, max = 1.3f)
@@ -57,26 +62,31 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "general")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.TrackWitherFactory.class)
     public boolean trackWitherSkulls = true;
 
     @SerialEntry
     @AutoGen(category = "general")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.TrackWindFactory.class)
     public boolean trackWindCharges = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public boolean renderTrajectory = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     public boolean renderShockwaveDome = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "elements")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     public boolean renderBlockHighlights = true;
 
     @SerialEntry
@@ -87,64 +97,75 @@ public class ModConfig {
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @ColorField
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public Color trajectoryColor = new Color(255, 128, 0);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @ColorField
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryWindFactory.class)
     public Color windChargeTrajectoryColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @FloatField(min = 0.1f, max = 2.0f)
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public float trajectoryWidth = 0.5f;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @EnumCycler
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public TrajectoryStyle trajectoryStyle = TrajectoryStyle.SOLID;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public boolean renderCoreGlow = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "trajectory")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.TrajectoryFactory.class)
     public boolean enableRibbonPulse = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "shockwave")
     @ColorField
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveFactory.class)
     public Color shockwaveColor = new Color(255, 128, 0);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "shockwave")
     @ColorField
+    @CustomImage(factory = ConfigPreviewRenderer.ShockwaveWindFactory.class)
     public Color windChargeShockwaveColor = new Color(255, 255, 255);
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @dev.isxander.yacl3.config.v2.api.autogen.TickBox
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     public boolean renderImpactWarning = true;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @EnumCycler
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     public ImpactWarningBadgeAnchor impactWarningBadgeAnchor = ImpactWarningBadgeAnchor.TOP_LEFT;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @IntField(min = -1000, max = 1000, format = "%d")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     public int impactWarningBadgeOffsetX = 0;
 
     @SerialEntry
     @AutoGen(category = "visuals", group = "impact_warning")
     @IntField(min = -1000, max = 1000, format = "%d")
+    @CustomImage(factory = ConfigPreviewRenderer.HudFactory.class)
     public int impactWarningBadgeOffsetY = 0;
 
-    // 3. Helper methods to match your existing client initialization calls
     public static net.minecraft.client.gui.screen.Screen createScreen(net.minecraft.client.gui.screen.Screen parentScreen) {
         dev.isxander.yacl3.api.YetAnotherConfigLib baseGui = HANDLER.generateGui();
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
@@ -175,6 +196,7 @@ public class ModConfig {
                     .formatValue(v -> v <= 0.0f
                             ? net.minecraft.text.Text.literal("0.00 (Auto / None)")
                             : net.minecraft.text.Text.literal(String.format("%.2f", v))))
+
             .build();
 
         dev.isxander.yacl3.api.YetAnotherConfigLib.Builder builder = dev.isxander.yacl3.api.YetAnotherConfigLib.createBuilder()
@@ -193,7 +215,7 @@ public class ModConfig {
                 categoryBuilder.group(group);
             }
 
-            if (category.name().getContents() instanceof net.minecraft.text.TranslatableTextContent translatable) {
+            if (category.name().getContent() instanceof net.minecraft.text.TranslatableTextContent translatable) {
                 if (translatable.getKey().endsWith("general")) {
                     categoryBuilder.option(serverOption);
                 }
@@ -201,6 +223,7 @@ public class ModConfig {
 
             builder.category(categoryBuilder.build());
         }
+
 
         return builder.build().generateScreen(parentScreen);
     }
@@ -217,4 +240,5 @@ public class ModConfig {
         return HANDLER.instance();
     }
 }
+
 

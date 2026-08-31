@@ -29,6 +29,6 @@ Contains the physics simulation engine that mimics Minecraft's projectile update
 
 ## Validation Results
 
-- Compiles and runs successfully under Minecraft `26.2` using Fabric API and official Mojang mappings.
+- Compiles and runs successfully under Minecraft `1.21.11` using Fabric API and official Mojang mappings.
 - The trajectory calculation aligns exactly with vanilla physics, ensuring predicted impact locations match the actual detonation points.
 - Physics equations correctly handle varying speeds and custom `accelerationPower` properties.

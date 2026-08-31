@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0
+
+### Live Config Previews
+- **Interactive GUI Previews:** Added real-time 2D schematic previews in the YACL configuration screen, allowing live visual previews of trajectory styling, shockwave domes, HUD layout, and tracking reticles.
+
+### Visual Improvements
+- **Smoother Dome Rendering:** Refined trajectory prediction math for smoother impact dome geometry.
+
+### Localization & UX
+- **Simplified Terminology:** Streamlined trajectory configuration titles and descriptions across all 11 supported languages for improved clarity and consistency.
+
 ## 1.4.0
 
 ### Trajectory Ribbon Styles & Config Overhaul

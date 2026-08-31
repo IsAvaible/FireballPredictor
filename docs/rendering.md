@@ -21,7 +21,7 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Vanilla Cracking Overlay**: Sends virtual `destroyBlockProgress` network packets directly to the client render engine.
 - **Phase Mapping**: Maps predicted explosion damage cleanly to block destruction stages `0` through `9`.
 - **Flashing Pre-Impact Alert**: Oscillates cracking severity as the fireball gets closer to impact.
-- **Mining Alpha Fade & Crumbling Safeguards**: `RenderSetup` for the overlay is constructed without `affectsCrumbling()` to prevent the block-break pass from re-drawing the prediction buffer. `PredictionRenderer.breakingFade(...)` scales trail and dome alpha down to 45% (`BREAKING_FADE = 0.45f`) while actively mining (`client.gameMode.isDestroying()`), ensuring vanilla cracking overlays (`CRUMBLING`) remain completely legible.
+- **Depth & Overlay Safeguards**: Translucent prediction rendering uses `depthWrite = false` in `PredictionPipelines.PREDICTION` to prevent depth buffer conflicts with block breaking overlays (`CRUMBLING`), ensuring vanilla cracking overlays remain completely legible without obscuring block mining progress.
 
 ### 4. Ambient Particle Accents
 - **Heat Visuals**: Randomly spawns client-side `FLAME`, `LAVA`, and `CAMPFIRE_COSY_SMOKE` particles on top of the predicted breakable blocks.
@@ -64,4 +64,18 @@ Shader packs managed by Iris modify the render pipeline lookup mechanism. Custom
 - **No Shadow Casting**: Shadow passes remain unassigned so HUD-like trajectory ribbons and blast domes do not cast world shadows.
 - **Soft-Loading & Safety**: Guarded by `FabricLoader.getInstance().isModLoaded("iris")` to prevent class-loading exceptions when Iris is not installed.
 
+---
 
+## Config Screen Live Previews
+
+YACL3 description side-panel previews are implemented by [[ConfigPreviewRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ConfigPreviewRenderer.java)] implementing `dev.isxander.yacl3.gui.image.ImageRenderer`.
+
+Options under the **Visuals** category annotate `@CustomImage(factory = …)` so the description panel shows a live schematic while you edit:
+
+| Mode | Factory | Reflects pending values of |
+| --- | --- | --- |
+| Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse` |
+| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor` |
+| HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
+
+Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAccess`, so colour pickers, cyclers, and sliders update the schematic immediately without saving.
