@@ -119,12 +119,9 @@ public class FireballPredictorClient implements ClientModInitializer {
                     tracked.tick(client.world);
                 }
 
-                boolean isWindCharge = fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity;
-                boolean filteredOut = isWindCharge
-                        ? (!ModConfig.instance().trackProjectiles || !ModConfig.instance().trackWindCharges)
-                        : (TrackedProjectile.isOwnerFilterable(fireball)
-                            && tracked != null
-                            && !tracked.shouldRender());
+                boolean filteredOut = TrackedProjectile.isOwnerFilterable(fireball)
+                        && tracked != null
+                        && !tracked.shouldRender();
 
                 if (filteredOut) {
                     ClientPowerCache.POWER_CACHE.remove(entityId);
@@ -370,11 +367,6 @@ public class FireballPredictorClient implements ClientModInitializer {
 
         if (entity instanceof ExplosiveProjectileEntity fireball) {
             int entityId = fireball.getId();
-            if (fireball instanceof net.minecraft.entity.projectile.AbstractWindChargeEntity) {
-                if (!ModConfig.instance().trackProjectiles || !ModConfig.instance().trackWindCharges) {
-                    return;
-                }
-            }
 
             TrackedProjectile ownerTracked = null;
             if (TrackedProjectile.isOwnerFilterable(fireball)) {
