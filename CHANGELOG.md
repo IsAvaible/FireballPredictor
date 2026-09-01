@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.1
 - **Mob Griefing Gamerule Support:** Predictions now respect the server's `mobGriefing` gamerule, accurately hiding block-destruction highlights and particle accents when block damage is disabled.
 - **Port-Independent Server Overrides:** Per-server power settings now normalize server addresses, preserving custom fallback powers across port changes and dynamic LAN sessions.
 - **Isolated Power Inference:** Custom player blast powers no longer bleed into mob or dispenser predictions, keeping vanilla fireballs accurate.
