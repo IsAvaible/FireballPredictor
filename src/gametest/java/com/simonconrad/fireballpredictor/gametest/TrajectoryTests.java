@@ -215,9 +215,18 @@ public class TrajectoryTests extends GameTestBase {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
 
-        // Spawn fireball 1 and simulate its trajectory
+        // Spawn fireball 1 and verify cold-start resolution (defaults to global fallback 1.0f before any explosion)
         LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
+        float coldStartPower = ClientPowerLookup.getPower(fireball1);
+        if (coldStartPower != 1.0f) {
+            throw fail("Expected cold-start fireball power to be global fallback 1.0f, but got: " + coldStartPower);
+        }
+
         TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getLevel());
+        if (traj.explosionPower() != 1.0f) {
+            throw fail("Expected cold-start simulated trajectory power to be 1.0f, but got: " + traj.explosionPower());
+        }
+
         PredictionData pred = TrajectoryPredictor.computePrediction(traj, context.getLevel(), fireball1.tickCount);
         Vec3 hitPos = pred.hitResult() != null ? pred.hitResult().getLocation() : fireball1.position();
 
@@ -317,6 +326,23 @@ public class TrajectoryTests extends GameTestBase {
         Float validRadius = ClientPowerLookup.getInferredPacketRadius();
         if (validRadius == null || validRadius != 4.0f) {
             throw fail("Expected valid packet radius 4.0f to be accepted, got: " + validRadius);
+        }
+
+        // 3. Verify Server Preset Priority (Tier 2 overrides Tier 3 inferred radius)
+        ModConfig config = ModConfig.instance();
+        config.setServerFallbackPower("play.example.com", 2.2f);
+        ClientPowerLookup.setTestServerIpOverride("play.example.com");
+
+        float powerWithPreset = ClientPowerLookup.getPower(fireball);
+        if (Math.abs(powerWithPreset - 2.2f) > 0.01f) {
+            throw fail("Expected Tier 2 server fallback preset (2.2f) to override Tier 3 inferred radius (4.0f), but got: " + powerWithPreset);
+        }
+
+        // Clearing server preset falls back to Tier 3 inferred radius (4.0f)
+        config.setServerFallbackPower("play.example.com", 0.0f);
+        float powerWithoutPreset = ClientPowerLookup.getPower(fireball);
+        if (Math.abs(powerWithoutPreset - 4.0f) > 0.01f) {
+            throw fail("Expected clearing server preset to fall back to Tier 3 inferred radius (4.0f), but got: " + powerWithoutPreset);
         }
 
         fireball.discard();

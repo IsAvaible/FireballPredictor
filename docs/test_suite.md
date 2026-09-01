@@ -106,7 +106,7 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Entity**: `LargeFireball` (unsynced entity ID)
 * **Starting State**: Clears `ClientPowerCache` and resets `inferredFireballPower`. Spawns a fireball with default properties.
 * **Environment**: A target wall of `Blocks.DIRT` built at relative `x = 2`.
-* **Details**: Simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
+* **Details**: Asserts that cold-start unsynced fireballs initially resolve to global fallback power `1.0f` before detonation. Then simulates an explosion power inference of `3.0f`, asserts that `ClientPowerLookup` and `ImpactPredictor` resolve the second unsynced fireball's power to the inferred `3.0f`, and verifies that predicted block destruction matches high-power crater scaling.
 
 ### 17. Zero-Radius Affected Block Estimation and Hierarchy (`testZeroRadiusAffectedBlockEstimationAndHierarchy`)
 * **Entity**: `LargeFireball`
@@ -117,13 +117,14 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
   2. Verifies updating power estimation when a subsequent smaller explosion occurs without permanent session-wide retention.
   3. Verifies fallback hierarchy precedence: Explicit packet radius inference overrides block estimation.
 
-### 18. Inflated Packet Radius Sanity Check (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
+### 18. Inflated Packet Radius Sanity Check and Server Preset Priority (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
 * **Entity**: `LargeFireball`
 * **Starting State**: Clears `ClientPowerCache` and resets inferred power state.
 * **Environment**: Headless mock position simulation.
 * **Details**:
   1. Simulates inflated packet radius (e.g. GommeHD `radius = 4.0f` with low block count), asserting that the inflated radius is rejected and block estimation (~1.44f) is used instead.
   2. Simulates legitimate high block count (40 blocks with `radius = 4.0f`), confirming that the 4.0f packet radius is accepted.
+  3. Validates Tier 2 priority: An explicit server fallback power preset overrides Tier 3 inferred packet radius, and removing the preset restores the inferred value.
 
 ### 19. Server Fallback Power Management (`testServerFallbackPowerSetAndUnset`)
 * **Environment**: Unit test configuration handling.
@@ -133,7 +134,7 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Entities**: `Ghast`, `Blaze`, `LargeFireball`
 * **Details**:
   1. Validates native owner detection (`setOwner` / `NATIVE_NBT`).
-  2. Validates environmental sweep detection when owner NBT is absent, resolving owner by orientation and proximity.
+  2. Validates environmental sweep detection when owner NBT is absent, strictly asserting that a proximal, aligned Ghast takes precedence over a distant Blaze and resolves as `ProjectileOwner.GHAST` with `ENVIRONMENTAL_SWEEP` source.
 
 ### 21. Dispenser & Player Deflection Inference (`testOwnerInferenceDispenserAndDeflection`)
 * **Entities**: `DispenserBlock`, `LargeFireball`, mock `Player`

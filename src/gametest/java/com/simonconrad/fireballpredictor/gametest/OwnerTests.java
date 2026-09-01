@@ -55,9 +55,12 @@ public class OwnerTests extends GameTestBase {
 
         // 2. Environmental sweep — no setOwner, ghast looking toward the fireball
         fireball.setOwner((net.minecraft.world.entity.Entity) null);
-        // Face +X (toward the fireball relative spawn)
-        ghast.setYRot(context.getTestRotation().rotate(Direction.EAST).toYRot());
+        // Position fireball along the ghast's look direction from its eye position
+        Direction east = context.getTestRotation().rotate(Direction.EAST);
+        ghast.setYRot(east.toYRot());
         ghast.setXRot(0.0f);
+        Vec3 forward = context.absoluteVec(new Vec3(2.0, 0.0, 0.0)).subtract(context.absoluteVec(Vec3.ZERO));
+        fireball.setPos(ghast.getEyePosition().add(forward));
 
         // Place blaze farther away looking wrong way — should lose to ghast
         Blaze blaze = context.spawn(EntityTypes.BLAZE, 5, 3, 5);
@@ -65,13 +68,11 @@ public class OwnerTests extends GameTestBase {
         blaze.setYRot(0.0f);
 
         InferenceResult sweep = OwnerInferenceEngine.infer(fireball, context.getLevel());
-        if (sweep.owner() != ProjectileOwner.GHAST && sweep.owner() != ProjectileOwner.BLAZE
-                && sweep.owner() != ProjectileOwner.COMMAND) {
-            throw fail("Unexpected sweep owner: " + sweep.owner() + " via " + sweep.source());
+        if (sweep.owner() != ProjectileOwner.GHAST) {
+            throw fail("Expected sweep owner GHAST, got: " + sweep.owner() + " via " + sweep.source());
         }
-        // With owner cleared, source must not be NATIVE_NBT
-        if (sweep.source() == InferenceResult.InferenceSource.NATIVE_NBT) {
-            throw fail("Sweep should not report NATIVE_NBT after owner cleared");
+        if (sweep.source() != InferenceResult.InferenceSource.ENVIRONMENTAL_SWEEP) {
+            throw fail("Expected ENVIRONMENTAL_SWEEP source, got: " + sweep.source());
         }
 
         ghast.discard();

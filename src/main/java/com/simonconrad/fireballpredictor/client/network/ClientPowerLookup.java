@@ -212,11 +212,21 @@ public class ClientPowerLookup {
         return (cached != null && cached > 0.0f) ? cached : null;
     }
 
+    private static volatile String testServerIpOverride = null;
+
+    public static void setTestServerIpOverride(String ip) {
+        testServerIpOverride = ip;
+    }
+
     public static void resetInferredPower() {
         OWNER_INFERENCES.clear();
+        testServerIpOverride = null;
     }
 
     public static String getCurrentServerIp() {
+        if (testServerIpOverride != null) {
+            return ModConfig.normalizeServerAddress(testServerIpOverride);
+        }
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             return ClientHelper.getClientServerIp();
         }
