@@ -33,6 +33,6 @@ public class ClientPacketListenerMixin {
         //     );
         // }
 
-        ExplosionInferenceHandler.onExplosion(pos, radius, blockCount, null);
+        ExplosionInferenceHandler.onExplosion(pos, radius, blockCount);
     }
 }

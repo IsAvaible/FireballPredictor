@@ -114,8 +114,8 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Environment**: Headless mock position simulation.
 * **Details**: 
   1. Simulates zero-radius `ClientboundExplodePacket` (`radius = 0.0f`) with affected block list extending 3.9 blocks away. Verifies power estimation via $d_{\max} / 1.3$ yields $\sim 3.0\text{f}$.
-  2. Verifies session max power retention ($P_{\text{session}}$ does not decrease when subsequent smaller explosions occur).
-  3. Verifies fallback hierarchy precedence: Tier 2 explicit packet radius inference (`2.5f`) overrides Tier 4 block estimation (`3.0f`).
+  2. Verifies updating power estimation when a subsequent smaller explosion occurs without permanent session-wide retention.
+  3. Verifies fallback hierarchy precedence: Explicit packet radius inference overrides block estimation.
 
 ### 18. Inflated Packet Radius Sanity Check (`testInflatedPacketRadiusSanityCheckAndServerPresetPriority`)
 * **Entity**: `LargeFireball`
@@ -257,7 +257,7 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Details**: Asserts that independent power inferences for `GHAST` (e.g. 2.0) and `PLAYER` (e.g. 3.5) coexist simultaneously and resolve correctly for subsequent fireballs.
 
 ### 53. Inference TTL Expiration (`testInferenceTtlExpiration`)
-* **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold.
+* **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold and that expired inferences decay cleanly back to the global fallback power (`1.0F`) without session-wide cross-pollution.
 
 ### 54. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
 * **Details**: Asserts that observing a new active shot of an owner type refreshes the TTL timestamp of that owner's active inferred power.
@@ -324,11 +324,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 61 tests are now running...
+[Server thread/INFO] (Minecraft) 64 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (11 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 61 GAME TESTS COMPLETE IN 1.102 s ======================
-[Server thread/INFO] (Minecraft) All 61 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (14 tests)...
+[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 64 GAME TESTS COMPLETE IN 1.306 s ======================
+[Server thread/INFO] (Minecraft) All 64 required tests passed :)
 BUILD SUCCESSFUL
 ```

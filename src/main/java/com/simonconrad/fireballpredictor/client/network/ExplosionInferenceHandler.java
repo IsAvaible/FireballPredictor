@@ -17,6 +17,14 @@ public class ExplosionInferenceHandler {
         onExplosion(explosionPos, radius, 0, null);
     }
 
+    public static void onExplosion(Vec3 explosionPos, float radius, int blockCount) {
+        onExplosion(explosionPos, radius, blockCount, null);
+    }
+
+    /**
+     * Overload for test harnesses / compatibility where affected block positions are explicitly provided.
+     * In Minecraft 1.21+, vanilla ClientboundExplodePacket only carries blockCount, so affectedBlocks is null in production.
+     */
     public static void onExplosion(Vec3 explosionPos, float radius, List<BlockPos> affectedBlocks) {
         onExplosion(explosionPos, radius, affectedBlocks != null ? affectedBlocks.size() : 0, affectedBlocks);
     }

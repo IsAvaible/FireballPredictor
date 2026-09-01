@@ -26,9 +26,6 @@ public class ClientPowerLookup {
 
     private static final Map<ProjectileOwner, InferredPowerEntry> OWNER_INFERENCES = new ConcurrentHashMap<>();
 
-    private static volatile Float sessionLastPacketRadius = null;
-    private static volatile Float sessionMaxBlockEstimation = null;
-
     public static float getPower(AbstractHurtingProjectile fireball) {
         if (fireball == null) {
             return 1.0F;
@@ -63,22 +60,25 @@ public class ClientPowerLookup {
                 if (owner.isMob() || owner == ProjectileOwner.DISPENSER) {
                     return 1.0F;
                 }
+
+                if (owner == ProjectileOwner.COMMAND) {
+                    InferredPowerEntry unknownEntry = OWNER_INFERENCES.get(ProjectileOwner.UNKNOWN);
+                    if (unknownEntry != null && !unknownEntry.isExpired(DEFAULT_INFERENCE_TTL_MS) && unknownEntry.power() > 0.0f) {
+                        return unknownEntry.power();
+                    }
+                }
             } else {
                 InferredPowerEntry unknownEntry = OWNER_INFERENCES.get(ProjectileOwner.UNKNOWN);
                 if (unknownEntry != null && !unknownEntry.isExpired(DEFAULT_INFERENCE_TTL_MS) && unknownEntry.power() > 0.0f) {
                     return unknownEntry.power();
                 }
+                InferredPowerEntry cmdEntry = OWNER_INFERENCES.get(ProjectileOwner.COMMAND);
+                if (cmdEntry != null && !cmdEntry.isExpired(DEFAULT_INFERENCE_TTL_MS) && cmdEntry.power() > 0.0f) {
+                    return cmdEntry.power();
+                }
             }
 
-            // Tier 4: Session fallback (latest packet radius or maximum block estimation)
-            if (sessionLastPacketRadius != null && sessionLastPacketRadius > 0.0f) {
-                return sessionLastPacketRadius;
-            }
-            if (sessionMaxBlockEstimation != null && sessionMaxBlockEstimation > 0.0f) {
-                return sessionMaxBlockEstimation;
-            }
-
-            // Tier 5: Global config fallback
+            // Tier 4: Global config fallback
             return ModConfig.instance().globalFallbackFireballPower;
         }
 
@@ -88,29 +88,14 @@ public class ClientPowerLookup {
     public static void recordInferredPacketRadius(ProjectileOwner owner, float radius) {
         long now = System.currentTimeMillis();
         InferredPowerEntry entry = new InferredPowerEntry(radius, now, true);
-        if (owner != null) {
-            OWNER_INFERENCES.put(owner, entry);
-        } else {
-            OWNER_INFERENCES.put(ProjectileOwner.UNKNOWN, entry);
-        }
-        sessionLastPacketRadius = radius;
+        OWNER_INFERENCES.put(owner != null ? owner : ProjectileOwner.UNKNOWN, entry);
     }
 
     public static void recordInferredBlockEstimation(ProjectileOwner owner, float power) {
         float minBounded = Math.max(1.0f, power);
         long now = System.currentTimeMillis();
         InferredPowerEntry entry = new InferredPowerEntry(minBounded, now, false);
-        if (owner != null) {
-            OWNER_INFERENCES.put(owner, entry);
-        } else {
-            OWNER_INFERENCES.put(ProjectileOwner.UNKNOWN, entry);
-        }
-
-        if (sessionMaxBlockEstimation == null) {
-            sessionMaxBlockEstimation = minBounded;
-        } else {
-            sessionMaxBlockEstimation = Math.max(sessionMaxBlockEstimation, minBounded);
-        }
+        OWNER_INFERENCES.put(owner != null ? owner : ProjectileOwner.UNKNOWN, entry);
     }
 
     public static void setInferredPacketRadius(float power) {
@@ -126,7 +111,7 @@ public class ClientPowerLookup {
     }
 
     public static Float getInferredPacketRadius() {
-        return getInferredPacketRadius(ProjectileOwner.UNKNOWN);
+        return getInferredPacketRadius(null);
     }
 
     public static Float getInferredPacketRadius(ProjectileOwner owner) {
@@ -135,12 +120,21 @@ public class ClientPowerLookup {
             if (entry != null && entry.fromPacketRadius() && !entry.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
                 return entry.power();
             }
+            return null;
         }
-        return sessionLastPacketRadius;
+        InferredPowerEntry unk = OWNER_INFERENCES.get(ProjectileOwner.UNKNOWN);
+        if (unk != null && unk.fromPacketRadius() && !unk.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return unk.power();
+        }
+        InferredPowerEntry cmd = OWNER_INFERENCES.get(ProjectileOwner.COMMAND);
+        if (cmd != null && cmd.fromPacketRadius() && !cmd.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return cmd.power();
+        }
+        return null;
     }
 
     public static Float getInferredBlockEstimation() {
-        return getInferredBlockEstimation(ProjectileOwner.UNKNOWN);
+        return getInferredBlockEstimation(null);
     }
 
     public static Float getInferredBlockEstimation(ProjectileOwner owner) {
@@ -149,12 +143,21 @@ public class ClientPowerLookup {
             if (entry != null && !entry.fromPacketRadius() && !entry.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
                 return entry.power();
             }
+            return null;
         }
-        return sessionMaxBlockEstimation;
+        InferredPowerEntry unk = OWNER_INFERENCES.get(ProjectileOwner.UNKNOWN);
+        if (unk != null && !unk.fromPacketRadius() && !unk.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return unk.power();
+        }
+        InferredPowerEntry cmd = OWNER_INFERENCES.get(ProjectileOwner.COMMAND);
+        if (cmd != null && !cmd.fromPacketRadius() && !cmd.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return cmd.power();
+        }
+        return null;
     }
 
     public static Float getInferredFireballPower() {
-        return getInferredFireballPower(ProjectileOwner.UNKNOWN);
+        return getInferredFireballPower(null);
     }
 
     public static Float getInferredFireballPower(ProjectileOwner owner) {
@@ -163,8 +166,17 @@ public class ClientPowerLookup {
             if (entry != null && !entry.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
                 return entry.power();
             }
+            return null;
         }
-        return sessionLastPacketRadius != null ? sessionLastPacketRadius : sessionMaxBlockEstimation;
+        InferredPowerEntry unk = OWNER_INFERENCES.get(ProjectileOwner.UNKNOWN);
+        if (unk != null && !unk.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return unk.power();
+        }
+        InferredPowerEntry cmd = OWNER_INFERENCES.get(ProjectileOwner.COMMAND);
+        if (cmd != null && !cmd.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            return cmd.power();
+        }
+        return null;
     }
 
     public static InferredPowerEntry getOwnerInference(ProjectileOwner owner) {
@@ -202,8 +214,6 @@ public class ClientPowerLookup {
 
     public static void resetInferredPower() {
         OWNER_INFERENCES.clear();
-        sessionLastPacketRadius = null;
-        sessionMaxBlockEstimation = null;
     }
 
     public static String getCurrentServerIp() {
