@@ -79,8 +79,8 @@ public class ImpactPredictor {
 
     public static List<BlockPos> predictBrokenBlocks(
             float power, ProjectileProfile profile, boolean isDangerous, Vec3 explosionPos, BlockGetter world) {
-        if (!profile.breaksBlocks() || power <= 0.0f) {
-            // Wind charges and zero-blast projectiles do not break blocks.
+        if (!profile.breaksBlocks() || power <= 0.0f || power > 50.0f) {
+            // Wind charges, zero-blast, and extreme-power (>50) projectiles do not break blocks.
             return List.of();
         }
 
@@ -89,9 +89,6 @@ public class ImpactPredictor {
         float rayPowerMultiplier = com.simonconrad.fireballpredictor.config.ModConfig.instance().rayPowerMultiplier;
 
         for (int i = 0; i < 1352; i++) {
-            if ((i & 63) == 0 && Thread.currentThread().isInterrupted()) {
-                return List.of();
-            }
             float d = RAY_DX[i];
             float e = RAY_DY[i];
             float f = RAY_DZ[i];

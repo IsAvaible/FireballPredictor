@@ -87,8 +87,8 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Details**: Confirms that Wind Charges retain a 1.0 drag multiplier and maintain full speed without drag degradation even when moving through water.
 
 ### 13. BlockGetter Water Detection (`testBlockGetterWaterDetection`)
-* **Environment**: Mock snapshot simulation.
-* **Details**: Asserts that the custom `BlockStateSnapshot` implementation correctly exposes fluid states to `TrajectoryPredictor.isTouchingWater` for accurate drag evaluation.
+* **Environment**: Level fluid detection simulation.
+* **Details**: Asserts that `TrajectoryPredictor.isTouchingWater` correctly detects water fluids using `BlockGetter` (`Level`) for accurate drag evaluation.
 
 ### 14. Small Fireball Power and Non-Destruction (`testSmallFireballPowerAndNoDestruction`)
 * **Entity**: `SmallFireball`
@@ -271,19 +271,15 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 ### 57. Dispenser Power Inference Isolation (`testDispenserPowerInferenceIsolation`)
 * **Details**: Verifies that un-inferred dispenser fireballs resolve to vanilla `1.0F` default and are protected against cross-pollution from previous power 3.5 player explosions.
 
-### 58. Extreme Power Snapshot Safety & Degradation (`testExtremePowerSnapshotSafetyAndDegradation`)
+### 58. Extreme Power Safety & Degradation (`testExtremePowerSafetyAndDegradation`)
 * **Entity**: `LargeFireball` (configured with extreme explosion power 100)
-* **Details**: Asserts that `TrajectoryPredictor.simulateTrajectory` returns `snapshot() == null` when bounding box volume exceeds `MAX_SNAPSHOT_BLOCKS = 65_536`, avoiding cubic memory allocation and main-thread freezes. Confirms that flight path ribbon and visual hit results remain preserved while predicted broken blocks degrade gracefully to an empty list.
+* **Details**: Asserts that `ImpactPredictor.predictBrokenBlocks` enforces the `power <= 50.0f` safety cap, returning an empty broken blocks list for extreme power 100 while flight path ribbons and visual hit markers remain preserved.
 
-### 59. Non-Breaking Projectile Snapshot Bypass (`testNonBreakingProjectileSnapshotBypass`)
+### 59. Non-Breaking Projectile Bypass (`testNonBreakingProjectileBypass`)
 * **Entities**: `WindCharge`, `SmallFireball`
-* **Details**: Asserts that non-destructive projectiles (`profile.breaksBlocks() == false`) bypass `BlockStateSnapshot` creation entirely on the main thread (`snapshot() == null`).
+* **Details**: Asserts that non-destructive projectiles (`profile.breaksBlocks() == false`) return `canBreakBlocks() == false` and empty broken block predictions.
 
-### 60. Sparse BlockStateSnapshot Air Retrieval (`testSparseBlockStateSnapshotAirRetrieval`)
-* **Environment**: Headless mock snapshot simulation.
-* **Details**: Validates sparse null-coalescing state retrieval in `BlockStateSnapshot`: returns `Blocks.STONE` for solid blocks, non-empty `Fluids.WATER` for fluid blocks, default `Blocks.AIR` / empty fluids for air positions and out-of-bounds queries, and tests safe fallback on oversized constructor requests.
-
-### 61. Path Bounding Box Calculation (`testPathBoundingBoxCalculation`)
+### 60. Path Bounding Box Calculation (`testPathBoundingBoxCalculation`)
 * **Environment**: Headless mock trajectory path simulation.
 * **Details**: Validates bounding box (`AABB`) calculation for trajectory paths in `TrajectoryPredictor.calculatePathBoundingBox`: verifies that null and empty paths return `null`, single-point paths expand by the default 1.5 margin, and multi-point paths correctly encompass all trajectory vertices expanded by the explosion dome radius margin.
 

@@ -46,9 +46,9 @@ public class TrajectoryPredictor {
         HitResult hitResult,
         HitResult damageHitResult,
         float explosionPower,
-        BlockStateSnapshot snapshot,
         ProjectileProfile profile,
         boolean isDangerous,
+        boolean canBreakBlocks,
         Collision collision
     ) {
         public TrajectoryResult(
@@ -57,11 +57,11 @@ public class TrajectoryPredictor {
             HitResult hitResult,
             HitResult damageHitResult,
             float explosionPower,
-            BlockStateSnapshot snapshot,
             ProjectileProfile profile,
-            boolean isDangerous
+            boolean isDangerous,
+            boolean canBreakBlocks
         ) {
-            this(path, velocities, hitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous, null);
+            this(path, velocities, hitResult, damageHitResult, explosionPower, profile, isDangerous, canBreakBlocks, null);
         }
 
         public TrajectoryResult(
@@ -69,11 +69,34 @@ public class TrajectoryPredictor {
             List<Vec3> velocities,
             HitResult hitResult,
             float explosionPower,
-            BlockStateSnapshot snapshot,
+            ProjectileProfile profile,
+            boolean isDangerous,
+            boolean canBreakBlocks
+        ) {
+            this(path, velocities, hitResult, hitResult, explosionPower, profile, isDangerous, canBreakBlocks, null);
+        }
+
+        public TrajectoryResult(
+            List<Vec3> path,
+            List<Vec3> velocities,
+            HitResult hitResult,
+            HitResult damageHitResult,
+            float explosionPower,
             ProjectileProfile profile,
             boolean isDangerous
         ) {
-            this(path, velocities, hitResult, hitResult, explosionPower, snapshot, profile, isDangerous, null);
+            this(path, velocities, hitResult, damageHitResult, explosionPower, profile, isDangerous, profile != null && profile.breaksBlocks(), null);
+        }
+
+        public TrajectoryResult(
+            List<Vec3> path,
+            List<Vec3> velocities,
+            HitResult hitResult,
+            float explosionPower,
+            ProjectileProfile profile,
+            boolean isDangerous
+        ) {
+            this(path, velocities, hitResult, hitResult, explosionPower, profile, isDangerous, profile != null && profile.breaksBlocks(), null);
         }
     }
 
@@ -90,7 +113,7 @@ public class TrajectoryPredictor {
 
     public static PredictionData predict(AbstractHurtingProjectile fireball, Level world, ProjectileOwner owner) {
         TrajectoryResult result = simulateTrajectory(fireball, world, owner);
-        return computePrediction(result, fireball.tickCount);
+        return computePrediction(result, world, fireball.tickCount);
     }
 
     public static TrajectoryResult simulateTrajectory(AbstractHurtingProjectile fireball, Level world) {
@@ -204,48 +227,24 @@ public class TrajectoryPredictor {
 
         float explosionPower = (visualHitResult != null || damageHitResult != null) ? ImpactPredictor.resolveExplosionPower(profile, fireball) : 0.0f;
         boolean canBreak = canBreakBlocks(fireball, world, owner, profile);
-        BlockStateSnapshot snapshot = null;
-        HitResult snapshotHit = visualHitResult;
-        if (snapshotHit != null && explosionPower > 0.0f && canBreak) {
-            snapshot = BlockStateSnapshot.create(world, snapshotHit.getLocation(), explosionPower);
-        }
         
         if (firstCollision == null) {
             firstCollision = new Collision(null, CollisionKind.NONE, maxTicks, currentPos);
         }
         
-        return new TrajectoryResult(path, velocities, visualHitResult, damageHitResult, explosionPower, snapshot, profile, isDangerous, firstCollision);
+        return new TrajectoryResult(path, velocities, visualHitResult, damageHitResult, explosionPower, profile, isDangerous, canBreak, firstCollision);
     }
 
-    public static PredictionData computePrediction(TrajectoryResult result, int predictionAge) {
-        List<BlockPos> brokenBlocks = new ArrayList<>();
-        if (result.hitResult != null && result.explosionPower > 0.0f && result.snapshot != null) {
-            brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.profile, result.isDangerous, result.hitResult.getLocation(), result.snapshot);
+    public static PredictionData computePrediction(TrajectoryResult result, BlockGetter world, int predictionAge) {
+        List<BlockPos> brokenBlocks = List.of();
+        if (result.canBreakBlocks && result.hitResult != null && result.explosionPower > 0.0f && world != null) {
+            brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.profile, result.isDangerous, result.hitResult.getLocation(), world);
         }
         
         PredictionRenderData renderData = createRenderData(result.explosionPower);
         Vec3 initialVelocity = result.velocities.isEmpty() ? Vec3.ZERO : result.velocities.get(0);
         
         return new PredictionData(result.path, result.velocities, result.hitResult, result.damageHitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
-    }
-
-    /**
-     * Creates a lightweight preliminary {@link PredictionData} with flight path and hit results
-     * for instant rendering on frame 0 while heavy explosion calculations and dome mesh generation
-     * run asynchronously on the worker thread.
-     */
-    public static PredictionData createPreliminaryPrediction(TrajectoryResult result, int predictionAge) {
-        Vec3 initialVelocity = result.velocities.isEmpty() ? Vec3.ZERO : result.velocities.get(0);
-        return new PredictionData(
-            result.path,
-            result.velocities,
-            result.hitResult,
-            result.damageHitResult,
-            List.of(),
-            initialVelocity,
-            PredictionRenderData.EMPTY,
-            predictionAge
-        );
     }
 
     public static PredictionRenderData createRenderData(List<Vec3> path, float explosionPower) {

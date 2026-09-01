@@ -137,7 +137,7 @@ public abstract class GameTestBase {
 
     protected List<BlockPos> getPredictedBrokenBlocks(AbstractHurtingProjectile projectile, GameTestHelper context) {
         TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(projectile, context.getLevel());
-        PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, projectile.tickCount);
+        PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, context.getLevel(), projectile.tickCount);
         return prediction.brokenBlocks();
     }
 

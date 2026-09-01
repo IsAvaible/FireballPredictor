@@ -171,18 +171,13 @@ public class TrajectoryTests extends GameTestBase {
         BlockPos waterPos = context.absolutePos(new BlockPos(2, 2, 2));
         context.setBlock(new BlockPos(2, 2, 2), Blocks.WATER);
 
-        com.simonconrad.fireballpredictor.math.BlockStateSnapshot snapshot =
-            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
-                context.getLevel(), waterPos.offset(-1, -1, -1), waterPos.offset(1, 1, 1)
-            );
-
         boolean touching = TrajectoryPredictor.isTouchingWater(
-            snapshot, waterPos.getX() + 0.1, waterPos.getY() + 0.1, waterPos.getZ() + 0.1,
+            context.getLevel(), waterPos.getX() + 0.1, waterPos.getY() + 0.1, waterPos.getZ() + 0.1,
             waterPos.getX() + 0.9, waterPos.getY() + 0.9, waterPos.getZ() + 0.9
         );
 
         if (!touching) {
-            throw fail("Expected snapshot BlockGetter isTouchingWater to return true for water block");
+            throw fail("Expected BlockGetter isTouchingWater to return true for water block");
         }
 
         context.succeed();
@@ -223,7 +218,7 @@ public class TrajectoryTests extends GameTestBase {
         // Spawn fireball 1 and simulate its trajectory
         LargeFireball fireball1 = spawnProjectile(context, EntityTypes.FIREBALL, 0.1, false);
         TrajectoryPredictor.TrajectoryResult traj = TrajectoryPredictor.simulateTrajectory(fireball1, context.getLevel());
-        PredictionData pred = TrajectoryPredictor.computePrediction(traj, fireball1.tickCount);
+        PredictionData pred = TrajectoryPredictor.computePrediction(traj, context.getLevel(), fireball1.tickCount);
         Vec3 hitPos = pred.hitResult() != null ? pred.hitResult().getLocation() : fireball1.position();
 
         // Register fireball location (lastPos and hitPos) in inference cache
@@ -667,7 +662,7 @@ public class TrajectoryTests extends GameTestBase {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
-    public void testExtremePowerSnapshotSafetyAndDegradation(GameTestHelper context) {
+    public void testExtremePowerSafetyAndDegradation(GameTestHelper context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
 
@@ -675,11 +670,7 @@ public class TrajectoryTests extends GameTestBase {
         ((FireballEntityAccessor) fireball).setExplosionPower(100);
 
         TrajectoryPredictor.TrajectoryResult trajResult = TrajectoryPredictor.simulateTrajectory(fireball, context.getLevel());
-        if (trajResult.snapshot() != null) {
-            throw fail("Expected snapshot to be null for extreme power 100 to prevent OOM/freeze, but got non-null");
-        }
-
-        PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, fireball.tickCount);
+        PredictionData prediction = TrajectoryPredictor.computePrediction(trajResult, context.getLevel(), fireball.tickCount);
         if (prediction.path().isEmpty()) {
             throw fail("Expected flight path to be preserved during extreme power graceful degradation");
         }
@@ -687,7 +678,7 @@ public class TrajectoryTests extends GameTestBase {
             throw fail("Expected visual hit result to be preserved during extreme power graceful degradation");
         }
         if (!prediction.brokenBlocks().isEmpty()) {
-            throw fail("Expected broken blocks to degrade to empty list for extreme power, but got " + prediction.brokenBlocks().size());
+            throw fail("Expected broken blocks to degrade to empty list for extreme power > 50, but got " + prediction.brokenBlocks().size());
         }
 
         fireball.discard();
@@ -695,73 +686,31 @@ public class TrajectoryTests extends GameTestBase {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
-    public void testNonBreakingProjectileSnapshotBypass(GameTestHelper context) {
+    public void testNonBreakingProjectileBypass(GameTestHelper context) {
         resetGlobalState();
         buildWall(context, Blocks.DIRT);
 
         WindCharge windCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
         TrajectoryPredictor.TrajectoryResult windResult = TrajectoryPredictor.simulateTrajectory(windCharge, context.getLevel());
-        if (windResult.snapshot() != null) {
-            throw fail("Expected WindCharge snapshot to be bypassed (null)");
+        if (windResult.canBreakBlocks()) {
+            throw fail("Expected WindCharge canBreakBlocks to be false");
+        }
+        PredictionData windPred = TrajectoryPredictor.computePrediction(windResult, context.getLevel(), windCharge.tickCount);
+        if (!windPred.brokenBlocks().isEmpty()) {
+            throw fail("Expected WindCharge broken blocks to be empty");
         }
         windCharge.discard();
 
         SmallFireball smallFb = spawnProjectile(context, EntityTypes.SMALL_FIREBALL, 0.0, false);
         TrajectoryPredictor.TrajectoryResult smallResult = TrajectoryPredictor.simulateTrajectory(smallFb, context.getLevel());
-        if (smallResult.snapshot() != null) {
-            throw fail("Expected SmallFireball snapshot to be bypassed (null)");
+        if (smallResult.canBreakBlocks()) {
+            throw fail("Expected SmallFireball canBreakBlocks to be false");
+        }
+        PredictionData smallPred = TrajectoryPredictor.computePrediction(smallResult, context.getLevel(), smallFb.tickCount);
+        if (!smallPred.brokenBlocks().isEmpty()) {
+            throw fail("Expected SmallFireball broken blocks to be empty");
         }
         smallFb.discard();
-
-        context.succeed();
-    }
-
-    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 20)
-    public void testSparseBlockStateSnapshotAirRetrieval(GameTestHelper context) {
-        resetGlobalState();
-        BlockPos stonePos = context.absolutePos(new BlockPos(2, 2, 2));
-        BlockPos waterPos = context.absolutePos(new BlockPos(3, 2, 2));
-        context.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
-        context.setBlock(new BlockPos(3, 2, 2), Blocks.WATER);
-
-        com.simonconrad.fireballpredictor.math.BlockStateSnapshot snapshot =
-            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
-                context.getLevel(), stonePos.offset(-1, -1, -1), waterPos.offset(1, 1, 1)
-            );
-
-        // Solid block test
-        if (!snapshot.getBlockState(stonePos).is(Blocks.STONE)) {
-            throw fail("Expected snapshot to return STONE at stonePos, got: " + snapshot.getBlockState(stonePos));
-        }
-
-        // Water fluid test
-        if (snapshot.getFluidState(waterPos).isEmpty()) {
-            throw fail("Expected snapshot to return non-empty water fluid at waterPos");
-        }
-
-        // Sparse air retrieval test
-        BlockPos airPos = stonePos.above();
-        if (!snapshot.getBlockState(airPos).isAir()) {
-            throw fail("Expected sparse snapshot to return default AIR for air position, got: " + snapshot.getBlockState(airPos));
-        }
-        if (!snapshot.getFluidState(airPos).isEmpty()) {
-            throw fail("Expected sparse snapshot to return default EMPTY fluid for air position");
-        }
-
-        // Out-of-bounds test
-        BlockPos oobPos = stonePos.offset(100, 100, 100);
-        if (!snapshot.getBlockState(oobPos).isAir()) {
-            throw fail("Expected snapshot to return AIR for out-of-bounds pos");
-        }
-
-        // Oversized bounds test (should gracefully produce empty arrays and safe defaults)
-        com.simonconrad.fireballpredictor.math.BlockStateSnapshot oversized =
-            new com.simonconrad.fireballpredictor.math.BlockStateSnapshot(
-                context.getLevel(), new BlockPos(-500, -500, -500), new BlockPos(500, 500, 500)
-            );
-        if (!oversized.getBlockState(stonePos).isAir()) {
-            throw fail("Expected oversized snapshot to safely return AIR default");
-        }
 
         context.succeed();
     }
