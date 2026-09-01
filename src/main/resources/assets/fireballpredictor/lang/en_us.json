@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Track projectiles fired by Dispensers.\nDefault: True",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Track Command / Unmatched",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Track projectiles with no matching owner nearby (summoned via commands or unmatched spawns).\nDefault: True",
+  "fireballpredictor.command.reload.success": "Reloaded Fireball Predictor server config and re-synced tracking restrictions to all players.",
   "fireballpredictor.command.preview.toggle_hover": "Click to toggle Theme Preview Gallery",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Unknown visual theme: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c Unknown theme target: %s (expected global, fireball, wind_charge, wither_skull, dragon_fireball)",

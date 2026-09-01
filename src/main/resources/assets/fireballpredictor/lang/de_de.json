@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Verfolge von Werfern abgefeuerte Projektile.\nStandard: Aktiviert",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Befehle / Nicht zugeordnete verfolgen",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Verfolge Projektile ohne passenden Besitzer in der Nähe (über Befehle beschworen oder nicht zugeordnete Spawns).\nStandard: Aktiviert",
+  "fireballpredictor.command.reload.success": "Fireball Predictor Server-Konfiguration neu geladen und Tracking-Einschränkungen mit allen Spielern synchronisiert.",
   "fireballpredictor.command.preview.toggle_hover": "Klicken, um die Theme-Vorschau-Galerie umzuschalten",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Unbekanntes visuelles Design: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c Unbekanntes Design-Ziel: %s (erwartet: global, fireball, wind_charge, wither_skull, dragon_fireball)",

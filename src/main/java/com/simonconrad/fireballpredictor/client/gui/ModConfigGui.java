@@ -1,5 +1,6 @@
 package com.simonconrad.fireballpredictor.client.gui;
 
+import com.simonconrad.fireballpredictor.client.network.ClientPowerLookup;
 import com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery;
 import com.simonconrad.fireballpredictor.client.tracking.ServerTrackingRules;
 import com.simonconrad.fireballpredictor.config.ModConfig;
@@ -68,9 +69,7 @@ public final class ModConfigGui {
             galleryButton.setAvailable(false);
         }
 
-        String serverIp = (client != null && client.getCurrentServer() != null)
-                ? client.getCurrentServer().ip
-                : null;
+        String serverIp = ClientPowerLookup.getCurrentServerIp();
 
         Option<Float> serverOption = null;
         if (serverIp != null && !serverIp.trim().isEmpty()) {

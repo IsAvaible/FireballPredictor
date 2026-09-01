@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "ڈسپنسرز کے ذریعے چھوڑے گئے پروجیکٹائلز کو ٹریک کریں۔\nڈیفالٹ: فعال",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "کمانڈز / غیر مماثل ٹریک کریں",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "قریبی مماثل مالک کے بغیر پروجیکٹائلز کو ٹریک کریں (کمانڈز کے ذریعے طلب یا غیر مماثل سپان)۔\nڈیفالٹ: فعال",
+  "fireballpredictor.command.reload.success": "Fireball Predictor سرور کنفیگ دوبارہ لوڈ ہو گئی اور تمام کھلاڑیوں کے ساتھ ٹریکنگ کی پابندیاں دوبارہ ہم آہنگ کر دی گئیں۔",
   "fireballpredictor.command.preview.toggle_hover": "تھیم پیش منظر گیلری کو آن/آف کرنے کے لیے کلک کریں",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c نامعلوم بصری تھیم: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c نامعلوم تھیم ہدف: %s (متوقع global, fireball, wind_charge, wither_skull, dragon_fireball)",

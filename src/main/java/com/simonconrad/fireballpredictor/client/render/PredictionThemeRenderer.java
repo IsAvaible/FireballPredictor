@@ -9,7 +9,6 @@ import org.joml.Matrix4f;
 
 import java.util.List;
 
-import static com.simonconrad.fireballpredictor.client.render.PredictionFeatureRenderer.DOWN;
 import static com.simonconrad.fireballpredictor.client.render.PredictionFeatureRenderer.FORWARD;
 import static com.simonconrad.fireballpredictor.client.render.PredictionFeatureRenderer.RIGHT;
 import static com.simonconrad.fireballpredictor.client.render.PredictionFeatureRenderer.UP;

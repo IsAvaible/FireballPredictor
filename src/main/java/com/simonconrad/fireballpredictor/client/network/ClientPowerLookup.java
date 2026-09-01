@@ -245,7 +245,7 @@ public class ClientPowerLookup {
         private static String getClientServerIp() {
             net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
             if (client != null && client.getCurrentServer() != null) {
-                return client.getCurrentServer().ip;
+                return ModConfig.normalizeServerAddress(client.getCurrentServer().ip);
             }
             return null;
         }

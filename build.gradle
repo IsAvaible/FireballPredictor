@@ -100,9 +100,6 @@ tasks.withType(ProcessResources).configureEach {
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
 	}
-
-	exclude "**/icon-256px.png"
-	exclude "**/icon.pxo"
 }
 
 tasks.named("check") {

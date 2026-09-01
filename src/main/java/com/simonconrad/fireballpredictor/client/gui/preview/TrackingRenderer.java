@@ -1,9 +1,6 @@
 package com.simonconrad.fireballpredictor.client.gui.preview;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -11,7 +8,16 @@ import net.minecraft.world.item.Items;
 import java.awt.Color;
 import java.util.List;
 
-import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.*;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.DASH_ON_PX;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.DASH_PERIOD_PX;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.desaturate;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.drawEffectBackground;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.drawItemIcon;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.lighten;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.pack;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.ribbonColumn;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.seconds;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.softDisc;
 
 /**
  * Renders the tracking-toggle schematics:

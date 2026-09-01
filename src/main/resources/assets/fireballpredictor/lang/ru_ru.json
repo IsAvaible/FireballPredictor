@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Отслеживать снаряды, выпущенные раздатчиками.\nПо умолчанию: Включено",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Отслеживать команды / Нераспознанные",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Отслеживать снаряды без совпадающего владельца поблизости (вызванные командами или нераспознанные).\nПо умолчанию: Включено",
+  "fireballpredictor.command.reload.success": "Конфигурация сервера Fireball Predictor перезагружена, ограничения отслеживания повторно синхронизированы со всеми игроками.",
   "fireballpredictor.command.preview.toggle_hover": "Нажмите, чтобы переключить галерею предпросмотра тем",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Неизвестная визуальная тема: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c Неизвестная цель темы: %s (ожидается global, fireball, wind_charge, wither_skull, dragon_fireball)",

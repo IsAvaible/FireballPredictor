@@ -85,7 +85,7 @@ public class FireballPredictor implements ModInitializer {
                                     ServerPlayNetworking.send(player, new MobGriefingPayload(mobGriefing));
                                 }
                                 context.getSource().sendSuccess(
-                                        () -> Component.literal("Reloaded Fireball Predictor server config and re-synced tracking restrictions to all players."),
+                                        () -> Component.translatable("fireballpredictor.command.reload.success"),
                                         true);
                                 return 1;
                             }))

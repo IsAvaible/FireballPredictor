@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "Rastrear proyectiles disparados por dispensadores.\nPor defecto: Activado",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "Rastrear comandos / No coincidentes",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "Rastrear proyectiles sin propietario coincidente cercano (invocados mediante comandos o apariciones no coincidentes).\nPor defecto: Activado",
+  "fireballpredictor.command.reload.success": "Se ha recargado la configuración del servidor de Fireball Predictor y se han sincronizado las restricciones de seguimiento con todos los jugadores.",
   "fireballpredictor.command.preview.toggle_hover": "Haz clic para alternar la galería de vista previa de temas",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c Tema visual desconocido: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c Objetivo de tema desconocido: %s (se esperaba global, fireball, wind_charge, wither_skull, dragon_fireball)",

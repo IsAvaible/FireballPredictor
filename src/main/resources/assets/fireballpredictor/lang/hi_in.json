@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "डिस्पेंसर द्वारा छोड़े गए प्रोजेक्टाइल ट्रैक करें।\nडिफ़ॉल्ट: सक्षम",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "कमांड / बेमेल ट्रैक करें",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "आस-पास बिना मेल खाते मालिक के प्रोजेक्टाइल ट्रैक करें (कमांड द्वारा बुलाए गए या बेमेल स्पॉन)।\nडिफ़ॉल्ट: सक्षम",
+  "fireballpredictor.command.reload.success": "Fireball Predictor सर्वर कॉन्फ़िग पुनः लोड किया गया और सभी खिलाड़ियों के लिए ट्रैकिंग प्रतिबंध पुनः समन्वयित किए गए।",
   "fireballpredictor.command.preview.toggle_hover": "थीम पूर्वावलोकन गैलरी चालू/बंद करने के लिए क्लिक करें",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c अज्ञात विज़ुअल थीम: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c अज्ञात थीम लक्ष्य: %s (अपेक्षित global, fireball, wind_charge, wither_skull, dragon_fireball)",

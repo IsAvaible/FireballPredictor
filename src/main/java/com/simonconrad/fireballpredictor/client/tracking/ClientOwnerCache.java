@@ -1,6 +1,5 @@
 package com.simonconrad.fireballpredictor.client.tracking;
 
-import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;

@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "追踪发射器发射的弹射物。\n默认值：开启",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "追踪命令 / 未匹配的",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "追踪附近没有匹配所有者的弹射物（通过命令召唤或未匹配的生成）。\n默认值：开启",
+  "fireballpredictor.command.reload.success": "已重新加载 Fireball Predictor 服务器配置并向所有玩家重新同步追踪限制。",
   "fireballpredictor.command.preview.toggle_hover": "点击以开关主题预览画廊",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c 未知视觉主题：%s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c 未知主题目标：%s（应为 global, fireball, wind_charge, wither_skull, dragon_fireball）",

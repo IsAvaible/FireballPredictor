@@ -44,9 +44,32 @@ public class ModConfig {
     @SerialEntry
     public java.util.Map<String, Float> serverFallbackPowers = new java.util.HashMap<>();
 
+    public static String normalizeServerAddress(String serverIp) {
+        if (serverIp == null || serverIp.isBlank()) {
+            return null;
+        }
+        String trimmed = serverIp.trim().toLowerCase(java.util.Locale.ROOT);
+        if (trimmed.startsWith("[")) {
+            int closingBracket = trimmed.indexOf(']');
+            if (closingBracket != -1) {
+                return trimmed.substring(1, closingBracket);
+            }
+        }
+        int colonIdx = trimmed.indexOf(':');
+        if (colonIdx != -1) {
+            return trimmed.substring(0, colonIdx);
+        }
+        return trimmed;
+    }
+
     public Float getServerFallbackPower(String serverIp) {
         if (serverIp == null || serverIp.isEmpty()) {
             return null;
+        }
+        String normalized = normalizeServerAddress(serverIp);
+        Float power = normalized != null ? serverFallbackPowers.get(normalized) : null;
+        if (power != null) {
+            return power;
         }
         return serverFallbackPowers.get(serverIp.toLowerCase(java.util.Locale.ROOT));
     }
@@ -55,10 +78,15 @@ public class ModConfig {
         if (serverIp == null || serverIp.isEmpty()) {
             return;
         }
-        String key = serverIp.toLowerCase(java.util.Locale.ROOT);
+        String normalized = normalizeServerAddress(serverIp);
+        String rawKey = serverIp.toLowerCase(java.util.Locale.ROOT);
         if (power == null || power <= 0.0f) {
-            serverFallbackPowers.remove(key);
+            if (normalized != null) {
+                serverFallbackPowers.remove(normalized);
+            }
+            serverFallbackPowers.remove(rawKey);
         } else {
+            String key = normalized != null ? normalized : rawKey;
             serverFallbackPowers.put(key, power);
         }
     }

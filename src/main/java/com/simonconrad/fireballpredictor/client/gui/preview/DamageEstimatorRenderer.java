@@ -4,10 +4,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.Items;
 
-import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.*;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.drawDisabledLabel;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.pack;
+import static com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.seconds;
 
 /**
  * Renders live schematic previews for damage estimation config options:

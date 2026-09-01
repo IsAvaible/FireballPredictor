@@ -115,6 +115,7 @@
   "yacl3.config.fireballpredictor:config.trackDispenserProjectiles.desc": "ডিসপেন্সারদের দ্বারা নিক্ষিপ্ত প্রোজেক্টাইল ট্র্যাক করুন।\nডিফল্ট: চালু",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles": "কমান্ড / অমিল ট্র্যাক করুন",
   "yacl3.config.fireballpredictor:config.trackCommandProjectiles.desc": "কাছে কোনো মিলতে থাকা মালিক ছাড়া প্রোজেক্টাইল ট্র্যাক করুন (কমান্ডের মাধ্যমে আহ্বান বা অমিল স্পন)।\nডিফল্ট: চালু",
+  "fireballpredictor.command.reload.success": "Fireball Predictor সার্ভার কনফিগ পুনরায় লোড করা হয়েছে এবং সকল খেলোয়াড়ের সাথে ট্র্যাকিং সীমাবদ্ধতা পুনরায় সিঙ্ক করা হয়েছে।",
   "fireballpredictor.command.preview.toggle_hover": "থিম প্রিভিউ গ্যালারি চালু/বন্ধ করতে ক্লিক করুন",
   "fireballpredictor.command.preview.unknown_theme": "§6[Fireball Predictor]§c অজানা ভিজ্যুয়াল থিম: %s",
   "fireballpredictor.command.preview.unknown_target": "§6[Fireball Predictor]§c অজানা থিম টার্গেট: %s (প্রত্যাশিত global, fireball, wind_charge, wither_skull, dragon_fireball)",
