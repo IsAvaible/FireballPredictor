@@ -284,6 +284,18 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Environment**: Headless mock trajectory path simulation.
 * **Details**: Validates bounding box (`AABB`) calculation for trajectory paths in `TrajectoryPredictor.calculatePathBoundingBox`: verifies that null and empty paths return `null`, single-point paths expand by the default 1.5 margin, and multi-point paths correctly encompass all trajectory vertices expanded by the explosion dome radius margin.
 
+### 61. Canonical Power Snapping (`testCanonicalPowerSnapping`)
+* **Environment**: Unit test math verification.
+* **Details**: Asserts that `ClientPowerLookup.snapToCanonicalPower` accurately snaps raw float estimations to discrete integer powers ($1.0, 2.0, 3.0, 4.0, 5.0$) within a $\pm 0.25$ tolerance window, snaps to half-integers ($1.5, 2.5, 3.5$) within a $\pm 0.15$ tolerance window, and enforces the minimum $1.0\text{F}$ lower bound.
+
+### 62. Multi-Sample EMA Smoothing (`testMultiSampleEmaSmoothing`)
+* **Environment**: Inferred power state simulation.
+* **Details**: Asserts that successive noisy block estimations for an active owner are smoothed via Exponential Moving Average ($\alpha = 0.65$), preventing isolated terrain variance from perturbing stable power predictions while transitioning cleanly when genuine sustained power shifts occur.
+
+### 63. Terrain Geometry & Resistance Normalization (`testGeometryAndResistanceNormalization`)
+* **Environment**: GameTest world and headless mock environments.
+* **Details**: Asserts that `ExplosionInferenceHandler.normalizeBlockCount` correctly scales destroyed block counts by local solid angle enclosure ($f_{\text{solid}}$) and contact material blast resistance ($\bar{B}$), gracefully returning raw unadjusted counts in headless/null-world contexts.
+
 ---
 
 ## Key Technical Solutions
@@ -325,11 +337,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 64 tests are now running...
+[Server thread/INFO] (Minecraft) 67 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (14 tests)...
-[Server thread/INFO] (Minecraft) [++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 64 GAME TESTS COMPLETE IN 1.306 s ======================
-[Server thread/INFO] (Minecraft) All 64 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (17 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 67 GAME TESTS COMPLETE IN 1.460 s ======================
+[Server thread/INFO] (Minecraft) All 67 required tests passed :)
 BUILD SUCCESSFUL
 ```

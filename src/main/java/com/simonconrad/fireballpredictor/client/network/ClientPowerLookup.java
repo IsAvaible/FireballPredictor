@@ -85,17 +85,51 @@ public class ClientPowerLookup {
         return 1.0F;
     }
 
+    /**
+     * Snaps a raw estimated power value to the nearest discrete canonical integer or half-integer,
+     * matching standard Minecraft server explosion power levels.
+     */
+    public static float snapToCanonicalPower(float rawPower) {
+        if (Float.isNaN(rawPower) || rawPower <= 1.0f) {
+            return 1.0f;
+        }
+
+        float nearestInt = Math.round(rawPower);
+        if (Math.abs(rawPower - nearestInt) <= 0.25f) {
+            return Math.max(1.0f, nearestInt);
+        }
+
+        float nearestHalf = Math.round(rawPower * 2.0f) / 2.0f;
+        if (Math.abs(rawPower - nearestHalf) <= 0.15f) {
+            return Math.max(1.0f, nearestHalf);
+        }
+
+        return Math.max(1.0f, rawPower);
+    }
+
     public static void recordInferredPacketRadius(ProjectileOwner owner, float radius) {
         long now = System.currentTimeMillis();
-        InferredPowerEntry entry = new InferredPowerEntry(radius, now, true);
+        InferredPowerEntry entry = new InferredPowerEntry(snapToCanonicalPower(radius), now, true);
         OWNER_INFERENCES.put(owner != null ? owner : ProjectileOwner.UNKNOWN, entry);
     }
 
-    public static void recordInferredBlockEstimation(ProjectileOwner owner, float power) {
-        float minBounded = Math.max(1.0f, power);
+    public static void recordInferredBlockEstimation(ProjectileOwner owner, float rawPower) {
+        ProjectileOwner targetOwner = owner != null ? owner : ProjectileOwner.UNKNOWN;
+        float powerSample = Math.max(1.0f, rawPower);
+
+        InferredPowerEntry existing = OWNER_INFERENCES.get(targetOwner);
+        float resolvedPower;
+        if (existing != null && !existing.fromPacketRadius() && !existing.isExpired(DEFAULT_INFERENCE_TTL_MS)) {
+            // Apply Exponential Moving Average (EMA) smoothing for repeated block estimations
+            float smoothed = 0.65f * powerSample + 0.35f * existing.power();
+            resolvedPower = snapToCanonicalPower(smoothed);
+        } else {
+            resolvedPower = snapToCanonicalPower(powerSample);
+        }
+
         long now = System.currentTimeMillis();
-        InferredPowerEntry entry = new InferredPowerEntry(minBounded, now, false);
-        OWNER_INFERENCES.put(owner != null ? owner : ProjectileOwner.UNKNOWN, entry);
+        InferredPowerEntry entry = new InferredPowerEntry(resolvedPower, now, false);
+        OWNER_INFERENCES.put(targetOwner, entry);
     }
 
     public static void setInferredPacketRadius(float power) {

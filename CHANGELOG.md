@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Dynamic Power Learning:** Learned fireball blast powers now account for surrounding terrain geometry and material resistance with multi-shot smoothing, ensuring more accurate predictions on multiplayer servers.
+
 ## 1.10.1
 - **Mob Griefing Gamerule Support:** Predictions now respect the server's `mobGriefing` gamerule, accurately hiding block-destruction highlights and particle accents when block damage is disabled.
 - **Port-Independent Server Overrides:** Per-server power settings now normalize server addresses, preserving custom fallback powers across port changes and dynamic LAN sessions.

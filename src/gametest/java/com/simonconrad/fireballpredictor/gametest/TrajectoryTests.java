@@ -279,12 +279,13 @@ public class TrajectoryTests extends GameTestBase {
         }
 
         // 2. Test updating estimation with new smaller explosion (dMax ~ 1.66 -> 1.28f)
+        // With EMA smoothing (0.65 * 1.28 + 0.35 * 3.0 = 1.882f -> snapped to canonical 2.0f)
         List<BlockPos> smallerAffected = List.of(
                 BlockPos.containing(11.3, 64.0, 10.0)
         );
         ExplosionInferenceHandler.onExplosion(explosionPos, 0.0f, smallerAffected);
-        if (Math.abs(ClientPowerLookup.getInferredBlockEstimation() - 1.28f) > 0.05f) {
-            throw fail("Expected latest block estimation to update to ~1.28f, got: " + ClientPowerLookup.getInferredBlockEstimation());
+        if (Math.abs(ClientPowerLookup.getInferredBlockEstimation() - 2.0f) > 0.05f) {
+            throw fail("Expected latest block estimation to update with EMA/snapping to ~2.0f, got: " + ClientPowerLookup.getInferredBlockEstimation());
         }
 
         // 3. Test Precedence: Radius Inference overrides Block Estimation
@@ -881,6 +882,91 @@ public class TrajectoryTests extends GameTestBase {
         com.simonconrad.fireballpredictor.tracking.MobGriefingState.clear();
         if (!com.simonconrad.fireballpredictor.tracking.MobGriefingState.isMobGriefingEnabled()) {
             throw fail("Expected MobGriefingState to reset to true after clear");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testCanonicalPowerSnapping(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Integer snapping within +/- 0.25
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(2.88f) - 3.0f) > 0.001f) {
+            throw fail("Expected 2.88f to snap to 3.0f, but got: " + ClientPowerLookup.snapToCanonicalPower(2.88f));
+        }
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(3.12f) - 3.0f) > 0.001f) {
+            throw fail("Expected 3.12f to snap to 3.0f, but got: " + ClientPowerLookup.snapToCanonicalPower(3.12f));
+        }
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(1.08f) - 1.0f) > 0.001f) {
+            throw fail("Expected 1.08f to snap to 1.0f, but got: " + ClientPowerLookup.snapToCanonicalPower(1.08f));
+        }
+
+        // 2. Half-integer snapping within +/- 0.15
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(2.45f) - 2.5f) > 0.001f) {
+            throw fail("Expected 2.45f to snap to 2.5f, but got: " + ClientPowerLookup.snapToCanonicalPower(2.45f));
+        }
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(3.58f) - 3.5f) > 0.001f) {
+            throw fail("Expected 3.58f to snap to 3.5f, but got: " + ClientPowerLookup.snapToCanonicalPower(3.58f));
+        }
+
+        // 3. Minimum bound enforcement (<= 1.0 -> 1.0) and NaN safety
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(0.5f) - 1.0f) > 0.001f) {
+            throw fail("Expected 0.5f to bound to 1.0f, but got: " + ClientPowerLookup.snapToCanonicalPower(0.5f));
+        }
+        if (Math.abs(ClientPowerLookup.snapToCanonicalPower(Float.NaN) - 1.0f) > 0.001f) {
+            throw fail("Expected Float.NaN to fallback to 1.0f, but got: " + ClientPowerLookup.snapToCanonicalPower(Float.NaN));
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testMultiSampleEmaSmoothing(GameTestHelper context) {
+        resetGlobalState();
+
+        // 1. Initial sample sets 3.0
+        ClientPowerLookup.recordInferredBlockEstimation(ProjectileOwner.PLAYER, 3.0f);
+        Float initial = ClientPowerLookup.getInferredBlockEstimation(ProjectileOwner.PLAYER);
+        if (initial == null || initial != 3.0f) {
+            throw fail("Expected initial power 3.0f, got: " + initial);
+        }
+
+        // 2. Slight noisy sample (2.75f) -> smoothed = 0.65 * 2.75 + 0.35 * 3.0 = 2.8375f -> snaps to 3.0f!
+        ClientPowerLookup.recordInferredBlockEstimation(ProjectileOwner.PLAYER, 2.75f);
+        Float smoothed = ClientPowerLookup.getInferredBlockEstimation(ProjectileOwner.PLAYER);
+        if (smoothed == null || smoothed != 3.0f) {
+            throw fail("Expected noisy sample 2.75f to smooth and snap cleanly to 3.0f, got: " + smoothed);
+        }
+
+        // 3. Significant genuine shift to 2.0f over consecutive shots
+        ClientPowerLookup.recordInferredBlockEstimation(ProjectileOwner.PLAYER, 1.8f);
+        // smoothed: 0.65 * 1.8 + 0.35 * 3.0 = 1.17 + 1.05 = 2.22f -> 2.22 snaps to 2.0 or 2.5
+        ClientPowerLookup.recordInferredBlockEstimation(ProjectileOwner.PLAYER, 1.9f);
+        Float shifted = ClientPowerLookup.getInferredBlockEstimation(ProjectileOwner.PLAYER);
+        if (shifted == null || shifted != 2.0f) {
+            throw fail("Expected repeated low samples to transition smoothed power to 2.0f, got: " + shifted);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testGeometryAndResistanceNormalization(GameTestHelper context) {
+        resetGlobalState();
+
+        Vec3 pos = new Vec3(10.0, 64.0, 10.0);
+
+        // 1. Null world should return raw count unmodified
+        float raw = ExplosionInferenceHandler.normalizeBlockCount(pos, 20, null);
+        if (Math.abs(raw - 20.0f) > 0.001f) {
+            throw fail("Expected null world to return raw block count 20, got: " + raw);
+        }
+
+        // 2. Air-only environment returns raw count (no solid contact blocks)
+        float airNormalized = ExplosionInferenceHandler.normalizeBlockCount(pos, 20, context.getLevel());
+        if (airNormalized <= 0.0f) {
+            throw fail("Expected non-zero normalization in gametest level, got: " + airNormalized);
         }
 
         context.succeed();
