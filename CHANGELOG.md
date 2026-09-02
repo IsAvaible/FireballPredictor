@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.2
 - **Dynamic Power Learning:** Learned fireball blast powers now account for surrounding terrain geometry and material resistance with multi-shot smoothing, ensuring more accurate predictions on multiplayer servers.
 
 ## 1.10.1
