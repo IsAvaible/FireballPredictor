@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientPowerLookup {
-    /** Default TTL for per-owner inferences (90 seconds). */
-    public static final long DEFAULT_INFERENCE_TTL_MS = 90_000L;
+    /** Default TTL for per-owner inferences (180 seconds / 3 minutes). */
+    public static final long DEFAULT_INFERENCE_TTL_MS = 180_000L;
 
     public record InferredPowerEntry(float power, long timestamp, boolean fromPacketRadius) {
         public boolean isExpired(long ttlMs) {

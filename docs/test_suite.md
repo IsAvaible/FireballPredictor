@@ -258,7 +258,7 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Details**: Asserts that independent power inferences for `GHAST` (e.g. 2.0) and `PLAYER` (e.g. 3.5) coexist simultaneously and resolve correctly for subsequent fireballs.
 
 ### 53. Inference TTL Expiration (`testInferenceTtlExpiration`)
-* **Details**: Verifies that `InferredPowerEntry` respects the 90-second TTL expiration threshold and that expired inferences decay cleanly back to the global fallback power (`1.0F`) without session-wide cross-pollution.
+* **Details**: Verifies that `InferredPowerEntry` respects the 180-second (3-minute) TTL expiration threshold and that expired inferences decay cleanly back to the global fallback power (`1.0F`) without session-wide cross-pollution.
 
 ### 54. Inference TTL Refresh on New Shot (`testInferenceTtlRefreshOnNewShot`)
 * **Details**: Asserts that observing a new active shot of an owner type refreshes the TTL timestamp of that owner's active inferred power.

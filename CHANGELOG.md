@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Extended Power Inference Memory:** Increased dynamically learned explosion power cache duration to 3 minutes, preserving custom fireball blast predictions across longer combat pauses.
+
 ## 1.10.2
 - **Dynamic Power Learning:** Learned fireball blast powers now account for surrounding terrain geometry and material resistance with multi-shot smoothing, ensuring more accurate predictions on multiplayer servers.
 

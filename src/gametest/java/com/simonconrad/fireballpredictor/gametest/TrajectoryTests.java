@@ -545,15 +545,15 @@ public class TrajectoryTests extends GameTestBase {
     public void testInferenceTtlExpiration(GameTestHelper context) {
         resetGlobalState();
 
-        long pastTime = System.currentTimeMillis() - 100_000L; // 100s ago (exceeds 90s TTL)
+        long pastTime = System.currentTimeMillis() - 190_000L; // 190s ago (exceeds 180s / 3m TTL)
         ClientPowerLookup.InferredPowerEntry expiredEntry = new ClientPowerLookup.InferredPowerEntry(4.0f, pastTime, true);
         if (!expiredEntry.isExpired(ClientPowerLookup.DEFAULT_INFERENCE_TTL_MS)) {
-            throw fail("Expected entry from 100s ago to be expired under 90s TTL");
+            throw fail("Expected entry from 190s ago to be expired under 180s TTL");
         }
 
         ClientPowerLookup.InferredPowerEntry freshEntry = new ClientPowerLookup.InferredPowerEntry(4.0f, System.currentTimeMillis(), true);
         if (freshEntry.isExpired(ClientPowerLookup.DEFAULT_INFERENCE_TTL_MS)) {
-            throw fail("Expected fresh entry to not be expired under 90s TTL");
+            throw fail("Expected fresh entry to not be expired under 180s TTL");
         }
 
         // Verify that expired inference causes getPower to fall back to global config default (1.0f)
