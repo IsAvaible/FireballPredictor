@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.3
 - **Extended Power Inference Memory:** Increased dynamically learned explosion power cache duration to 3 minutes, preserving custom fireball blast predictions across longer combat pauses.
 
 ## 1.10.2
