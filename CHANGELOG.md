@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- **Expanded Heart Overlay Variants:** Added cracking health bar overlay textures and rendering support for Wither, Poison, Frozen, and Hardcore mode status effects, ensuring the player's active heart style is accurately preserved when predicting partial damage.
+- **Universal Texture Pack & Status Effect Heart Overlays:** Overhauled the health bar damage predictor overlay system to use pure fissure and heat-wash transparency overlays instead of composite textures. Because the overlays feature 100% transparent backgrounds and intact-half masks, custom resource packs (custom heart borders, silhouettes, and palettes) and all status effects (Wither, Poison, Frozen, Absorption, and Hardcore) are natively preserved without requiring hardcoded per-effect textures.
 
 ## 1.10.3
 - **Extended Power Inference Memory:** Increased dynamically learned explosion power cache duration to 3 minutes, preserving custom fireball blast predictions across longer combat pauses.

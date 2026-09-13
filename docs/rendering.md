@@ -166,3 +166,25 @@ Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAcc
 - **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
 - **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers with dynamic icon texture cache invalidation on resource reload.
 
+---
+
+## Health Bar Damage Overlay (`HeartOverlayRenderer`)
+
+The mod attaches a custom HUD layer after vanilla `HEALTH_BAR` via Fabric API's `HudElementRegistry.attachElementAfter(VanillaHudElements.HEALTH_BAR, ...)`.
+
+### 1. Pure Overlay Architecture & Texture Pack Compatibility
+Instead of using baked composite textures that replicate vanilla red, golden, or withered heart pixels, the damage indicator utilizes **pure translucent overlays** representing physical fissures and an intense thermal heat wash:
+- **`cracking_full.png` / `cracking_full_blinking.png`**: Applied when an entire heart slot (both half units) is projected to be destroyed. Features fissures and fiery ember glow across all active heart pixels with a completely transparent background (`alpha = 0`).
+- **`cracking_half.png` / `cracking_half_blinking.png`**: Applied when the left half-unit of a heart is lost (`rightLost == false`). Pixels for $x \ge 5$ have `alpha = 0`, leaving the right half unaffected.
+- **`cracking_half_right.png` / `cracking_half_right_blinking.png`**: Applied when only the right half-unit of a heart is lost (`leftLost == false`). Pixels for $x \le 4$ have strict `alpha = 0`, allowing the intact left half to show through unaltered.
+
+### 2. Universal Status Effect & Game Mode Support
+Because intact halves and surrounding backgrounds are 100% transparent, standard OpenGL translucent blending preserves whatever underlying texture was drawn by vanilla or a custom resource pack. This guarantees seamless compatibility with:
+- **Status Effects**: Wither (`WITHERED`), Poison (`POISONED`), Frozen (`FROZEN`), and Absorption (`ABSORBING`).
+- **Game Modes**: Standard mode and Hardcore mode (which uses distinct skull/wing heart sprites).
+- **Custom Resource / Texture Packs**: Any custom heart silhouettes, borders, or color palettes are naturally visible underneath the crack lines.
+
+### 3. Damage Allocation & Animation
+- Damage is deducted first from **Absorption** health slots, and subsequently from **Base Health**.
+- Slots toggle between steady cracking and blinking sprites synchronized with `client.gui.getGuiTicks() % 6 < 3` to create an urgent visual warning.
+- Displays an adjacent numerical readout (`-X.X❤  ⚡Y.Yb/s`) aligned relative to the impact badge.
