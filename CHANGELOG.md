@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Expanded Heart Overlay Variants:** Added cracking health bar overlay textures and rendering support for Wither, Poison, Frozen, and Hardcore mode status effects, ensuring the player's active heart style is accurately preserved when predicting partial damage.
+
 ## 1.10.3
 - **Extended Power Inference Memory:** Increased dynamically learned explosion power cache duration to 3 minutes, preserving custom fireball blast predictions across longer combat pauses.
 

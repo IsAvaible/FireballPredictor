@@ -47,7 +47,17 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Flashing Pre-Impact Alert**: Alternates between steady and blinking sprite states based on `player.level().getGameTime()`:
   - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
   - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
-  - `hud/heart/cracking_half_right` / `hud/heart/cracking_half_right_blinking`
+  - Right-half-lost variants preserve the player's intact left-half heart appearance across all vanilla heart variations:
+    - Normal: `cracking_half_right` / `cracking_half_right_blinking`
+    - Hardcore Normal: `cracking_half_hardcore_right` / `cracking_half_hardcore_right_blinking`
+    - Absorption: `cracking_half_absorbing_right` / `cracking_half_absorbing_right_blinking`
+    - Hardcore Absorption: `cracking_half_absorbing_hardcore_right` / `cracking_half_absorbing_hardcore_right_blinking`
+    - Poison: `cracking_half_poisoned_right` / `cracking_half_poisoned_right_blinking`
+    - Hardcore Poison: `cracking_half_poisoned_hardcore_right` / `cracking_half_poisoned_hardcore_right_blinking`
+    - Wither: `cracking_half_withered_right` / `cracking_half_withered_right_blinking`
+    - Hardcore Wither: `cracking_half_withered_hardcore_right` / `cracking_half_withered_hardcore_right_blinking`
+    - Frozen: `cracking_half_frozen_right` / `cracking_half_frozen_right_blinking`
+    - Hardcore Frozen: `cracking_half_frozen_hardcore_right` / `cracking_half_frozen_hardcore_right_blinking`
 - **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
 
 ### 7. Special Render Themes & Zero-Allocation VFX Pipeline ([VisualTheme.java](../src/main/java/com/simonconrad/fireballpredictor/config/VisualTheme.java))

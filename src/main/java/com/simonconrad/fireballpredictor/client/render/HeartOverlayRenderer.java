@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 
 /**
@@ -29,6 +30,15 @@ import net.minecraft.world.entity.player.Player;
  */
 public final class HeartOverlayRenderer {
 
+    /** Heart visual state matching vanilla health bar variations. */
+    public enum HeartType {
+        NORMAL,
+        ABSORBING,
+        POISONED,
+        WITHERED,
+        FROZEN
+    }
+
     private static final int NUM_HEARTS_PER_ROW = 10;
     private static final int HEART_SIZE = 9;
     private static final int HEART_SEPARATION = 8;
@@ -36,12 +46,38 @@ public final class HeartOverlayRenderer {
 
     private static final Identifier CRACKING_FULL = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full");
     private static final Identifier CRACKING_HALF = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half");
-    private static final Identifier CRACKING_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right");
-    private static final Identifier CRACKING_HALF_ABSORBING_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_right");
     private static final Identifier CRACKING_FULL_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full_blinking");
     private static final Identifier CRACKING_HALF_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_blinking");
+
+    // Normal
+    private static final Identifier CRACKING_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right");
     private static final Identifier CRACKING_HALF_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right_blinking");
+    private static final Identifier CRACKING_HALF_HARDCORE_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_hardcore_right");
+    private static final Identifier CRACKING_HALF_HARDCORE_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_hardcore_right_blinking");
+
+    // Absorbing
+    private static final Identifier CRACKING_HALF_ABSORBING_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_right");
     private static final Identifier CRACKING_HALF_ABSORBING_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_right_blinking");
+    private static final Identifier CRACKING_HALF_ABSORBING_HARDCORE_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_hardcore_right");
+    private static final Identifier CRACKING_HALF_ABSORBING_HARDCORE_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_absorbing_hardcore_right_blinking");
+
+    // Poisoned
+    private static final Identifier CRACKING_HALF_POISONED_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_poisoned_right");
+    private static final Identifier CRACKING_HALF_POISONED_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_poisoned_right_blinking");
+    private static final Identifier CRACKING_HALF_POISONED_HARDCORE_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_poisoned_hardcore_right");
+    private static final Identifier CRACKING_HALF_POISONED_HARDCORE_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_poisoned_hardcore_right_blinking");
+
+    // Withered
+    private static final Identifier CRACKING_HALF_WITHERED_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_withered_right");
+    private static final Identifier CRACKING_HALF_WITHERED_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_withered_right_blinking");
+    private static final Identifier CRACKING_HALF_WITHERED_HARDCORE_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_withered_hardcore_right");
+    private static final Identifier CRACKING_HALF_WITHERED_HARDCORE_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_withered_hardcore_right_blinking");
+
+    // Frozen
+    private static final Identifier CRACKING_HALF_FROZEN_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_frozen_right");
+    private static final Identifier CRACKING_HALF_FROZEN_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_frozen_right_blinking");
+    private static final Identifier CRACKING_HALF_FROZEN_HARDCORE_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_frozen_hardcore_right");
+    private static final Identifier CRACKING_HALF_FROZEN_HARDCORE_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_frozen_hardcore_right_blinking");
 
     private static final int TEXT_COLOR = 0xFFE67A00;
 
@@ -117,16 +153,51 @@ public final class HeartOverlayRenderer {
         long gameTime = player.level().getGameTime();
         boolean blinking = (gameTime % 6L) < 3L;
 
+        boolean hardcore = player.level().getLevelData().isHardcore();
+        HeartType healthType = determineHealthHeartType(player);
+
         // 1. Health heart slots (indices 0 .. healthSlots - 1)
-        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking, false);
+        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking, healthType, hardcore);
 
         // 2. Absorption heart slots (placed after healthSlots, indices healthSlots .. totalHearts - 1)
-        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking, true);
+        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking, HeartType.ABSORBING, hardcore);
+    }
+
+    public static HeartType determineHealthHeartType(Player player) {
+        if (player.hasEffect(MobEffects.POISON)) {
+            return HeartType.POISONED;
+        } else if (player.hasEffect(MobEffects.WITHER)) {
+            return HeartType.WITHERED;
+        } else if (player.isFullyFrozen()) {
+            return HeartType.FROZEN;
+        }
+        return HeartType.NORMAL;
+    }
+
+    public static Identifier getHalfRightSprite(HeartType type, boolean hardcore, boolean blinking) {
+        return switch (type) {
+            case ABSORBING -> hardcore
+                    ? (blinking ? CRACKING_HALF_ABSORBING_HARDCORE_RIGHT_BLINKING : CRACKING_HALF_ABSORBING_HARDCORE_RIGHT)
+                    : (blinking ? CRACKING_HALF_ABSORBING_RIGHT_BLINKING : CRACKING_HALF_ABSORBING_RIGHT);
+            case POISONED -> hardcore
+                    ? (blinking ? CRACKING_HALF_POISONED_HARDCORE_RIGHT_BLINKING : CRACKING_HALF_POISONED_HARDCORE_RIGHT)
+                    : (blinking ? CRACKING_HALF_POISONED_RIGHT_BLINKING : CRACKING_HALF_POISONED_RIGHT);
+            case WITHERED -> hardcore
+                    ? (blinking ? CRACKING_HALF_WITHERED_HARDCORE_RIGHT_BLINKING : CRACKING_HALF_WITHERED_HARDCORE_RIGHT)
+                    : (blinking ? CRACKING_HALF_WITHERED_RIGHT_BLINKING : CRACKING_HALF_WITHERED_RIGHT);
+            case FROZEN -> hardcore
+                    ? (blinking ? CRACKING_HALF_FROZEN_HARDCORE_RIGHT_BLINKING : CRACKING_HALF_FROZEN_HARDCORE_RIGHT)
+                    : (blinking ? CRACKING_HALF_FROZEN_RIGHT_BLINKING : CRACKING_HALF_FROZEN_RIGHT);
+            case NORMAL -> hardcore
+                    ? (blinking ? CRACKING_HALF_HARDCORE_RIGHT_BLINKING : CRACKING_HALF_HARDCORE_RIGHT)
+                    : (blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT);
+        };
     }
 
     private static void renderHeartSlots(GuiGraphicsExtractor graphics, int startSlot, int count,
                                          float remValue, float maxValue,
-                                         int left, int top, int rowSpacing, boolean blinking, boolean absorbing) {
+                                         int left, int top, int rowSpacing, boolean blinking,
+                                         HeartType heartType, boolean hardcore) {
         for (int i = 0; i < count; i++) {
             float leftVal = i * 2.0F;
             float rightVal = i * 2.0F + 1.0F;
@@ -148,11 +219,7 @@ public final class HeartOverlayRenderer {
             if (leftLost && rightLost) {
                 sprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
             } else if (rightLost) {
-                if (absorbing) {
-                    sprite = blinking ? CRACKING_HALF_ABSORBING_RIGHT_BLINKING : CRACKING_HALF_ABSORBING_RIGHT;
-                } else {
-                    sprite = blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;
-                }
+                sprite = getHalfRightSprite(heartType, hardcore, blinking);
             } else {
                 sprite = blinking ? CRACKING_HALF_BLINKING : CRACKING_HALF;
             }
