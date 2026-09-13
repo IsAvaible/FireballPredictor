@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Restored Punchy Blinking Warning State:** Restored the bright, luminous golden-yellow warning flash on blinking damaged hearts (`cracking_full_blinking.png`, `cracking_half_blinking.png`, `cracking_half_right_blinking.png`, and master variants) by ensuring damaged pixels are fully opaque while maintaining strict transparency on intact halves and outer margins. This eliminates dull/murky color bleed from underlying red hearts while preserving full silhouette independence.
 - **Silhouette-Adaptive Pixel-Art Heart Overlays:** The health bar damage predictor overlay now dynamically adapts to the exact silhouette of whatever heart or health icon is loaded by the active resource pack. Using a 9x9 pixel-art master crack network that extends across the full icon face and masks against the active sprite's alpha channel, custom texture packs with non-heart shapes (such as square health boxes, circles, or shields) are cracked cleanly from edge to edge with authentic 1-to-1 Minecraft pixel sizing, while vanilla hearts remain 100% identical to the original cracking texture.
 
 ## 1.10.3
