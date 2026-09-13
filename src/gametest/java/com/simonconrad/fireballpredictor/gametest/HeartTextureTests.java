@@ -17,7 +17,31 @@ public class HeartTextureTests extends GameTestBase {
             "cracking_half_right",
             "cracking_half_right_blinking",
             "cracking_master_full",
-            "cracking_master_full_blinking"
+            "cracking_master_full_blinking",
+            "cracking_frozen_full",
+            "cracking_frozen_full_blinking",
+            "cracking_frozen_half",
+            "cracking_frozen_half_blinking",
+            "cracking_frozen_half_right",
+            "cracking_frozen_half_right_blinking",
+            "cracking_frozen_scorch_full",
+            "cracking_frozen_scorch_full_blinking",
+            "cracking_frozen_scorch_half",
+            "cracking_frozen_scorch_half_blinking",
+            "cracking_frozen_scorch_half_right",
+            "cracking_frozen_scorch_half_right_blinking",
+            "cracking_frozen_shatter_full",
+            "cracking_frozen_shatter_full_blinking",
+            "cracking_frozen_shatter_half",
+            "cracking_frozen_shatter_half_blinking",
+            "cracking_frozen_shatter_half_right",
+            "cracking_frozen_shatter_half_right_blinking",
+            "cracking_master_frozen_full",
+            "cracking_master_frozen_full_blinking",
+            "cracking_master_frozen_scorch_full",
+            "cracking_master_frozen_scorch_full_blinking",
+            "cracking_master_frozen_shatter_full",
+            "cracking_master_frozen_shatter_full_blinking"
     };
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
@@ -46,7 +70,12 @@ public class HeartTextureTests extends GameTestBase {
     public void testOverlayTransparencyConstraints(GameTestHelper context) {
         resetGlobalState();
 
-        String[] halfRightOverlays = {"cracking_half_right", "cracking_half_right_blinking"};
+        String[] halfRightOverlays = {
+                "cracking_half_right", "cracking_half_right_blinking",
+                "cracking_frozen_half_right", "cracking_frozen_half_right_blinking",
+                "cracking_frozen_scorch_half_right", "cracking_frozen_scorch_half_right_blinking",
+                "cracking_frozen_shatter_half_right", "cracking_frozen_shatter_half_right_blinking"
+        };
         for (String name : halfRightOverlays) {
             BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
             // Left half (x <= 4) must be 100% transparent
@@ -58,22 +87,26 @@ public class HeartTextureTests extends GameTestBase {
                     }
                 }
             }
-            // Right half (x >= 5) must contain crack pixels
-            boolean hasCracks = false;
+            // Right half (x >= 5) must contain exactly 14 crack pixels
+            int rightCracks = 0;
             for (int y = 0; y < 9; y++) {
                 for (int x = 5; x < 9; x++) {
-                    if (((img.getRGB(x, y) >> 24) & 0xFF) > 0) {
-                        hasCracks = true;
-                        break;
+                    if (((img.getRGB(x, y) >> 24) & 0xFF) > 16) {
+                        rightCracks++;
                     }
                 }
             }
-            if (!hasCracks) {
-                throw fail(name + " has no crack pixels on the right half");
+            if (rightCracks != 14) {
+                throw fail(name + " has " + rightCracks + " crack pixels on right half, expected exactly 14");
             }
         }
 
-        String[] halfLeftOverlays = {"cracking_half", "cracking_half_blinking"};
+        String[] halfLeftOverlays = {
+                "cracking_half", "cracking_half_blinking",
+                "cracking_frozen_half", "cracking_frozen_half_blinking",
+                "cracking_frozen_scorch_half", "cracking_frozen_scorch_half_blinking",
+                "cracking_frozen_shatter_half", "cracking_frozen_shatter_half_blinking"
+        };
         for (String name : halfLeftOverlays) {
             BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
             // Right half (x >= 5) must be 100% transparent
@@ -85,18 +118,38 @@ public class HeartTextureTests extends GameTestBase {
                     }
                 }
             }
-            // Left half (x <= 4) must contain crack pixels
-            boolean hasCracks = false;
+            // Left half (x <= 4) must contain exactly 20 crack pixels
+            int leftCracks = 0;
             for (int y = 0; y < 9; y++) {
                 for (int x = 0; x <= 4; x++) {
-                    if (((img.getRGB(x, y) >> 24) & 0xFF) > 0) {
-                        hasCracks = true;
-                        break;
+                    if (((img.getRGB(x, y) >> 24) & 0xFF) > 16) {
+                        leftCracks++;
                     }
                 }
             }
-            if (!hasCracks) {
-                throw fail(name + " has no crack pixels on the left half");
+            if (leftCracks != 20) {
+                throw fail(name + " has " + leftCracks + " crack pixels on left half, expected exactly 20");
+            }
+        }
+
+        String[] fullOverlays = {
+                "cracking_full", "cracking_full_blinking",
+                "cracking_frozen_full", "cracking_frozen_full_blinking",
+                "cracking_frozen_scorch_full", "cracking_frozen_scorch_full_blinking",
+                "cracking_frozen_shatter_full", "cracking_frozen_shatter_full_blinking"
+        };
+        for (String name : fullOverlays) {
+            BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
+            int fullCracks = 0;
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    if (((img.getRGB(x, y) >> 24) & 0xFF) > 16) {
+                        fullCracks++;
+                    }
+                }
+            }
+            if (fullCracks != 34) {
+                throw fail(name + " has " + fullCracks + " crack pixels, expected exactly 34");
             }
         }
 
@@ -107,20 +160,34 @@ public class HeartTextureTests extends GameTestBase {
     public void testMasterPixelArtAssets(GameTestHelper context) {
         resetGlobalState();
 
-        BufferedImage full = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full.png");
-        BufferedImage blink = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full_blinking.png");
+        String[] masterFulls = {
+                "cracking_master_full",
+                "cracking_master_frozen_scorch_full",
+                "cracking_master_frozen_shatter_full"
+        };
+        String[] masterBlinks = {
+                "cracking_master_full_blinking",
+                "cracking_master_frozen_scorch_full_blinking",
+                "cracking_master_frozen_shatter_full_blinking"
+        };
 
         int[][] corners = {{1, 1}, {7, 1}, {1, 7}, {7, 7}};
-        for (int[] corner : corners) {
-            int x = corner[0];
-            int y = corner[1];
-            int alphaFull = (full.getRGB(x, y) >> 24) & 0xFF;
-            int alphaBlink = (blink.getRGB(x, y) >> 24) & 0xFF;
-            if (alphaFull == 0) {
-                throw fail("Corner pixel (" + x + "," + y + ") in master full texture must have alpha > 0");
-            }
-            if (alphaBlink == 0) {
-                throw fail("Corner pixel (" + x + "," + y + ") in master blink texture must have alpha > 0");
+
+        for (int i = 0; i < masterFulls.length; i++) {
+            BufferedImage full = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + masterFulls[i] + ".png");
+            BufferedImage blink = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + masterBlinks[i] + ".png");
+
+            for (int[] corner : corners) {
+                int x = corner[0];
+                int y = corner[1];
+                int alphaFull = (full.getRGB(x, y) >> 24) & 0xFF;
+                int alphaBlink = (blink.getRGB(x, y) >> 24) & 0xFF;
+                if (alphaFull == 0) {
+                    throw fail("Corner pixel (" + x + "," + y + ") in " + masterFulls[i] + " must have alpha > 0");
+                }
+                if (alphaBlink == 0) {
+                    throw fail("Corner pixel (" + x + "," + y + ") in " + masterBlinks[i] + " must have alpha > 0");
+                }
             }
         }
 
@@ -131,10 +198,15 @@ public class HeartTextureTests extends GameTestBase {
     public void testDynamicSynthesisMasking(GameTestHelper context) {
         resetGlobalState();
 
-        BufferedImage master = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full.png");
-        BufferedImage orig = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_full.png");
+        String[][] pairs = {
+                {"cracking_master_full", "cracking_full"},
+                {"cracking_master_full_blinking", "cracking_full_blinking"},
+                {"cracking_master_frozen_scorch_full", "cracking_frozen_scorch_full"},
+                {"cracking_master_frozen_scorch_full_blinking", "cracking_frozen_scorch_full_blinking"},
+                {"cracking_master_frozen_shatter_full", "cracking_frozen_shatter_full"},
+                {"cracking_master_frozen_shatter_full_blinking", "cracking_frozen_shatter_full_blinking"}
+        };
 
-        // 1. Vanilla mask test: synthesizing with default vanilla mask must match cracking_full exactly
         boolean[][] vanillaMask = {
                 {false, false, false, false, false, false, false, false, false},
                 {false, false,  true,  true, false,  true,  true, false, false},
@@ -147,38 +219,59 @@ public class HeartTextureTests extends GameTestBase {
                 {false, false, false, false, false, false, false, false, false}
         };
 
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++) {
-                int expectedRgb = vanillaMask[y][x] ? master.getRGB(x, y) : 0;
-                int actualRgb = orig.getRGB(x, y);
-                // When masked out, both should have alpha 0
-                int expectedAlpha = (expectedRgb >> 24) & 0xFF;
-                int actualAlpha = (actualRgb >> 24) & 0xFF;
-                if (expectedAlpha == 0 && actualAlpha == 0) {
-                    continue;
-                }
-                if (expectedRgb != actualRgb) {
-                    throw fail("Synthesis mismatch at (" + x + "," + y + "): expected=0x" +
-                            Integer.toHexString(expectedRgb) + ", actual=0x" + Integer.toHexString(actualRgb));
+        for (String[] pair : pairs) {
+            BufferedImage master = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + pair[0] + ".png");
+            BufferedImage orig = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + pair[1] + ".png");
+
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    int expectedRgb = vanillaMask[y][x] ? master.getRGB(x, y) : 0;
+                    int actualRgb = orig.getRGB(x, y);
+                    int expectedAlpha = (expectedRgb >> 24) & 0xFF;
+                    int actualAlpha = (actualRgb >> 24) & 0xFF;
+                    if (expectedAlpha == 0 && actualAlpha == 0) {
+                        continue;
+                    }
+                    if (expectedRgb != actualRgb) {
+                        throw fail("Synthesis mismatch for " + pair[0] + " at (" + x + "," + y + "): expected=0x" +
+                                Integer.toHexString(expectedRgb) + ", actual=0x" + Integer.toHexString(actualRgb));
+                    }
                 }
             }
         }
 
-        // 2. Square mask test: all 7x7 interior pixels must be active
-        boolean[][] squareMask = new boolean[9][9];
-        for (int y = 1; y <= 7; y++) {
-            for (int x = 1; x <= 7; x++) {
-                squareMask[y][x] = true;
-            }
-        }
+        context.succeed();
+    }
 
-        int[][] corners = {{1, 1}, {7, 1}, {1, 7}, {7, 7}};
-        for (int[] corner : corners) {
-            int x = corner[0];
-            int y = corner[1];
-            int alpha = (master.getRGB(x, y) >> 24) & 0xFF;
-            if (alpha == 0) {
-                throw fail("Corner pixel (" + x + "," + y + ") must have alpha > 0 for square mask");
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testThermalScorchPaletteNoAbsorptionYellow(GameTestHelper context) {
+        resetGlobalState();
+
+        String[] scorchBlinkOverlays = {
+                "cracking_frozen_scorch_full_blinking",
+                "cracking_frozen_scorch_half_blinking",
+                "cracking_frozen_scorch_half_right_blinking",
+                "cracking_master_frozen_scorch_full_blinking"
+        };
+
+        for (String name : scorchBlinkOverlays) {
+            BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    int rgb = img.getRGB(x, y);
+                    int alpha = (rgb >> 24) & 0xFF;
+                    if (alpha == 0) continue;
+                    int r = (rgb >> 16) & 0xFF;
+                    int g = (rgb >> 8) & 0xFF;
+                    int b = rgb & 0xFF;
+
+                    if (r == 0xFF && g == 0xCD && b == 0x6E) {
+                        throw fail(name + " contains absorption heart yellow (#FFCD6E) at (" + x + "," + y + ")");
+                    }
+                    if (r == 0xFF && g == 0xF5 && b == 0xB4) {
+                        throw fail(name + " contains pale absorption yellow (#FFF5B4) at (" + x + "," + y + ")");
+                    }
+                }
             }
         }
 

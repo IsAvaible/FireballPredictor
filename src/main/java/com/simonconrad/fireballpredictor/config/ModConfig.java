@@ -299,6 +299,15 @@ public class ModConfig {
     public boolean renderDamageHeartsOverlay = true;
 
     /**
+     * Visual style of damage crack overlays when hearts are in the frozen state (freezing / powder snow).
+     */
+    @SerialEntry
+    @AutoGen(category = "visuals", group = "damage_estimator")
+    @CustomImage(factory = ConfigPreviewRenderer.DamageHeartsFactory.class)
+    @EnumCycler
+    public FrozenHeartOverlayStyle frozenHeartOverlayStyle = FrozenHeartOverlayStyle.THERMAL_SCORCH;
+
+    /**
      * Shows the predicted damage (hearts) and knockback speed (blocks/second) readout next to the
      * impact warning badge for the most threatening incoming projectile.
      */

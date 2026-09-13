@@ -172,5 +172,9 @@
   "key.category.fireballpredictor.general": "Fireball Predictor",
   "key.fireballpredictor.toggle_tracking": "मॉड टॉगल करें (मास्टर ट्रैकिंग)",
   "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a ट्रैकिंग सक्षम की गई",
-  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c ट्रैकिंग अक्षम की गई"
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c ट्रैकिंग अक्षम की गई",
+  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle": "Frozen Hearts Damage Style",
+  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.desc": "Visual appearance of damage crack overlays on frozen hearts (freezing / powder snow).\\nDefault: Thermal Scorch",
+  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.thermal_scorch": "Thermal Scorch",
+  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.frostbite_shatter": "Frostbite Shatter"
 }

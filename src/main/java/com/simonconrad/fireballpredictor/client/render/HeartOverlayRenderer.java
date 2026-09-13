@@ -2,6 +2,7 @@ package com.simonconrad.fireballpredictor.client.render;
 
 import java.util.Locale;
 
+import com.simonconrad.fireballpredictor.config.FrozenHeartOverlayStyle;
 import com.simonconrad.fireballpredictor.config.ImpactWarningBadgeAnchor;
 import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
@@ -25,6 +26,9 @@ import net.minecraft.world.entity.player.Player;
  * underlying heart shapes/colors untouched. This natively supports any status effect (Wither,
  * Poison, Frozen, Absorption), game mode (Hardcore), and custom resource packs.
  *
+ * <p>When hearts are in the frozen state (freezing / powder snow), dedicated status-aware textures
+ * are selected (Thermal Scorch or Frostbite Shatter) to eliminate complementary color clashing.
+ *
  * <p>Damage is allocated in two stages mirroring vanilla:
  * <ul>
  *   <li>Absorption hearts are consumed first, starting from the top absorption point.</li>
@@ -38,12 +42,29 @@ public final class HeartOverlayRenderer {
     private static final int HEART_SEPARATION = 8;
     private static final int HEARTS_LEFT_OFFSET = 91;
 
+    // Standard warm overlay static fallback sprites (Normal, Poison, Wither, Absorption)
     private static final Identifier CRACKING_FULL = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full");
     private static final Identifier CRACKING_HALF = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half");
     private static final Identifier CRACKING_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right");
     private static final Identifier CRACKING_FULL_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_full_blinking");
     private static final Identifier CRACKING_HALF_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_blinking");
     private static final Identifier CRACKING_HALF_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_half_right_blinking");
+
+    // Frozen Thermal Scorch static fallback sprites
+    private static final Identifier CRACKING_FROZEN_SCORCH_FULL = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_full");
+    private static final Identifier CRACKING_FROZEN_SCORCH_HALF = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_half");
+    private static final Identifier CRACKING_FROZEN_SCORCH_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_half_right");
+    private static final Identifier CRACKING_FROZEN_SCORCH_FULL_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_full_blinking");
+    private static final Identifier CRACKING_FROZEN_SCORCH_HALF_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_half_blinking");
+    private static final Identifier CRACKING_FROZEN_SCORCH_HALF_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_scorch_half_right_blinking");
+
+    // Frozen Frostbite Shatter static fallback sprites
+    private static final Identifier CRACKING_FROZEN_SHATTER_FULL = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_full");
+    private static final Identifier CRACKING_FROZEN_SHATTER_HALF = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_half");
+    private static final Identifier CRACKING_FROZEN_SHATTER_HALF_RIGHT = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_half_right");
+    private static final Identifier CRACKING_FROZEN_SHATTER_FULL_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_full_blinking");
+    private static final Identifier CRACKING_FROZEN_SHATTER_HALF_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_half_blinking");
+    private static final Identifier CRACKING_FROZEN_SHATTER_HALF_RIGHT_BLINKING = Identifier.fromNamespaceAndPath("fireballpredictor", "hud/heart/cracking_frozen_shatter_half_right_blinking");
 
     private static final int TEXT_COLOR = 0xFFE67A00;
 
@@ -119,17 +140,48 @@ public final class HeartOverlayRenderer {
         long gameTime = player.level().getGameTime();
         boolean blinking = (gameTime % 6L) < 3L;
 
-        // 1. Health heart slots (indices 0 .. healthSlots - 1)
-        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking);
+        boolean isFrozen = player.isFullyFrozen();
+        FrozenHeartOverlayStyle style = ModConfig.instance().frozenHeartOverlayStyle;
+        if (style == null) {
+            style = FrozenHeartOverlayStyle.THERMAL_SCORCH;
+        }
 
-        // 2. Absorption heart slots (placed after healthSlots, indices healthSlots .. totalHearts - 1)
-        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking);
+        // 1. Health heart slots (indices 0 .. healthSlots - 1) - affected by frozen status
+        renderHeartSlots(graphics, 0, healthSlots, remHp, health, left, top, rowSpacing, blinking, isFrozen, style);
+
+        // 2. Absorption heart slots (placed after healthSlots) - never frozen in vanilla
+        renderHeartSlots(graphics, healthSlots, absorbSlots, remAbs, absorption, left, top, rowSpacing, blinking, false, style);
     }
 
     /**
      * Resolves the appropriate overlay sprite for a heart slot based on which half-units are lost.
      */
     public static Identifier getOverlaySprite(boolean leftLost, boolean rightLost, boolean blinking) {
+        return getOverlaySprite(leftLost, rightLost, blinking, false, FrozenHeartOverlayStyle.THERMAL_SCORCH);
+    }
+
+    public static Identifier getOverlaySprite(boolean leftLost, boolean rightLost, boolean blinking,
+                                             boolean frozen, FrozenHeartOverlayStyle style) {
+        if (frozen) {
+            if (style == FrozenHeartOverlayStyle.FROSTBITE_SHATTER) {
+                if (leftLost && rightLost) {
+                    return blinking ? CRACKING_FROZEN_SHATTER_FULL_BLINKING : CRACKING_FROZEN_SHATTER_FULL;
+                } else if (rightLost) {
+                    return blinking ? CRACKING_FROZEN_SHATTER_HALF_RIGHT_BLINKING : CRACKING_FROZEN_SHATTER_HALF_RIGHT;
+                } else if (leftLost) {
+                    return blinking ? CRACKING_FROZEN_SHATTER_HALF_BLINKING : CRACKING_FROZEN_SHATTER_HALF;
+                }
+            } else {
+                if (leftLost && rightLost) {
+                    return blinking ? CRACKING_FROZEN_SCORCH_FULL_BLINKING : CRACKING_FROZEN_SCORCH_FULL;
+                } else if (rightLost) {
+                    return blinking ? CRACKING_FROZEN_SCORCH_HALF_RIGHT_BLINKING : CRACKING_FROZEN_SCORCH_HALF_RIGHT;
+                } else if (leftLost) {
+                    return blinking ? CRACKING_FROZEN_SCORCH_HALF_BLINKING : CRACKING_FROZEN_SCORCH_HALF;
+                }
+            }
+            return null;
+        }
         if (leftLost && rightLost) {
             return blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
         } else if (rightLost) {
@@ -141,20 +193,33 @@ public final class HeartOverlayRenderer {
     }
 
     public static Identifier fullOverlay(boolean blinking) {
-        return blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
+        return fullOverlay(blinking, false, FrozenHeartOverlayStyle.THERMAL_SCORCH);
+    }
+
+    public static Identifier fullOverlay(boolean blinking, boolean frozen, FrozenHeartOverlayStyle style) {
+        return getOverlaySprite(true, true, blinking, frozen, style);
     }
 
     public static Identifier halfLeftOverlay(boolean blinking) {
-        return blinking ? CRACKING_HALF_BLINKING : CRACKING_HALF;
+        return halfLeftOverlay(blinking, false, FrozenHeartOverlayStyle.THERMAL_SCORCH);
+    }
+
+    public static Identifier halfLeftOverlay(boolean blinking, boolean frozen, FrozenHeartOverlayStyle style) {
+        return getOverlaySprite(true, false, blinking, frozen, style);
     }
 
     public static Identifier halfRightOverlay(boolean blinking) {
-        return blinking ? CRACKING_HALF_RIGHT_BLINKING : CRACKING_HALF_RIGHT;
+        return halfRightOverlay(blinking, false, FrozenHeartOverlayStyle.THERMAL_SCORCH);
+    }
+
+    public static Identifier halfRightOverlay(boolean blinking, boolean frozen, FrozenHeartOverlayStyle style) {
+        return getOverlaySprite(false, true, blinking, frozen, style);
     }
 
     private static void renderHeartSlots(GuiGraphicsExtractor graphics, int startSlot, int count,
                                          float remValue, float maxValue,
-                                         int left, int top, int rowSpacing, boolean blinking) {
+                                         int left, int top, int rowSpacing, boolean blinking,
+                                         boolean frozen, FrozenHeartOverlayStyle style) {
         for (int i = 0; i < count; i++) {
             float leftVal = i * 2.0F;
             float rightVal = i * 2.0F + 1.0F;
@@ -173,12 +238,12 @@ public final class HeartOverlayRenderer {
             int y = top - row * rowSpacing;
 
             if (DynamicHeartOverlayManager.isInitialized()) {
-                Identifier dynamicTex = DynamicHeartOverlayManager.getOverlayTexture(leftLost, rightLost, blinking);
+                Identifier dynamicTex = DynamicHeartOverlayManager.getOverlayTexture(leftLost, rightLost, blinking, frozen, style);
                 if (dynamicTex != null) {
                     graphics.blit(RenderPipelines.GUI_TEXTURED, dynamicTex, x, y, 0.0F, 0.0F, HEART_SIZE, HEART_SIZE, HEART_SIZE, HEART_SIZE);
                 }
             } else {
-                Identifier sprite = getOverlaySprite(leftLost, rightLost, blinking);
+                Identifier sprite = getOverlaySprite(leftLost, rightLost, blinking, frozen, style);
                 if (sprite != null) {
                     graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, HEART_SIZE, HEART_SIZE);
                 }
