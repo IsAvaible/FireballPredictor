@@ -172,9 +172,16 @@ public final class HeartOverlayRenderer {
             int x = left + col * HEART_SEPARATION;
             int y = top - row * rowSpacing;
 
-            Identifier sprite = getOverlaySprite(leftLost, rightLost, blinking);
-            if (sprite != null) {
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, HEART_SIZE, HEART_SIZE);
+            if (DynamicHeartOverlayManager.isInitialized()) {
+                Identifier dynamicTex = DynamicHeartOverlayManager.getOverlayTexture(leftLost, rightLost, blinking);
+                if (dynamicTex != null) {
+                    graphics.blit(RenderPipelines.GUI_TEXTURED, dynamicTex, x, y, 0.0F, 0.0F, HEART_SIZE, HEART_SIZE, HEART_SIZE, HEART_SIZE);
+                }
+            } else {
+                Identifier sprite = getOverlaySprite(leftLost, rightLost, blinking);
+                if (sprite != null) {
+                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, HEART_SIZE, HEART_SIZE);
+                }
             }
         }
     }

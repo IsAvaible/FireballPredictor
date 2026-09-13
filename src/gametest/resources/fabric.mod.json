@@ -10,7 +10,8 @@
       "com.simonconrad.fireballpredictor.gametest.TrajectoryTests",
       "com.simonconrad.fireballpredictor.gametest.DamageTests",
       "com.simonconrad.fireballpredictor.gametest.OwnerTests",
-      "com.simonconrad.fireballpredictor.gametest.ThemeTests"
+      "com.simonconrad.fireballpredictor.gametest.ThemeTests",
+      "com.simonconrad.fireballpredictor.gametest.HeartTextureTests"
     ]
   },
   "depends": {

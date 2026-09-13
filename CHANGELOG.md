@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- **Universal Texture Pack & Status Effect Heart Overlays:** Overhauled the health bar damage predictor overlay system to use pure fissure and heat-wash transparency overlays instead of composite textures. Because the overlays feature 100% transparent backgrounds and intact-half masks, custom resource packs (custom heart borders, silhouettes, and palettes) and all status effects (Wither, Poison, Frozen, Absorption, and Hardcore) are natively preserved without requiring hardcoded per-effect textures.
+- **Silhouette-Adaptive Pixel-Art Heart Overlays:** The health bar damage predictor overlay now dynamically adapts to the exact silhouette of whatever heart or health icon is loaded by the active resource pack. Using a 9x9 pixel-art master crack network that extends across the full icon face and masks against the active sprite's alpha channel, custom texture packs with non-heart shapes (such as square health boxes, circles, or shields) are cracked cleanly from edge to edge with authentic 1-to-1 Minecraft pixel sizing, while vanilla hearts remain 100% identical to the original cracking texture.
 
 ## 1.10.3
 - **Extended Power Inference Memory:** Increased dynamically learned explosion power cache duration to 3 minutes, preserving custom fireball blast predictions across longer combat pauses.

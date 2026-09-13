@@ -103,6 +103,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                     @Override
                     public void onResourceManagerReload(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
                         com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.invalidateIconTextureCache();
+                        com.simonconrad.fireballpredictor.client.render.DynamicHeartOverlayManager.reload(resourceManager);
                     }
                 });
 
