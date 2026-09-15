@@ -1,5 +1,7 @@
 package com.simonconrad.fireballpredictor.client.gui.preview;
 
+import com.simonconrad.fireballpredictor.client.render.DynamicHeartOverlayManager;
+import com.simonconrad.fireballpredictor.client.render.HeartOverlayRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -61,10 +63,13 @@ final class DamageEstimatorRenderer {
 
         int crackedCount = 4;
 
+        Minecraft mc = Minecraft.getInstance();
+        boolean isFrozen = mc != null && mc.player != null && mc.player.isFullyFrozen();
+
         for (int i = 0; i < numHearts; i++) {
             int hx = hx0 + i * heartSep;
             boolean cracked = (i >= numHearts - crackedCount);
-            drawHeart(g, p, hx, hy0, cracked, cracked && blinking);
+            drawHeart(g, p, hx, hy0, cracked, cracked && blinking, isFrozen);
 
             if (cracked) {
                 // Rising fiery ember particles above cracked hearts
@@ -109,15 +114,25 @@ final class DamageEstimatorRenderer {
 
     // ---- Heart Drawing Helpers ----------------------------------------------
 
-    private static void drawHeart(GuiGraphicsExtractor g, Painter p, int x, int y, boolean cracked, boolean blinking) {
+    private static void drawHeart(GuiGraphicsExtractor g, Painter p, int x, int y, boolean cracked, boolean blinking, boolean frozen) {
         boolean drawn = false;
         if (heartSpriteAvailable) {
             try {
                 g.blitSprite(RenderPipelines.GUI_TEXTURED, CONTAINER_SPRITE, x, y, 9, 9);
                 g.blitSprite(RenderPipelines.GUI_TEXTURED, FULL_SPRITE, x, y, 9, 9);
                 if (cracked) {
-                    Identifier crackSprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
-                    g.blitSprite(RenderPipelines.GUI_TEXTURED, crackSprite, x, y, 9, 9);
+                    if (DynamicHeartOverlayManager.isInitialized()) {
+                        Identifier dynamicTex = DynamicHeartOverlayManager.getOverlayTexture(true, true, blinking, frozen);
+                        if (dynamicTex != null) {
+                            g.blit(RenderPipelines.GUI_TEXTURED, dynamicTex, x, y, 0.0F, 0.0F, 9, 9, 9, 9);
+                        }
+                    } else {
+                        Identifier crackSprite = HeartOverlayRenderer.getOverlaySprite(true, true, blinking, frozen);
+                        if (crackSprite == null) {
+                            crackSprite = blinking ? CRACKING_FULL_BLINKING : CRACKING_FULL;
+                        }
+                        g.blitSprite(RenderPipelines.GUI_TEXTURED, crackSprite, x, y, 9, 9);
+                    }
                 }
                 drawn = true;
             } catch (RuntimeException | LinkageError ignored) {

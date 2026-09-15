@@ -172,9 +172,5 @@
   "key.category.fireballpredictor.general": "Fireball Predictor",
   "key.fireballpredictor.toggle_tracking": "تبديل المود (التتبع الرئيسي)",
   "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a تم تفعيل التتبع",
-  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c تم تعطيل التتبع",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle": "Frozen Hearts Damage Style",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.desc": "Visual appearance of damage crack overlays on frozen hearts (freezing / powder snow).\\nDefault: Thermal Scorch",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.thermal_scorch": "Thermal Scorch",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.frostbite_shatter": "Frostbite Shatter"
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c تم تعطيل التتبع"
 }

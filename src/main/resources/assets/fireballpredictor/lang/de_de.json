@@ -172,9 +172,5 @@
   "key.category.fireballpredictor.general": "Fireball Predictor",
   "key.fireballpredictor.toggle_tracking": "Mod umschalten (Hauptverfolgung)",
   "fireballpredictor.message.mod_enabled": "§6[Fireball Predictor]§a Verfolgung aktiviert",
-  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Verfolgung deaktiviert",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle": "Stil für gefrorene Schadensherzen",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.desc": "Visuelles Erscheinungsbild der rissigen Schadensüberlagerung auf gefrorenen Herzen.\\nStandard: Thermischer Brand",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.thermal_scorch": "Thermischer Brand",
-  "yacl3.config.fireballpredictor:config.frozenHeartOverlayStyle.frostbite_shatter": "Frostsplitterung"
+  "fireballpredictor.message.mod_disabled": "§6[Fireball Predictor]§c Verfolgung deaktiviert"
 }

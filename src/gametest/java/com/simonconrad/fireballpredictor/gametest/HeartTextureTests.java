@@ -26,16 +26,8 @@ public class HeartTextureTests extends GameTestBase {
             "cracking_frozen_scorch_half_blinking",
             "cracking_frozen_scorch_half_right",
             "cracking_frozen_scorch_half_right_blinking",
-            "cracking_frozen_shatter_full",
-            "cracking_frozen_shatter_full_blinking",
-            "cracking_frozen_shatter_half",
-            "cracking_frozen_shatter_half_blinking",
-            "cracking_frozen_shatter_half_right",
-            "cracking_frozen_shatter_half_right_blinking",
             "cracking_master_frozen_scorch_full",
-            "cracking_master_frozen_scorch_full_blinking",
-            "cracking_master_frozen_shatter_full",
-            "cracking_master_frozen_shatter_full_blinking"
+            "cracking_master_frozen_scorch_full_blinking"
     };
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
@@ -61,8 +53,7 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] halfRightOverlays = {
                 "cracking_half_right", "cracking_half_right_blinking",
-                "cracking_frozen_scorch_half_right", "cracking_frozen_scorch_half_right_blinking",
-                "cracking_frozen_shatter_half_right", "cracking_frozen_shatter_half_right_blinking"
+                "cracking_frozen_scorch_half_right", "cracking_frozen_scorch_half_right_blinking"
         };
         for (String name : halfRightOverlays) {
             BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
@@ -91,8 +82,7 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] halfLeftOverlays = {
                 "cracking_half", "cracking_half_blinking",
-                "cracking_frozen_scorch_half", "cracking_frozen_scorch_half_blinking",
-                "cracking_frozen_shatter_half", "cracking_frozen_shatter_half_blinking"
+                "cracking_frozen_scorch_half", "cracking_frozen_scorch_half_blinking"
         };
         for (String name : halfLeftOverlays) {
             BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
@@ -121,8 +111,7 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] fullOverlays = {
                 "cracking_full", "cracking_full_blinking",
-                "cracking_frozen_scorch_full", "cracking_frozen_scorch_full_blinking",
-                "cracking_frozen_shatter_full", "cracking_frozen_shatter_full_blinking"
+                "cracking_frozen_scorch_full", "cracking_frozen_scorch_full_blinking"
         };
         for (String name : fullOverlays) {
             BufferedImage img = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png");
@@ -148,13 +137,11 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] masterFulls = {
                 "cracking_master_full",
-                "cracking_master_frozen_scorch_full",
-                "cracking_master_frozen_shatter_full"
+                "cracking_master_frozen_scorch_full"
         };
         String[] masterBlinks = {
                 "cracking_master_full_blinking",
-                "cracking_master_frozen_scorch_full_blinking",
-                "cracking_master_frozen_shatter_full_blinking"
+                "cracking_master_frozen_scorch_full_blinking"
         };
 
         int[][] corners = {{1, 1}, {7, 1}, {1, 7}, {7, 7}};
@@ -188,9 +175,7 @@ public class HeartTextureTests extends GameTestBase {
                 {"cracking_master_full", "cracking_full"},
                 {"cracking_master_full_blinking", "cracking_full_blinking"},
                 {"cracking_master_frozen_scorch_full", "cracking_frozen_scorch_full"},
-                {"cracking_master_frozen_scorch_full_blinking", "cracking_frozen_scorch_full_blinking"},
-                {"cracking_master_frozen_shatter_full", "cracking_frozen_shatter_full"},
-                {"cracking_master_frozen_shatter_full_blinking", "cracking_frozen_shatter_full_blinking"}
+                {"cracking_master_frozen_scorch_full_blinking", "cracking_frozen_scorch_full_blinking"}
         };
 
         boolean[][] vanillaMask = {
@@ -396,6 +381,32 @@ public class HeartTextureTests extends GameTestBase {
 
         if (keptCount != 34) {
             throw fail("Expected exactly 34 interior pixels after filtering baked border, got " + keptCount);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testThermalScorchDynamicSynthesisPreservesBorders(GameTestHelper context) {
+        resetGlobalState();
+
+        boolean[][] vanillaMask = HeartMaskHelper.defaultVanillaMask();
+        BufferedImage scorchMaster = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full.png");
+        BufferedImage scorchBlink = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full_blinking.png");
+
+        for (int y = 0; y < 9; y++) {
+            for (int x = 0; x < 9; x++) {
+                if (HeartMaskHelper.isStandardHeartBorderCoord(x, y)) {
+                    int pixelFull = vanillaMask[y][x] ? scorchMaster.getRGB(x, y) : 0;
+                    int pixelBlink = vanillaMask[y][x] ? scorchBlink.getRGB(x, y) : 0;
+                    if (((pixelFull >> 24) & 0xFF) != 0) {
+                        throw fail("Thermal Scorch synthesized overlay leaked onto border at (" + x + "," + y + ")");
+                    }
+                    if (((pixelBlink >> 24) & 0xFF) != 0) {
+                        throw fail("Thermal Scorch blinking synthesized overlay leaked onto border at (" + x + "," + y + ")");
+                    }
+                }
+            }
         }
 
         context.succeed();

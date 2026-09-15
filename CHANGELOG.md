@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.5
+- **Resource Pack Heart Border Fix:** Fixed cracking overlays overwriting or bleeding over heart borders in custom and PvP resource packs, ensuring damage cracks cleanly stay within the heart interior.
+- **Thermal Scorch Master Sprites & Preview Integration:** Extended the frozen cracking master textures across the full 7x7 icon bounds to eliminate residual heart silhouettes on custom health shapes, and updated the settings damage estimator preview to render dynamic master-synthesized overlays.
+
 ## 1.10.4
 - **Silhouette-Adaptive Pixel-Art Heart Overlays:** The health bar damage predictor overlay now dynamically adapts to the exact silhouette of whatever heart or health icon is loaded by the active resource pack. Using a 9x9 pixel-art master crack network that extends across the full icon face and masks against the active sprite's alpha channel, custom texture packs with non-heart shapes (such as square health boxes, circles, or shields) are cracked cleanly from edge to edge with authentic 1-to-1 Minecraft pixel sizing, while vanilla hearts remain 100% identical to the original cracking texture. 
 - **Expanded Heart Overlay Variants:** Added support for cracking health overlay textures for Wither, Poison, Frozen, and Hardcore mode status effects, ensuring the player's active heart style is accurately preserved when predicting partial damage.

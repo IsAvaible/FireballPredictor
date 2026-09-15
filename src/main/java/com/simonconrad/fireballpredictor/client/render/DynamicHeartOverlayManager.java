@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.simonconrad.fireballpredictor.config.FrozenHeartOverlayStyle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Preserves authentic 9x9 Minecraft pixel art, the exact fissure and ember color palette,
  * and 1-to-1 pixel sizing. Supports both standard warm cracking and status-aware frozen heart cracking
- * (Thermal Scorch & Frostbite Shatter).
+ * (Thermal Scorch).
  */
 public final class DynamicHeartOverlayManager {
 
@@ -55,20 +54,6 @@ public final class DynamicHeartOverlayManager {
     public static final Identifier DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING =
             Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_scorch_half_right_blinking");
 
-    // Frozen Frostbite Shatter dynamic textures
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_FULL =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_full");
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_FULL_BLINKING =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_full_blinking");
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_HALF =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_half");
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_HALF_BLINKING =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_half_blinking");
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_HALF_RIGHT =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_half_right");
-    public static final Identifier DYNAMIC_FROZEN_SHATTER_HALF_RIGHT_BLINKING =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "dynamic_hud_heart_cracking_frozen_shatter_half_right_blinking");
-
     private static final Identifier MASTER_FULL_ID =
             Identifier.fromNamespaceAndPath("fireballpredictor", "textures/gui/sprites/hud/heart/cracking_master_full.png");
     private static final Identifier MASTER_BLINK_ID =
@@ -79,19 +64,12 @@ public final class DynamicHeartOverlayManager {
     private static final Identifier MASTER_SCORCH_BLINK_ID =
             Identifier.fromNamespaceAndPath("fireballpredictor", "textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full_blinking.png");
 
-    private static final Identifier MASTER_SHATTER_FULL_ID =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "textures/gui/sprites/hud/heart/cracking_master_frozen_shatter_full.png");
-    private static final Identifier MASTER_SHATTER_BLINK_ID =
-            Identifier.fromNamespaceAndPath("fireballpredictor", "textures/gui/sprites/hud/heart/cracking_master_frozen_shatter_full_blinking.png");
-
     private static final Identifier VANILLA_HEART_ID =
             Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/full.png");
-    private static final Identifier VANILLA_FROZEN_HEART_ID =
-            Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/frozen_full.png");
     public static final Identifier VANILLA_CONTAINER_ID =
             Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/container.png");
 
-    private static final DynamicTexture[] DYNAMIC_TEXTURES = new DynamicTexture[18];
+    private static final DynamicTexture[] DYNAMIC_TEXTURES = new DynamicTexture[12];
     private static volatile boolean initialized = false;
 
     private DynamicHeartOverlayManager() {
@@ -105,32 +83,21 @@ public final class DynamicHeartOverlayManager {
      * Resolves the active overlay texture identifier for standard hearts.
      */
     public static Identifier getOverlayTexture(boolean leftLost, boolean rightLost, boolean blinking) {
-        return getOverlayTexture(leftLost, rightLost, blinking, false, FrozenHeartOverlayStyle.THERMAL_SCORCH);
+        return getOverlayTexture(leftLost, rightLost, blinking, false);
     }
 
     /**
-     * Resolves the active overlay texture identifier supporting frozen hearts and style variants.
+     * Resolves the active overlay texture identifier supporting frozen hearts.
      */
-    public static Identifier getOverlayTexture(boolean leftLost, boolean rightLost, boolean blinking,
-                                              boolean frozen, FrozenHeartOverlayStyle style) {
+    public static Identifier getOverlayTexture(boolean leftLost, boolean rightLost, boolean blinking, boolean frozen) {
         if (initialized) {
             if (frozen) {
-                if (style == FrozenHeartOverlayStyle.FROSTBITE_SHATTER) {
-                    if (leftLost && rightLost) {
-                        return blinking ? DYNAMIC_FROZEN_SHATTER_FULL_BLINKING : DYNAMIC_FROZEN_SHATTER_FULL;
-                    } else if (leftLost) {
-                        return blinking ? DYNAMIC_FROZEN_SHATTER_HALF_BLINKING : DYNAMIC_FROZEN_SHATTER_HALF;
-                    } else if (rightLost) {
-                        return blinking ? DYNAMIC_FROZEN_SHATTER_HALF_RIGHT_BLINKING : DYNAMIC_FROZEN_SHATTER_HALF_RIGHT;
-                    }
-                } else {
-                    if (leftLost && rightLost) {
-                        return blinking ? DYNAMIC_FROZEN_SCORCH_FULL_BLINKING : DYNAMIC_FROZEN_SCORCH_FULL;
-                    } else if (leftLost) {
-                        return blinking ? DYNAMIC_FROZEN_SCORCH_HALF_BLINKING : DYNAMIC_FROZEN_SCORCH_HALF;
-                    } else if (rightLost) {
-                        return blinking ? DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING : DYNAMIC_FROZEN_SCORCH_HALF_RIGHT;
-                    }
+                if (leftLost && rightLost) {
+                    return blinking ? DYNAMIC_FROZEN_SCORCH_FULL_BLINKING : DYNAMIC_FROZEN_SCORCH_FULL;
+                } else if (leftLost) {
+                    return blinking ? DYNAMIC_FROZEN_SCORCH_HALF_BLINKING : DYNAMIC_FROZEN_SCORCH_HALF;
+                } else if (rightLost) {
+                    return blinking ? DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING : DYNAMIC_FROZEN_SCORCH_HALF_RIGHT;
                 }
                 return null;
             }
@@ -143,7 +110,7 @@ public final class DynamicHeartOverlayManager {
             }
             return null;
         }
-        return HeartOverlayRenderer.getOverlaySprite(leftLost, rightLost, blinking, frozen, style);
+        return HeartOverlayRenderer.getOverlaySprite(leftLost, rightLost, blinking, frozen);
     }
 
     /**
@@ -161,11 +128,9 @@ public final class DynamicHeartOverlayManager {
         }
 
         try {
-            // 1. Load active heart sprites to determine silhouettes
+            // 1. Load active heart sprite to determine silhouette and border mask
             boolean[][] mask = extractHeartMask(resourceManager, VANILLA_HEART_ID,
                     "/assets/minecraft/textures/gui/sprites/hud/heart/full.png");
-            boolean[][] frozenMask = extractHeartMask(resourceManager, VANILLA_FROZEN_HEART_ID,
-                    "/assets/minecraft/textures/gui/sprites/hud/heart/frozen_full.png");
 
             // 2. Load master 9x9 pixel art templates
             NativeImage masterFull = loadNativeImage(resourceManager, MASTER_FULL_ID,
@@ -177,11 +142,6 @@ public final class DynamicHeartOverlayManager {
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full.png");
             NativeImage scorchBlink = loadNativeImage(resourceManager, MASTER_SCORCH_BLINK_ID,
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full_blinking.png");
-
-            NativeImage shatterFull = loadNativeImage(resourceManager, MASTER_SHATTER_FULL_ID,
-                    "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_shatter_full.png");
-            NativeImage shatterBlink = loadNativeImage(resourceManager, MASTER_SHATTER_BLINK_ID,
-                    "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_shatter_full_blinking.png");
 
             if (masterFull == null || masterBlink == null) {
                 LOGGER.warn("Failed to load master pixel-art cracking textures; using static fallback.");
@@ -197,30 +157,20 @@ public final class DynamicHeartOverlayManager {
                 NativeImage imgHalfRight = synthesize(masterFull, mask, false, true);
                 NativeImage imgHalfRightBlink = synthesize(masterBlink, mask, false, true);
 
-                // 4. Synthesize frozen scorch variants (fallback to standard if scorch master missing)
+                // 4. Synthesize frozen scorch variants using the exact same silhouette & border mask
                 NativeImage sFullSrc = scorchFull != null ? scorchFull : masterFull;
                 NativeImage sBlinkSrc = scorchBlink != null ? scorchBlink : masterBlink;
-                NativeImage sFull = synthesize(sFullSrc, frozenMask, true, true);
-                NativeImage sFullBlink = synthesize(sBlinkSrc, frozenMask, true, true);
-                NativeImage sHalfLeft = synthesize(sFullSrc, frozenMask, true, false);
-                NativeImage sHalfLeftBlink = synthesize(sBlinkSrc, frozenMask, true, false);
-                NativeImage sHalfRight = synthesize(sFullSrc, frozenMask, false, true);
-                NativeImage sHalfRightBlink = synthesize(sBlinkSrc, frozenMask, false, true);
+                NativeImage sFull = synthesize(sFullSrc, mask, true, true);
+                NativeImage sFullBlink = synthesize(sBlinkSrc, mask, true, true);
+                NativeImage sHalfLeft = synthesize(sFullSrc, mask, true, false);
+                NativeImage sHalfLeftBlink = synthesize(sBlinkSrc, mask, true, false);
+                NativeImage sHalfRight = synthesize(sFullSrc, mask, false, true);
+                NativeImage sHalfRightBlink = synthesize(sBlinkSrc, mask, false, true);
 
-                // 5. Synthesize frozen shatter variants (fallback to standard if shatter master missing)
-                NativeImage shFullSrc = shatterFull != null ? shatterFull : masterFull;
-                NativeImage shBlinkSrc = shatterBlink != null ? shatterBlink : masterBlink;
-                NativeImage shFull = synthesize(shFullSrc, frozenMask, true, true);
-                NativeImage shFullBlink = synthesize(shBlinkSrc, frozenMask, true, true);
-                NativeImage shHalfLeft = synthesize(shFullSrc, frozenMask, true, false);
-                NativeImage shHalfLeftBlink = synthesize(shBlinkSrc, frozenMask, true, false);
-                NativeImage shHalfRight = synthesize(shFullSrc, frozenMask, false, true);
-                NativeImage shHalfRightBlink = synthesize(shBlinkSrc, frozenMask, false, true);
-
-                // 6. Close old dynamic textures if any
+                // 5. Close old dynamic textures if any
                 closeDynamicTextures();
 
-                // 7. Register standard warm textures
+                // 6. Register standard warm textures
                 registerTexture(textureManager, 0, DYNAMIC_FULL, imgFull);
                 registerTexture(textureManager, 1, DYNAMIC_FULL_BLINKING, imgFullBlink);
                 registerTexture(textureManager, 2, DYNAMIC_HALF, imgHalfLeft);
@@ -228,21 +178,13 @@ public final class DynamicHeartOverlayManager {
                 registerTexture(textureManager, 4, DYNAMIC_HALF_RIGHT, imgHalfRight);
                 registerTexture(textureManager, 5, DYNAMIC_HALF_RIGHT_BLINKING, imgHalfRightBlink);
 
-                // 8. Register frozen scorch textures
+                // 7. Register frozen scorch textures
                 registerTexture(textureManager, 6, DYNAMIC_FROZEN_SCORCH_FULL, sFull);
                 registerTexture(textureManager, 7, DYNAMIC_FROZEN_SCORCH_FULL_BLINKING, sFullBlink);
                 registerTexture(textureManager, 8, DYNAMIC_FROZEN_SCORCH_HALF, sHalfLeft);
                 registerTexture(textureManager, 9, DYNAMIC_FROZEN_SCORCH_HALF_BLINKING, sHalfLeftBlink);
                 registerTexture(textureManager, 10, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT, sHalfRight);
                 registerTexture(textureManager, 11, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING, sHalfRightBlink);
-
-                // 9. Register frozen shatter textures
-                registerTexture(textureManager, 12, DYNAMIC_FROZEN_SHATTER_FULL, shFull);
-                registerTexture(textureManager, 13, DYNAMIC_FROZEN_SHATTER_FULL_BLINKING, shFullBlink);
-                registerTexture(textureManager, 14, DYNAMIC_FROZEN_SHATTER_HALF, shHalfLeft);
-                registerTexture(textureManager, 15, DYNAMIC_FROZEN_SHATTER_HALF_BLINKING, shHalfLeftBlink);
-                registerTexture(textureManager, 16, DYNAMIC_FROZEN_SHATTER_HALF_RIGHT, shHalfRight);
-                registerTexture(textureManager, 17, DYNAMIC_FROZEN_SHATTER_HALF_RIGHT_BLINKING, shHalfRightBlink);
 
                 initialized = true;
                 LOGGER.info("Successfully synthesized silhouette-adaptive 9x9 pixel-art heart damage overlays (standard & frozen).");
@@ -251,8 +193,6 @@ public final class DynamicHeartOverlayManager {
                 masterBlink.close();
                 if (scorchFull != null) scorchFull.close();
                 if (scorchBlink != null) scorchBlink.close();
-                if (shatterFull != null) shatterFull.close();
-                if (shatterBlink != null) shatterBlink.close();
             }
         } catch (Exception e) {
             LOGGER.error("Error synthesizing dynamic heart overlays", e);
