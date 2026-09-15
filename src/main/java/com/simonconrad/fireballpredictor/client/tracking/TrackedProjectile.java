@@ -62,9 +62,13 @@ public final class TrackedProjectile {
             return;
         }
         boolean wasDeflected = inference.isDeflected();
-        this.inference = wasDeflected
-                ? InferenceResult.of(packetResult.owner(), packetResult.entity(), packetResult.source(), true)
-                : packetResult;
+        if (wasDeflected) {
+            // Projectile was deflected by a player; keep PLAYER ownership and deflector entity
+            Entity deflector = inference.entity() != null ? inference.entity() : packetResult.entity();
+            this.inference = InferenceResult.of(ProjectileOwner.PLAYER, deflector, packetResult.source(), true);
+        } else {
+            this.inference = packetResult;
+        }
         this.shouldRender = evaluateFilter(projectile, this.inference.owner(), this.inference.isDeflected());
     }
 

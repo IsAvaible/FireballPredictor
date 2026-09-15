@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Multiplayer, Damage & Visual Fixes:** Improved server networking safety, preserved player deflection ownership, fixed shockwave and gallery render sorting, aligned HUD damage text without warning badges, strictly enforced equipment slots for damage protection calculation, and hardened explosion power learning across anti-cheat servers and long-distance flights.
+
 ## 1.10.5
 - **Resource Pack Heart Border Fix:** Fixed cracking overlays overwriting or bleeding over heart borders in custom and PvP resource packs, ensuring damage cracks cleanly stay within the heart interior.
 - **Thermal Scorch Master Sprites & Preview Integration:** Extended the frozen cracking master textures across the full 7x7 icon bounds to eliminate residual heart silhouettes on custom health shapes, and updated the settings damage estimator preview to render dynamic master-synthesized overlays.

@@ -39,7 +39,9 @@ public abstract class LargeFireballMixin implements FireballEntityAccessor {
         LargeFireball fireball = (LargeFireball) (Object) this;
         if (fireball.level() != null && !fireball.level().isClientSide()) {
             for (ServerPlayer player : PlayerLookup.tracking(fireball)) {
-                ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), (float) this.explosionPower));
+                if (ServerPlayNetworking.canSend(player, FireballPowerPayload.ID)) {
+                    ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), (float) this.explosionPower));
+                }
             }
         }
     }

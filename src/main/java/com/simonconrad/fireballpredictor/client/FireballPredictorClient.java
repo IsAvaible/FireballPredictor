@@ -389,7 +389,8 @@ public class FireballPredictorClient implements ClientModInitializer {
             VanillaHudElements.HEALTH_BAR,
             Identifier.fromNamespaceAndPath("fireballpredictor", "damage_hearts"),
             (graphics, tickCounter) -> {
-                HeartOverlayRenderer.render(graphics, Minecraft.getInstance(), damageOverlayActive, currentDamageEstimate, currentDamageEstimateType);
+                boolean badgeVisible = impactWarningVisible && ModConfig.instance().renderImpactWarning;
+                HeartOverlayRenderer.render(graphics, Minecraft.getInstance(), damageOverlayActive, currentDamageEstimate, currentDamageEstimateType, badgeVisible);
             }
         );
 
@@ -670,7 +671,7 @@ public class FireballPredictorClient implements ClientModInitializer {
             if (predictionData.hitResult() != null && predictionData.hitResult().getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
                 net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) predictionData.hitResult();
                 net.minecraft.core.BlockPos hitPos = blockHit.getBlockPos();
-                if (world.getBlockState(hitPos).isAir()) {
+                if (world.getBlockState(hitPos).getCollisionShape(world, hitPos).isEmpty()) {
                     return true;
                 }
             }

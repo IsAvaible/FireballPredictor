@@ -263,6 +263,9 @@ public final class DamageCalculator {
                 continue;
             }
             for (Holder<Enchantment> holder : enchantments.keySet()) {
+                if (!holder.value().matchingSlot(slot)) {
+                    continue;
+                }
                 int level = enchantments.getLevel(holder);
                 List<ConditionalEffect<EnchantmentValueEffect>> effects =
                         holder.value().getEffects(EnchantmentEffectComponents.DAMAGE_PROTECTION);

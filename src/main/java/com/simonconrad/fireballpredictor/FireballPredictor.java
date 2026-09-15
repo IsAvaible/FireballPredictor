@@ -55,21 +55,29 @@ public class FireballPredictor implements ModInitializer {
                 if (fireball instanceof LargeFireball largeFireball) {
                     power = ((FireballEntityAccessor) largeFireball).getExplosionPower();
                 }
-                ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), power));
+                if (ServerPlayNetworking.canSend(player, FireballPowerPayload.ID)) {
+                    ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), power));
+                }
 
                 // Authoritative owner sync when the mod is also present on the server
                 ProjectileOwner owner = OwnerClassifier.resolveAuthoritative(fireball);
                 Entity ownerEntity = fireball.getOwner();
                 int ownerId = ownerEntity != null ? ownerEntity.getId() : -1;
-                ServerPlayNetworking.send(player, new FireballOwnerPayload(fireball.getId(), owner.name(), ownerId));
+                if (ServerPlayNetworking.canSend(player, FireballOwnerPayload.ID)) {
+                    ServerPlayNetworking.send(player, new FireballOwnerPayload(fireball.getId(), owner.name(), ownerId));
+                }
             }
         });
 
         // Push the server's tracking restrictions and active mobGriefing state to joining clients
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayNetworking.send(handler.player, trackingRulesPayload());
-            boolean mobGriefing = handler.player.level().getGameRules().get(GameRules.MOB_GRIEFING);
-            ServerPlayNetworking.send(handler.player, new MobGriefingPayload(mobGriefing));
+            if (ServerPlayNetworking.canSend(handler.player, TrackingRulesPayload.ID)) {
+                ServerPlayNetworking.send(handler.player, trackingRulesPayload());
+            }
+            if (ServerPlayNetworking.canSend(handler.player, MobGriefingPayload.ID)) {
+                boolean mobGriefing = handler.player.level().getGameRules().get(GameRules.MOB_GRIEFING);
+                ServerPlayNetworking.send(handler.player, new MobGriefingPayload(mobGriefing));
+            }
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -80,9 +88,13 @@ public class FireballPredictor implements ModInitializer {
                                 int mask = ServerConfig.reload();
                                 TrackingRulesPayload payload = new TrackingRulesPayload(mask);
                                 for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                                    ServerPlayNetworking.send(player, payload);
-                                    boolean mobGriefing = player.level().getGameRules().get(GameRules.MOB_GRIEFING);
-                                    ServerPlayNetworking.send(player, new MobGriefingPayload(mobGriefing));
+                                    if (ServerPlayNetworking.canSend(player, TrackingRulesPayload.ID)) {
+                                        ServerPlayNetworking.send(player, payload);
+                                    }
+                                    if (ServerPlayNetworking.canSend(player, MobGriefingPayload.ID)) {
+                                        boolean mobGriefing = player.level().getGameRules().get(GameRules.MOB_GRIEFING);
+                                        ServerPlayNetworking.send(player, new MobGriefingPayload(mobGriefing));
+                                    }
                                 }
                                 context.getSource().sendSuccess(
                                         () -> Component.translatable("fireballpredictor.command.reload.success"),

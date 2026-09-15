@@ -19,7 +19,9 @@ public class GameRulesMixin {
         if (rule == GameRules.MOB_GRIEFING && value instanceof Boolean boolValue && server != null && server.getPlayerList() != null) {
             MobGriefingPayload payload = new MobGriefingPayload(boolValue);
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                ServerPlayNetworking.send(player, payload);
+                if (ServerPlayNetworking.canSend(player, MobGriefingPayload.ID)) {
+                    ServerPlayNetworking.send(player, payload);
+                }
             }
         }
     }

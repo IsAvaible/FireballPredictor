@@ -95,21 +95,16 @@ public class FireballInferenceTracker {
     public static void recordFinalFireballLocation(AbstractHurtingProjectile fireball) {
         if (isFireball(fireball)) {
             FireballLocationRecord rec = activeFireballRecords.get(fireball.getId());
-            if (rec != null) {
-                activeFireballRecords.put(fireball.getId(), new FireballLocationRecord(
-                    rec.entityId,
-                    rec.owner,
-                    fireball.position(),
-                    rec.hitPos,
-                    System.currentTimeMillis()
-                ));
-            }
+            ProjectileOwner owner = rec != null ? rec.owner : resolveOwner(fireball);
+            Vec3 hitPos = rec != null ? rec.hitPos : fireball.position();
+            activeFireballRecords.put(fireball.getId(), new FireballLocationRecord(
+                fireball.getId(),
+                owner,
+                fireball.position(),
+                hitPos,
+                System.currentTimeMillis()
+            ));
         }
-    }
-
-    @Deprecated
-    public static void unregisterFireballLocation(AbstractHurtingProjectile fireball) {
-        recordFinalFireballLocation(fireball);
     }
 
     public static void pruneExpiredRecords() {

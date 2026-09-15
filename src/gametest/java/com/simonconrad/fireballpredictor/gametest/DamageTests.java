@@ -194,6 +194,28 @@ public class DamageTests extends GameTestBase {
     }
 
     @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 60)
+    public void testDamageCalculatorIgnoresHeldProtectionItems(GameTestHelper context) {
+        resetGlobalState();
+        ServerLevel level = context.getLevel();
+        Player player = spawnMockPlayer(context, new Vec3(8.0, 3.0, 3.5));
+
+        Registry<Enchantment> enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> blastProtection = enchantments.getOrThrow(Enchantments.BLAST_PROTECTION);
+
+        // Put enchanted armor in MAINHAND and OFFHAND (not equipped in armor slots)
+        player.setItemSlot(EquipmentSlot.MAINHAND, enchantedStack(new ItemStack(Items.DIAMOND_CHESTPLATE), blastProtection));
+        player.setItemSlot(EquipmentSlot.OFFHAND, enchantedStack(new ItemStack(Items.DIAMOND_HELMET), blastProtection));
+
+        DamageSource source = level.damageSources().explosion(null, null);
+        float epf = DamageCalculator.getEnchantmentProtection(player, source);
+        if (epf != 0.0F) {
+            throw fail("Protection enchantments on held items (hands) must not contribute to EPF, got " + epf);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 60)
     public void testDamageCalculatorCoverReducesDamage(GameTestHelper context) {
         resetGlobalState();
         ServerLevel level = context.getLevel();

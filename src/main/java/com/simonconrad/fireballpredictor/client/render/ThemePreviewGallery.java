@@ -656,11 +656,13 @@ public final class ThemePreviewGallery {
                 trajectoryIntercept
             );
 
-            float distSq = (float) cameraPos.distanceToSqr(hitPos);
             AABB pathBox = TrajectoryPredictor.calculatePathBoundingBox(track.path(), domeRadius);
             Frustum frustum = camera.getCullFrustum();
             if (pathBox == null || frustum == null || frustum.isVisible(pathBox)) {
-                collection.translucentModels.submit(new PredictionSubmit(distSq, trailState, domeState));
+                float domeDistSq = (float) cameraPos.distanceToSqr(hitPos);
+                collection.translucentModels.submit(new PredictionSubmit(domeDistSq, null, domeState));
+                float trailDistSq = (float) cameraPos.distanceToSqr(track.startPos());
+                collection.translucentModels.submit(new PredictionSubmit(trailDistSq, trailState, null));
             }
 
             // 3. Nameplate tooltip at the top of the trajectory path

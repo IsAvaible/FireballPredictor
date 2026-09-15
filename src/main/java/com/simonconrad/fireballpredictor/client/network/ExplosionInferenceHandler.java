@@ -70,13 +70,16 @@ public class ExplosionInferenceHandler {
         ProjectileOwner owner = matched.owner != null ? matched.owner : ProjectileOwner.UNKNOWN;
 
         if (radius > 0.0f) {
-            // Sanity check: If packet radius claims a large power (e.g. 4.0) but actual block destruction indicates much smaller power, treat packet radius as inflated.
-            if (estimatedBlockPower != null && estimatedBlockPower < radius * 0.75f) {
+            // Check if packet radius diverges significantly from observable block destruction
+            // (e.g. anti-cheat servers sending inflated 4.0 or deflated 1.0/0.5 dummy radii).
+            boolean diverges = estimatedBlockPower != null
+                    && (estimatedBlockPower < radius * 0.75f || estimatedBlockPower > radius * 1.35f);
+            if (diverges) {
                 ClientPowerLookup.recordInferredBlockEstimation(owner, estimatedBlockPower);
             } else {
                 ClientPowerLookup.recordInferredPacketRadius(owner, radius);
             }
-        } else if (estimatedBlockPower != null) {
+        } else if (estimatedBlockPower != null && estimatedBlockPower > 0.0f) {
             ClientPowerLookup.recordInferredBlockEstimation(owner, estimatedBlockPower);
         }
     }

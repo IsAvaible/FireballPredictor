@@ -71,6 +71,10 @@ public final class HeartOverlayRenderer {
     }
 
     public static void render(GuiGraphicsExtractor graphics, Minecraft client, boolean active, DamageEstimate estimate, WarningProjectileType type) {
+        render(graphics, client, active, estimate, type, false);
+    }
+
+    public static void render(GuiGraphicsExtractor graphics, Minecraft client, boolean active, DamageEstimate estimate, WarningProjectileType type, boolean badgeVisible) {
         if (!active || estimate == null || !estimate.inRange()) {
             return;
         }
@@ -96,7 +100,7 @@ public final class HeartOverlayRenderer {
             drawCrackedHearts(graphics, player, finalDamage);
         }
         if (drawText && (finalDamage > 0.0F || knockback > 0.0)) {
-            drawDamageText(graphics, client, estimate, type);
+            drawDamageText(graphics, client, estimate, type, badgeVisible);
         }
     }
 
@@ -226,7 +230,7 @@ public final class HeartOverlayRenderer {
         }
     }
 
-    private static void drawDamageText(GuiGraphicsExtractor graphics, Minecraft client, DamageEstimate estimate, WarningProjectileType type) {
+    private static void drawDamageText(GuiGraphicsExtractor graphics, Minecraft client, DamageEstimate estimate, WarningProjectileType type, boolean badgeVisible) {
         Font font = client.font;
         if (font == null) {
             return;
@@ -249,9 +253,18 @@ public final class HeartOverlayRenderer {
         }
 
         int textWidth = font.width(text);
-        int textX = (anchor == ImpactWarningBadgeAnchor.TOP_RIGHT || anchor == ImpactWarningBadgeAnchor.BOTTOM_RIGHT)
-                ? badge.x() - textWidth - 6
-                : badge.x() + 24;
+        int textX;
+        if (badgeVisible) {
+            textX = (anchor == ImpactWarningBadgeAnchor.TOP_RIGHT || anchor == ImpactWarningBadgeAnchor.BOTTOM_RIGHT)
+                    ? badge.x() - textWidth - 6
+                    : badge.x() + 24;
+        } else {
+            textX = switch (anchor) {
+                case TOP_RIGHT, BOTTOM_RIGHT -> badge.x() + 20 - textWidth;
+                case TOP_CENTER, BOTTOM_CENTER -> badge.x() + (20 - textWidth) / 2;
+                default -> badge.x();
+            };
+        }
 
         int textColor = type != null ? type.barFillColor() : TEXT_COLOR;
         graphics.text(font, text, textX, badge.y() + 6, textColor, true);

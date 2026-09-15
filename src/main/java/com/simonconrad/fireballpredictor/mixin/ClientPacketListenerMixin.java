@@ -23,16 +23,6 @@ public class ClientPacketListenerMixin {
         Vec3 pos = packet.center();
         float radius = packet.radius();
         int blockCount = packet.blockCount();
-
-        // if (client.player != null) {
-        //     client.player.sendSystemMessage(
-        //         net.minecraft.network.chat.Component.literal(
-        //             String.format("§e[Debug] §fExplosion at (%.1f, %.1f, %.1f) | Radius: %.2f", 
-        //             pos.x, pos.y, pos.z, radius)
-        //         )
-        //     );
-        // }
-
         ExplosionInferenceHandler.onExplosion(pos, radius, blockCount, null, client.level);
     }
 }

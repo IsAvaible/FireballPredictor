@@ -204,12 +204,19 @@ public class PredictionRenderer {
         }
 
         if (trailState != null || domeState != null) {
-            float distSq = (float) camera.position().distanceToSqr(fireball.position());
-            PredictionSubmit submit = new PredictionSubmit(distSq, trailState, domeState);
             AABB pathBox = TrajectoryPredictor.calculatePathBoundingBox(data.path(), domeRadius);
             Frustum frustum = camera.getCullFrustum();
             if (pathBox == null || frustum == null || frustum.isVisible(pathBox)) {
-                collection.translucentModels.submit(submit);
+                // Submit dome and trail with independent depth-sorting keys so the terminal blast dome
+                // (anchored at hitPos) and the incoming trail sort correctly against other translucent geometry
+                if (domeState != null) {
+                    float domeDistSq = (float) camera.position().distanceToSqr(domeState.hitPos());
+                    collection.translucentModels.submit(new PredictionSubmit(domeDistSq, null, domeState));
+                }
+                if (trailState != null) {
+                    float trailDistSq = (float) camera.position().distanceToSqr(fireball.position());
+                    collection.translucentModels.submit(new PredictionSubmit(trailDistSq, trailState, null));
+                }
             }
         }
     }
