@@ -88,6 +88,8 @@ public final class DynamicHeartOverlayManager {
             Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/full.png");
     private static final Identifier VANILLA_FROZEN_HEART_ID =
             Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/frozen_full.png");
+    public static final Identifier VANILLA_CONTAINER_ID =
+            Identifier.fromNamespaceAndPath("minecraft", "textures/gui/sprites/hud/heart/container.png");
 
     private static final DynamicTexture[] DYNAMIC_TEXTURES = new DynamicTexture[18];
     private static volatile boolean initialized = false;
@@ -290,8 +292,18 @@ public final class DynamicHeartOverlayManager {
                 "/assets/minecraft/textures/gui/sprites/hud/heart/full.png");
     }
 
+    public static boolean isStandardHeartBorderCoord(int x, int y) {
+        return HeartMaskHelper.isStandardHeartBorderCoord(x, y);
+    }
+
+    public static boolean isDarkBorderPixel(int pixel) {
+        return HeartMaskHelper.isDarkBorderPixel(pixel);
+    }
+
     /**
      * Extracts a 9x9 boolean silhouette mask from a specific heart icon sprite in the resource pack.
+     * Dark outer border outline pixels (common in custom/PvP resource packs) are filtered out to ensure
+     * damage cracking overlays only cover the interior fill and never overwrite the structural heart borders.
      */
     public static boolean[][] extractHeartMask(ResourceManager resourceManager, Identifier spriteId, String fallbackPath) {
         boolean[][] mask = new boolean[9][9];
@@ -301,40 +313,59 @@ public final class DynamicHeartOverlayManager {
             return defaultVanillaMask();
         }
 
+        NativeImage containerImg = null;
+        if (resourceManager != null) {
+            containerImg = loadNativeImage(resourceManager, VANILLA_CONTAINER_ID,
+                    "/assets/minecraft/textures/gui/sprites/hud/heart/container.png");
+        }
+
+        int activePixels = 0;
         try {
             int w = heartImg.getWidth();
             int h = heartImg.getHeight();
+            int cw = containerImg != null ? containerImg.getWidth() : 0;
+            int ch = containerImg != null ? containerImg.getHeight() : 0;
 
             for (int y = 0; y < 9; y++) {
                 for (int x = 0; x < 9; x++) {
-                    int sampleX = (int) ((x + 0.5f) * w / 9.0f);
-                    int sampleY = (int) ((y + 0.5f) * h / 9.0f);
-                    sampleX = Math.clamp(sampleX, 0, w - 1);
-                    sampleY = Math.clamp(sampleY, 0, h - 1);
+                    int sampleX = Math.clamp((int) ((x + 0.5f) * w / 9.0f), 0, w - 1);
+                    int sampleY = Math.clamp((int) ((y + 0.5f) * h / 9.0f), 0, h - 1);
 
                     int pixel = heartImg.getPixel(sampleX, sampleY);
-                    int alpha = ARGB.alpha(pixel);
-                    mask[y][x] = alpha > 16;
+
+                    // Cross-reference container border if available
+                    boolean isContainerBorder = false;
+                    if (containerImg != null) {
+                        int csx = Math.clamp((int) ((x + 0.5f) * cw / 9.0f), 0, cw - 1);
+                        int csy = Math.clamp((int) ((y + 0.5f) * ch / 9.0f), 0, ch - 1);
+                        int cPixel = containerImg.getPixel(csx, csy);
+                        if (ARGB.alpha(cPixel) > 16 && HeartMaskHelper.isDarkBorderPixel(cPixel)) {
+                            isContainerBorder = true;
+                        }
+                    }
+
+                    boolean active = HeartMaskHelper.isMaskPixelActive(x, y, pixel, isContainerBorder);
+                    mask[y][x] = active;
+                    if (active) {
+                        activePixels++;
+                    }
                 }
             }
         } finally {
             heartImg.close();
+            if (containerImg != null) {
+                containerImg.close();
+            }
+        }
+
+        if (activePixels == 0) {
+            return defaultVanillaMask();
         }
         return mask;
     }
 
     public static boolean[][] defaultVanillaMask() {
-        return new boolean[][] {
-                {false, false, false, false, false, false, false, false, false},
-                {false, false,  true,  true, false,  true,  true, false, false},
-                {false,  true,  true,  true,  true,  true,  true,  true, false},
-                {false,  true,  true,  true,  true,  true,  true,  true, false},
-                {false,  true,  true,  true,  true,  true,  true,  true, false},
-                {false, false,  true,  true,  true,  true,  true, false, false},
-                {false, false, false,  true,  true,  true, false, false, false},
-                {false, false, false, false,  true, false, false, false, false},
-                {false, false, false, false, false, false, false, false, false}
-        };
+        return HeartMaskHelper.defaultVanillaMask();
     }
 
     private static void registerTexture(TextureManager manager, int index, Identifier id, NativeImage image) {

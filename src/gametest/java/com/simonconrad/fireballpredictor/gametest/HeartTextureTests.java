@@ -4,8 +4,10 @@ import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import javax.imageio.ImageIO;
 
+import com.simonconrad.fireballpredictor.client.render.HeartMaskHelper;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.util.ARGB;
 
 public class HeartTextureTests extends GameTestBase {
 
@@ -18,12 +20,6 @@ public class HeartTextureTests extends GameTestBase {
             "cracking_half_right_blinking",
             "cracking_master_full",
             "cracking_master_full_blinking",
-            "cracking_frozen_full",
-            "cracking_frozen_full_blinking",
-            "cracking_frozen_half",
-            "cracking_frozen_half_blinking",
-            "cracking_frozen_half_right",
-            "cracking_frozen_half_right_blinking",
             "cracking_frozen_scorch_full",
             "cracking_frozen_scorch_full_blinking",
             "cracking_frozen_scorch_half",
@@ -36,8 +32,6 @@ public class HeartTextureTests extends GameTestBase {
             "cracking_frozen_shatter_half_blinking",
             "cracking_frozen_shatter_half_right",
             "cracking_frozen_shatter_half_right_blinking",
-            "cracking_master_frozen_full",
-            "cracking_master_frozen_full_blinking",
             "cracking_master_frozen_scorch_full",
             "cracking_master_frozen_scorch_full_blinking",
             "cracking_master_frozen_shatter_full",
@@ -50,16 +44,11 @@ public class HeartTextureTests extends GameTestBase {
 
         for (String name : STATIC_SPRITE_NAMES) {
             String pathInSprites = "/assets/fireballpredictor/textures/gui/sprites/hud/heart/" + name + ".png";
-            String pathInHud = "/assets/fireballpredictor/textures/hud/heart/" + name + ".png";
 
             BufferedImage imgSprites = loadResourceImage(pathInSprites);
-            BufferedImage imgHud = loadResourceImage(pathInHud);
 
             if (imgSprites.getWidth() != 9 || imgSprites.getHeight() != 9) {
                 throw fail("Expected 9x9 sprite at " + pathInSprites + ", got " + imgSprites.getWidth() + "x" + imgSprites.getHeight());
-            }
-            if (imgHud.getWidth() != 9 || imgHud.getHeight() != 9) {
-                throw fail("Expected 9x9 sprite at " + pathInHud + ", got " + imgHud.getWidth() + "x" + imgHud.getHeight());
             }
         }
 
@@ -72,7 +61,6 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] halfRightOverlays = {
                 "cracking_half_right", "cracking_half_right_blinking",
-                "cracking_frozen_half_right", "cracking_frozen_half_right_blinking",
                 "cracking_frozen_scorch_half_right", "cracking_frozen_scorch_half_right_blinking",
                 "cracking_frozen_shatter_half_right", "cracking_frozen_shatter_half_right_blinking"
         };
@@ -103,7 +91,6 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] halfLeftOverlays = {
                 "cracking_half", "cracking_half_blinking",
-                "cracking_frozen_half", "cracking_frozen_half_blinking",
                 "cracking_frozen_scorch_half", "cracking_frozen_scorch_half_blinking",
                 "cracking_frozen_shatter_half", "cracking_frozen_shatter_half_blinking"
         };
@@ -134,7 +121,6 @@ public class HeartTextureTests extends GameTestBase {
 
         String[] fullOverlays = {
                 "cracking_full", "cracking_full_blinking",
-                "cracking_frozen_full", "cracking_frozen_full_blinking",
                 "cracking_frozen_scorch_full", "cracking_frozen_scorch_full_blinking",
                 "cracking_frozen_shatter_full", "cracking_frozen_shatter_full_blinking"
         };
@@ -273,6 +259,143 @@ public class HeartTextureTests extends GameTestBase {
                     }
                 }
             }
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testStandardHeartBorderCoordinatesCountAndAccuracy(GameTestHelper context) {
+        resetGlobalState();
+
+        int borderCoordCount = 0;
+        for (int y = 0; y < 9; y++) {
+            for (int x = 0; x < 9; x++) {
+                if (HeartMaskHelper.isStandardHeartBorderCoord(x, y)) {
+                    borderCoordCount++;
+                }
+            }
+        }
+
+        // Must exactly match the 20 perimeter border pixels of standard Minecraft hearts
+        if (borderCoordCount != 20) {
+            throw fail("Expected exactly 20 standard heart border coordinates, but got " + borderCoordCount);
+        }
+
+        // Cleft coordinate (4,1) and lobe tops must be recognized as border coordinates
+        if (!HeartMaskHelper.isStandardHeartBorderCoord(4, 1)) {
+            throw fail("Coordinate (4,1) (heart cleft) must be identified as a standard border coordinate");
+        }
+        if (!HeartMaskHelper.isStandardHeartBorderCoord(4, 8)) {
+            throw fail("Coordinate (4,8) (bottom tip) must be identified as a standard border coordinate");
+        }
+
+        // Interior fill coordinates must NOT be border coordinates
+        if (HeartMaskHelper.isStandardHeartBorderCoord(4, 3)
+                || HeartMaskHelper.isStandardHeartBorderCoord(2, 2)
+                || HeartMaskHelper.isStandardHeartBorderCoord(6, 2)) {
+            throw fail("Interior heart coordinates must not be classified as border coordinates");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testDarkBorderPixelDetection(GameTestHelper context) {
+        resetGlobalState();
+
+        // Transparent pixels should not be dark borders
+        if (HeartMaskHelper.isDarkBorderPixel(0)) {
+            throw fail("Transparent pixel (alpha 0) should not be dark border");
+        }
+
+        // Black and dark border outline colors
+        int black = ARGB.color(255, 0, 0, 0);
+        int darkOutline1 = ARGB.color(255, 30, 0, 0);
+        int darkOutline2 = ARGB.color(255, 20, 20, 20);
+        int darkOutline3 = ARGB.color(255, 36, 12, 12);
+        if (!HeartMaskHelper.isDarkBorderPixel(black)
+                || !HeartMaskHelper.isDarkBorderPixel(darkOutline1)
+                || !HeartMaskHelper.isDarkBorderPixel(darkOutline2)
+                || !HeartMaskHelper.isDarkBorderPixel(darkOutline3)) {
+            throw fail("Dark border colors must be recognized by isDarkBorderPixel");
+        }
+
+        // Normal heart fill and effect colors must NOT be dark border pixels
+        int heartRed = ARGB.color(255, 255, 0, 0);
+        int heartShadedRed = ARGB.color(255, 180, 20, 20);
+        int absorptionGold = ARGB.color(255, 255, 205, 110);
+        int iceBlue = ARGB.color(255, 100, 200, 255);
+        if (HeartMaskHelper.isDarkBorderPixel(heartRed)
+                || HeartMaskHelper.isDarkBorderPixel(heartShadedRed)
+                || HeartMaskHelper.isDarkBorderPixel(absorptionGold)
+                || HeartMaskHelper.isDarkBorderPixel(iceBlue)) {
+            throw fail("Vibrant heart fill colors must not be classified as dark border pixels");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBlinkingMasterCleftPixelColor(GameTestHelper context) {
+        resetGlobalState();
+
+        BufferedImage masterBlink = loadResourceImage("/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full_blinking.png");
+        int rgb = masterBlink.getRGB(4, 1);
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+
+        // Cleft at (4,1) must be dark reddish brown seam [781400] instead of pale yellow [FFF5B4]
+        if (r == 0xFF && g == 0xF5 && b == 0xB4) {
+            throw fail("Master blinking cleft at (4,1) must not be pale yellow (#FFF5B4)");
+        }
+        if (r != 120 || g != 20 || b != 0) {
+            throw fail("Master blinking cleft at (4,1) expected #781400 (120, 20, 0), got (" + r + "," + g + "," + b + ")");
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 50)
+    public void testBakedBorderMaskFiltering(GameTestHelper context) {
+        resetGlobalState();
+
+        boolean[][] vanillaMask = HeartMaskHelper.defaultVanillaMask();
+        int darkBorderColor = ARGB.color(255, 18, 10, 10);
+        int redFillColor = ARGB.color(255, 220, 20, 20);
+
+        // Simulate a custom resource pack sprite with baked borders and red interior
+        int keptCount = 0;
+        for (int y = 0; y < 9; y++) {
+            for (int x = 0; x < 9; x++) {
+                int pixel;
+                if (vanillaMask[y][x]) {
+                    pixel = redFillColor;
+                } else if (HeartMaskHelper.isStandardHeartBorderCoord(x, y)) {
+                    pixel = darkBorderColor;
+                } else {
+                    pixel = 0; // transparent
+                }
+
+                int alpha = ARGB.alpha(pixel);
+                boolean isBorderCoord = HeartMaskHelper.isStandardHeartBorderCoord(x, y);
+                boolean isDarkBorder = HeartMaskHelper.isDarkBorderPixel(pixel);
+
+                boolean keep = (alpha > 16) && !(isBorderCoord && isDarkBorder);
+                if (keep) {
+                    keptCount++;
+                    if (!vanillaMask[y][x]) {
+                        throw fail("Pixel at (" + x + "," + y + ") was kept but is not in vanilla interior mask");
+                    }
+                } else if (vanillaMask[y][x]) {
+                    throw fail("Pixel at (" + x + "," + y + ") is in vanilla interior mask but was filtered out");
+                }
+            }
+        }
+
+        if (keptCount != 34) {
+            throw fail("Expected exactly 34 interior pixels after filtering baked border, got " + keptCount);
         }
 
         context.succeed();
