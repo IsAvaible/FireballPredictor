@@ -280,6 +280,7 @@ public class TrajectoryTests extends GameTestBase {
 
         // 2. Test updating estimation with new smaller explosion (dMax ~ 1.66 -> 1.28f)
         // With EMA smoothing (0.65 * 1.28 + 0.35 * 3.0 = 1.882f -> snapped to canonical 2.0f)
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
         List<BlockPos> smallerAffected = List.of(
                 BlockPos.containing(11.3, 64.0, 10.0)
         );
@@ -289,6 +290,7 @@ public class TrajectoryTests extends GameTestBase {
         }
 
         // 3. Test Precedence: Radius Inference overrides Block Estimation
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
         ExplosionInferenceHandler.onExplosion(explosionPos, 2.5f, 0);
         float resolvedPower = ClientPowerLookup.getPower(fireball);
         if (resolvedPower != 2.5f) {
@@ -323,6 +325,7 @@ public class TrajectoryTests extends GameTestBase {
         }
 
         // 2. Simulate legitimate radius 4.0 with large block count (40 blocks estimates power ~3.91f)
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
         ExplosionInferenceHandler.onExplosion(explosionPos, 4.0f, 40, null);
         Float validRadius = ClientPowerLookup.getInferredPacketRadius();
         if (validRadius == null || validRadius != 4.0f) {

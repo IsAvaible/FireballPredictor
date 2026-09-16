@@ -307,8 +307,12 @@ public final class DamageCalculator {
 
     public static double computeKnockback(
             double distance, float radius, Player player, float seenPercent, float knockbackMultiplier) {
+        if (radius <= 0.0f || distance >= radius || seenPercent <= 0.0f) {
+            return 0.0;
+        }
         double knockbackResistance = player.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
-        return (1.0 - distance / radius) * seenPercent * knockbackMultiplier * (1.0 - knockbackResistance);
+        double factor = Math.max(0.0, 1.0 - distance / radius);
+        return factor * seenPercent * knockbackMultiplier * Math.max(0.0, 1.0 - knockbackResistance);
     }
 
     private static boolean matchesCondition(Optional<LootItemCondition> requirements, DamageSource source) {

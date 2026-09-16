@@ -442,6 +442,7 @@ public class FireballPredictorClient implements ClientModInitializer {
         trackedPrediction.calculatedDangerous = currentDangerous;
         trackedPrediction.calculatedCanBreakBlocks = currentCanBreak;
         trackedPrediction.cachedDamageHitTick = -1;
+        trackedPrediction.cachedSeenPercent = -1.0f;
 
         Vec3 hitPos = result.hitResult() != null ? result.hitResult().getLocation() : null;
         FireballInferenceTracker.registerFireballLocation(fireball, hitPos);

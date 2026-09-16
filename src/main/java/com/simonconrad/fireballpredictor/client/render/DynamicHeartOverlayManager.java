@@ -127,20 +127,24 @@ public final class DynamicHeartOverlayManager {
             return;
         }
 
+        NativeImage masterFull = null;
+        NativeImage masterBlink = null;
+        NativeImage scorchFull = null;
+        NativeImage scorchBlink = null;
         try {
             // 1. Load active heart sprite to determine silhouette and border mask
             boolean[][] mask = extractHeartMask(resourceManager, VANILLA_HEART_ID,
                     "/assets/minecraft/textures/gui/sprites/hud/heart/full.png");
 
             // 2. Load master 9x9 pixel art templates
-            NativeImage masterFull = loadNativeImage(resourceManager, MASTER_FULL_ID,
+            masterFull = loadNativeImage(resourceManager, MASTER_FULL_ID,
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full.png");
-            NativeImage masterBlink = loadNativeImage(resourceManager, MASTER_BLINK_ID,
+            masterBlink = loadNativeImage(resourceManager, MASTER_BLINK_ID,
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_full_blinking.png");
 
-            NativeImage scorchFull = loadNativeImage(resourceManager, MASTER_SCORCH_FULL_ID,
+            scorchFull = loadNativeImage(resourceManager, MASTER_SCORCH_FULL_ID,
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full.png");
-            NativeImage scorchBlink = loadNativeImage(resourceManager, MASTER_SCORCH_BLINK_ID,
+            scorchBlink = loadNativeImage(resourceManager, MASTER_SCORCH_BLINK_ID,
                     "/assets/fireballpredictor/textures/gui/sprites/hud/heart/cracking_master_frozen_scorch_full_blinking.png");
 
             if (masterFull == null || masterBlink == null) {
@@ -148,55 +152,53 @@ public final class DynamicHeartOverlayManager {
                 return;
             }
 
-            try {
-                // 3. Synthesize standard warm variants
-                NativeImage imgFull = synthesize(masterFull, mask, true, true);
-                NativeImage imgFullBlink = synthesize(masterBlink, mask, true, true);
-                NativeImage imgHalfLeft = synthesize(masterFull, mask, true, false);
-                NativeImage imgHalfLeftBlink = synthesize(masterBlink, mask, true, false);
-                NativeImage imgHalfRight = synthesize(masterFull, mask, false, true);
-                NativeImage imgHalfRightBlink = synthesize(masterBlink, mask, false, true);
+            // 3. Synthesize standard warm variants
+            NativeImage imgFull = synthesize(masterFull, mask, true, true);
+            NativeImage imgFullBlink = synthesize(masterBlink, mask, true, true);
+            NativeImage imgHalfLeft = synthesize(masterFull, mask, true, false);
+            NativeImage imgHalfLeftBlink = synthesize(masterBlink, mask, true, false);
+            NativeImage imgHalfRight = synthesize(masterFull, mask, false, true);
+            NativeImage imgHalfRightBlink = synthesize(masterBlink, mask, false, true);
 
-                // 4. Synthesize frozen scorch variants using the exact same silhouette & border mask
-                NativeImage sFullSrc = scorchFull != null ? scorchFull : masterFull;
-                NativeImage sBlinkSrc = scorchBlink != null ? scorchBlink : masterBlink;
-                NativeImage sFull = synthesize(sFullSrc, mask, true, true);
-                NativeImage sFullBlink = synthesize(sBlinkSrc, mask, true, true);
-                NativeImage sHalfLeft = synthesize(sFullSrc, mask, true, false);
-                NativeImage sHalfLeftBlink = synthesize(sBlinkSrc, mask, true, false);
-                NativeImage sHalfRight = synthesize(sFullSrc, mask, false, true);
-                NativeImage sHalfRightBlink = synthesize(sBlinkSrc, mask, false, true);
+            // 4. Synthesize frozen scorch variants using the exact same silhouette & border mask
+            NativeImage sFullSrc = scorchFull != null ? scorchFull : masterFull;
+            NativeImage sBlinkSrc = scorchBlink != null ? scorchBlink : masterBlink;
+            NativeImage sFull = synthesize(sFullSrc, mask, true, true);
+            NativeImage sFullBlink = synthesize(sBlinkSrc, mask, true, true);
+            NativeImage sHalfLeft = synthesize(sFullSrc, mask, true, false);
+            NativeImage sHalfLeftBlink = synthesize(sBlinkSrc, mask, true, false);
+            NativeImage sHalfRight = synthesize(sFullSrc, mask, false, true);
+            NativeImage sHalfRightBlink = synthesize(sBlinkSrc, mask, false, true);
 
-                // 5. Close old dynamic textures if any
-                closeDynamicTextures();
+            // 5. Close old dynamic textures if any
+            closeDynamicTextures();
 
-                // 6. Register standard warm textures
-                registerTexture(textureManager, 0, DYNAMIC_FULL, imgFull);
-                registerTexture(textureManager, 1, DYNAMIC_FULL_BLINKING, imgFullBlink);
-                registerTexture(textureManager, 2, DYNAMIC_HALF, imgHalfLeft);
-                registerTexture(textureManager, 3, DYNAMIC_HALF_BLINKING, imgHalfLeftBlink);
-                registerTexture(textureManager, 4, DYNAMIC_HALF_RIGHT, imgHalfRight);
-                registerTexture(textureManager, 5, DYNAMIC_HALF_RIGHT_BLINKING, imgHalfRightBlink);
+            // 6. Register standard warm textures
+            registerTexture(textureManager, 0, DYNAMIC_FULL, imgFull);
+            registerTexture(textureManager, 1, DYNAMIC_FULL_BLINKING, imgFullBlink);
+            registerTexture(textureManager, 2, DYNAMIC_HALF, imgHalfLeft);
+            registerTexture(textureManager, 3, DYNAMIC_HALF_BLINKING, imgHalfLeftBlink);
+            registerTexture(textureManager, 4, DYNAMIC_HALF_RIGHT, imgHalfRight);
+            registerTexture(textureManager, 5, DYNAMIC_HALF_RIGHT_BLINKING, imgHalfRightBlink);
 
-                // 7. Register frozen scorch textures
-                registerTexture(textureManager, 6, DYNAMIC_FROZEN_SCORCH_FULL, sFull);
-                registerTexture(textureManager, 7, DYNAMIC_FROZEN_SCORCH_FULL_BLINKING, sFullBlink);
-                registerTexture(textureManager, 8, DYNAMIC_FROZEN_SCORCH_HALF, sHalfLeft);
-                registerTexture(textureManager, 9, DYNAMIC_FROZEN_SCORCH_HALF_BLINKING, sHalfLeftBlink);
-                registerTexture(textureManager, 10, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT, sHalfRight);
-                registerTexture(textureManager, 11, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING, sHalfRightBlink);
+            // 7. Register frozen scorch textures
+            registerTexture(textureManager, 6, DYNAMIC_FROZEN_SCORCH_FULL, sFull);
+            registerTexture(textureManager, 7, DYNAMIC_FROZEN_SCORCH_FULL_BLINKING, sFullBlink);
+            registerTexture(textureManager, 8, DYNAMIC_FROZEN_SCORCH_HALF, sHalfLeft);
+            registerTexture(textureManager, 9, DYNAMIC_FROZEN_SCORCH_HALF_BLINKING, sHalfLeftBlink);
+            registerTexture(textureManager, 10, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT, sHalfRight);
+            registerTexture(textureManager, 11, DYNAMIC_FROZEN_SCORCH_HALF_RIGHT_BLINKING, sHalfRightBlink);
 
-                initialized = true;
-                LOGGER.info("Successfully synthesized silhouette-adaptive 9x9 pixel-art heart damage overlays (standard & frozen).");
-            } finally {
-                masterFull.close();
-                masterBlink.close();
-                if (scorchFull != null) scorchFull.close();
-                if (scorchBlink != null) scorchBlink.close();
-            }
+            initialized = true;
+            LOGGER.info("Successfully synthesized silhouette-adaptive 9x9 pixel-art heart damage overlays (standard & frozen).");
         } catch (Exception e) {
             LOGGER.error("Error synthesizing dynamic heart overlays", e);
             initialized = false;
+        } finally {
+            if (masterFull != null) masterFull.close();
+            if (masterBlink != null) masterBlink.close();
+            if (scorchFull != null) scorchFull.close();
+            if (scorchBlink != null) scorchBlink.close();
         }
     }
 

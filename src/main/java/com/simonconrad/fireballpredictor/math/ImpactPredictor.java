@@ -79,7 +79,7 @@ public class ImpactPredictor {
 
     public static List<BlockPos> predictBrokenBlocks(
             float power, ProjectileProfile profile, boolean isDangerous, Vec3 explosionPos, BlockGetter world) {
-        if (!profile.breaksBlocks() || power <= 0.0f || power > 50.0f) {
+        if (profile == null || !profile.breaksBlocks() || power <= 0.0f || power > 50.0f) {
             // Wind charges, zero-blast, and extreme-power (>50) projectiles do not break blocks.
             return List.of();
         }

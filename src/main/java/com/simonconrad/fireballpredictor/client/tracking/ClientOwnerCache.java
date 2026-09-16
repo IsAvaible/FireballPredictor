@@ -54,4 +54,21 @@ public final class ClientOwnerCache {
     public static void clear() {
         OWNER_CACHE.clear();
     }
+
+    public static com.simonconrad.fireballpredictor.tracking.ProjectileOwner resolveOwner(@Nullable net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile fireball) {
+        if (fireball == null) {
+            return com.simonconrad.fireballpredictor.tracking.ProjectileOwner.UNKNOWN;
+        }
+        InferenceResult cached = get(fireball.getId());
+        if (cached != null && cached.owner() != com.simonconrad.fireballpredictor.tracking.ProjectileOwner.UNKNOWN) {
+            return cached.owner();
+        }
+        if (fireball.level() != null) {
+            InferenceResult inferred = OwnerInferenceEngine.infer(fireball, fireball.level());
+            if (inferred != null && inferred.owner() != com.simonconrad.fireballpredictor.tracking.ProjectileOwner.UNKNOWN) {
+                return inferred.owner();
+            }
+        }
+        return com.simonconrad.fireballpredictor.tracking.ProjectileOwner.UNKNOWN;
+    }
 }

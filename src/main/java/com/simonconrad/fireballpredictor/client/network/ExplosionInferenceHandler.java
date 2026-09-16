@@ -39,7 +39,7 @@ public class ExplosionInferenceHandler {
     }
 
     public static void onExplosion(Vec3 explosionPos, float radius, int blockCount, List<BlockPos> affectedBlocks, BlockGetter world) {
-        FireballLocationRecord matched = FireballInferenceTracker.findNearbyFireball(explosionPos, 3.0);
+        FireballLocationRecord matched = FireballInferenceTracker.consumeNearbyFireball(explosionPos, 3.0);
         if (matched == null) {
             return;
         }

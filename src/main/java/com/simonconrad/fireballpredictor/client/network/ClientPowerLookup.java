@@ -268,20 +268,7 @@ public class ClientPowerLookup {
     }
 
     private static ProjectileOwner resolveOwner(AbstractHurtingProjectile fireball) {
-        if (fireball == null) {
-            return ProjectileOwner.UNKNOWN;
-        }
-        InferenceResult cached = ClientOwnerCache.get(fireball.getId());
-        if (cached != null && cached.owner() != ProjectileOwner.UNKNOWN) {
-            return cached.owner();
-        }
-        if (fireball.level() != null) {
-            InferenceResult inferred = OwnerInferenceEngine.infer(fireball, fireball.level());
-            if (inferred != null && inferred.owner() != ProjectileOwner.UNKNOWN) {
-                return inferred.owner();
-            }
-        }
-        return ProjectileOwner.UNKNOWN;
+        return ClientOwnerCache.resolveOwner(fireball);
     }
 
     @Environment(EnvType.CLIENT)

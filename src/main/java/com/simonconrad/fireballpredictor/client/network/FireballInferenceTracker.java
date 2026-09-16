@@ -131,6 +131,31 @@ public class FireballInferenceTracker {
         return best;
     }
 
+    public static FireballLocationRecord consumeNearbyFireball(Vec3 pos, double maxDistance) {
+        pruneExpiredRecords();
+
+        FireballLocationRecord best = null;
+        Integer bestId = null;
+        double bestDistSq = maxDistance * maxDistance;
+
+        for (Map.Entry<Integer, FireballLocationRecord> entry : activeFireballRecords.entrySet()) {
+            FireballLocationRecord rec = entry.getValue();
+            if (rec.isNear(pos, maxDistance)) {
+                double distSq = rec.distanceToSqr(pos);
+                if (distSq <= bestDistSq) {
+                    bestDistSq = distSq;
+                    best = rec;
+                    bestId = entry.getKey();
+                }
+            }
+        }
+
+        if (bestId != null) {
+            activeFireballRecords.remove(bestId);
+        }
+        return best;
+    }
+
     public static boolean hasFireballNear(Vec3 pos, double maxDistance) {
         return findNearbyFireball(pos, maxDistance) != null;
     }
@@ -140,19 +165,6 @@ public class FireballInferenceTracker {
     }
 
     private static ProjectileOwner resolveOwner(AbstractHurtingProjectile fireball) {
-        if (fireball == null) {
-            return ProjectileOwner.UNKNOWN;
-        }
-        InferenceResult cached = ClientOwnerCache.get(fireball.getId());
-        if (cached != null && cached.owner() != ProjectileOwner.UNKNOWN) {
-            return cached.owner();
-        }
-        if (fireball.level() != null) {
-            InferenceResult inferred = OwnerInferenceEngine.infer(fireball, fireball.level());
-            if (inferred != null && inferred.owner() != ProjectileOwner.UNKNOWN) {
-                return inferred.owner();
-            }
-        }
-        return ProjectileOwner.UNKNOWN;
+        return ClientOwnerCache.resolveOwner(fireball);
     }
 }

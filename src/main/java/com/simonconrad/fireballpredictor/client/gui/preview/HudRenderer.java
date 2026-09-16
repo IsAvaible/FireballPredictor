@@ -56,13 +56,15 @@ final class HudRenderer {
         int scaledOffX = Math.round(Mth.clamp(offX * scale, -fw / 3.0f, fw / 3.0f));
         int scaledOffY = Math.round(Mth.clamp(offY * scale, -fh / 3.0f, fh / 3.0f));
 
-        int bx = switch (anchor) {
+        ImpactWarningBadgeAnchor safeAnchor = anchor != null ? anchor : ImpactWarningBadgeAnchor.TOP_LEFT;
+
+        int bx = switch (safeAnchor) {
             case TOP_RIGHT, BOTTOM_RIGHT -> fx + fw - badge - margin;
             case TOP_CENTER, BOTTOM_CENTER -> fx + (fw - badge) / 2;
             default -> fx + margin;
         } + scaledOffX;
 
-        int by = switch (anchor) {
+        int by = switch (safeAnchor) {
             case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> fy + fh - badge - margin;
             default -> fy + margin;
         } + scaledOffY;
