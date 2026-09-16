@@ -10,7 +10,7 @@ Whenever Minecraft updates its version or changes its internal collision, drag, 
 
 ## Test Scenarios
 
-The suite is organized across four domain-scoped test classes ([`TrajectoryTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/TrajectoryTests.java), [`DamageTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/DamageTests.java), [`OwnerTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/OwnerTests.java), and [`ThemeTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/ThemeTests.java), inheriting from [`GameTestBase.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/GameTestBase.java)) using the empty structure pattern (`fabric-gametest-api-v1:empty`):
+The suite is organized across five domain-scoped test classes ([`TrajectoryTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/TrajectoryTests.java), [`DamageTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/DamageTests.java), [`OwnerTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/OwnerTests.java), [`ThemeTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/ThemeTests.java), and [`HeartTextureTests.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/HeartTextureTests.java), inheriting from [`GameTestBase.java`](../src/gametest/java/com/simonconrad/fireballpredictor/gametest/GameTestBase.java)) using the empty structure pattern (`fabric-gametest-api-v1:empty`):
 
 ### 1. Ghast Fireball Prediction (`testFireballPredictionAndExplosion`)
 * **Entity**: `FireballEntity`
@@ -296,6 +296,50 @@ The suite is organized across four domain-scoped test classes ([`TrajectoryTests
 * **Environment**: GameTest world and headless mock environments.
 * **Details**: Asserts that `ExplosionInferenceHandler.normalizeBlockCount` correctly scales destroyed block counts by local solid angle enclosure ($f_{\text{solid}}$) and contact material blast resistance ($\bar{B}$), gracefully returning raw unadjusted counts in headless/null-world contexts.
 
+### 64. Equipped Item Enchantment Slot Matching (`testDamageCalculatorEquippedItemEnchantmentSlotsOnly`)
+* **Environment**: Unit test calculation verification (`DamageTests.java`).
+* **Details**: Asserts that `DamageCalculator.getEnchantmentProtection` evaluates enchantment protection effects exclusively for items equipped in their valid equipment slot (`holder.value().matchingSlot(slot)`). Enchantments placed on invalid equipment slots (e.g. Protection IV on a held item) do not contribute to protection calculation.
+
+### 65. Active GUI Sprites Existence (`testGuiSpritesExist`)
+* **Environment**: Asset file verification (`HeartTextureTests.java`).
+* **Details**: Verifies that all 16 active cracking overlay sprite files (6 standard, 6 frozen scorch, 4 master) exist in `textures/gui/sprites/hud/heart/`.
+
+### 66. Heart Sprite Dimensions (`testGuiSpriteDimensions`)
+* **Environment**: Texture dimension assertion (`HeartTextureTests.java`).
+* **Details**: Validates that all active heart overlay textures have exact 9x9 pixel dimensions.
+
+### 67. Half-Heart Transparency Invariants (`testHalfOverlayTransparency`)
+* **Environment**: Sprite alpha channel validation (`HeartTextureTests.java`).
+* **Details**: Confirms that left-damaged half-heart overlays have strict alpha 0 on the right half ($x \ge 5$) and right-damaged half-heart overlays have strict alpha 0 on the left half ($x \le 4$), preserving the intact half of the player's underlying heart sprite.
+
+### 68. Master Crack Coverage (`testMasterTextureCoversVanillaMask`)
+* **Environment**: Silhouette coverage testing (`HeartTextureTests.java`).
+* **Details**: Asserts that `cracking_master_full.png` has non-zero alpha across all 34 active vanilla heart silhouette mask coordinates.
+
+### 69. Master Texture 7x7 Interior Bounds (`testMasterTextureCoversSquareBounds`)
+* **Environment**: Silhouette coverage testing (`HeartTextureTests.java`).
+* **Details**: Asserts that master textures (`cracking_master_full` and `cracking_master_frozen_scorch_full`) have active pixels across all coordinates in $x \in [1, 7], y \in [1, 7]$ without residual mini-heart cutouts, ensuring full edge-to-edge cracking on custom square/circle health icons.
+
+### 70. Master Blinking Luminous Warning Flash (`testMasterBlinkingYellowWarning`)
+* **Environment**: Pixel color assertion (`HeartTextureTests.java`).
+* **Details**: Confirms that blinking master textures contain the bright luminous gold/yellow warning core (`#FFDC64`).
+
+### 71. Master Blinking Cleft Seam (`testMasterBlinkingCleftCoordinateIsDark`)
+* **Environment**: Pixel color assertion (`HeartTextureTests.java`).
+* **Details**: Asserts that the heart cleft coordinate `(4, 1)` in `cracking_master_full_blinking.png` preserves the dark reddish-brown outline seam (`#781400`).
+
+### 72. Standard Heart Border Coordinate Detection (`testHeartMaskHelperBorderCoordinates`)
+* **Environment**: Helper logic test (`HeartTextureTests.java`).
+* **Details**: Verifies that `HeartMaskHelper.isStandardHeartBorderCoord` accurately identifies all 20 border outline coordinates of the vanilla heart icon.
+
+### 73. Dark Border Pixel Identification (`testHeartMaskHelperDarkBorderPixel`)
+* **Environment**: Color thresholding verification (`HeartTextureTests.java`).
+* **Details**: Verifies that `HeartMaskHelper.isDarkBorderPixel` correctly flags dark outline pixels (max channel < 55 or luminance < 40) while preserving interior fill colors.
+
+### 74. Dynamic Mask Synthesis Border Exclusion (`testHeartMaskHelperBakedBorderMask`)
+* **Environment**: Silhouette extraction testing (`HeartTextureTests.java`).
+* **Details**: Validates that `HeartMaskHelper.isMaskPixelActive` strips outer dark border pixels and cross-references `container.png` borders to produce a clean 34-pixel interior damage mask without border bleed.
+
 ---
 
 ## Key Technical Solutions
@@ -337,11 +381,11 @@ To run the GameTest suite headlessly, execute the following Gradle task in the p
 ### Expected Output
 When all tests pass, you will see:
 ```text
-[Server thread/INFO] (Minecraft) 67 tests are now running...
+[Server thread/INFO] (Minecraft) 77 tests are now running...
 [Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 0 (50 tests)...
-[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (17 tests)...
-[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
-[Server thread/INFO] (Minecraft) ========= 67 GAME TESTS COMPLETE IN 1.460 s ======================
-[Server thread/INFO] (Minecraft) All 67 required tests passed :)
+[Server thread/INFO] (Minecraft) Running test environment 'minecraft:default' batch 1 (27 tests)...
+[Server thread/INFO] (Minecraft) [+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]
+[Server thread/INFO] (Minecraft) ========= 77 GAME TESTS COMPLETE IN 1.620 s ======================
+[Server thread/INFO] (Minecraft) All 77 required tests passed :)
 BUILD SUCCESSFUL
 ```

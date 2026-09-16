@@ -10,10 +10,11 @@ This document describes the client-side visual effects (VFX) used to represent p
 - **Core-and-Glow Dual Pass**: Draws a dual-pass ribbon consisting of a wider, soft outer shroud (base color with edge transparency) and a vibrant, high-alpha inner energy core (~35% width) to add volumetric depth.
 - **Dynamic Taper & Landing Readability**: Tapers smoothly from 40% width / 30% alpha at the projectile position to full width over 1 tick, and tapers inward slightly near the collision point to pinpoint the exact landing location without cone distortion.
 - **Motion & Pulse Effects**: Time-based sine-wave alpha pulsing (`enableRibbonPulse`) modulates alpha along the path, with frequency scaling near impact to build visual anticipation.
+- **Decoupled Translucent Depth Sorting**: Trajectory trails and shockwave domes are submitted to `collection.translucentModels` as independent render batches with separate depth-sorting keys. The trail sorts based on camera distance to the fireball entity (`fireball.position()`), while the dome sorts based on camera distance to the detonation point (`hitPos`), preventing depth fighting and incorrect translucent sorting against each other or world water and stained glass.
 - **Visual Styles**: Configurable via `trajectoryStyle` (`SOLID`, `DASHED` HUD indicator style, or `CORE_ONLY` high-contrast minimalist line).
 
 ### 2. Shockwave Dome
-- **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads are emitted first so the ribbon blends on top.
+- **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads and ribbon quads submit independently with their own camera distance keys for accurate depth sorting.
 - **Procedural Dome Quads**: Renders a procedural hemisphere built from smooth quadrilateral latitude/longitude strips.
 - **Fresnel Rim Effect**: Per-vertex Schlick Fresnel (`F0 = 0.04`, exponent 5) is evaluated on the CPU in [PredictionFeatureRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java) and baked into the vertex alpha. Patches facing the camera become transparent while the silhouette rim (grazing angle) is pushed toward the alpha ceiling, giving the dome a glass-bubble look that tracks the camera. Because culling is disabled, the far side of the hemisphere receives the full rim term and reads as the bright shell of the blast. The latitude profile remains as a base density; `domeFresnelStrength` blends between the legacy flat profile (0) and full Fresnel shading (1).
 - **Pulse Animation**: Pulsates gracefully using a time-based sine wave algorithm to draw player attention.
@@ -45,188 +46,16 @@ This document describes the client-side visual effects (VFX) used to represent p
   2. Any remaining unmitigated damage consumes current health, starting from the highest health point.
 - **Independent Half-Heart Evaluation**: Evaluates left and right half-heart units independently per slot to support odd health values, partial absorption, and multiple stacked heart rows without visual misalignments.
 - **Flashing Pre-Impact Alert**: Alternates between steady and blinking sprite states based on `player.level().getGameTime()`:
-  - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
-  - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
-  - Right-half-lost variants preserve the player's intact left-half heart appearance across all vanilla heart variations:
-    - Normal: `cracking_half_right` / `cracking_half_right_blinking`
-    - Hardcore Normal: `cracking_half_hardcore_right` / `cracking_half_hardcore_right_blinking`
-    - Absorption: `cracking_half_absorbing_right` / `cracking_half_absorbing_right_blinking`
-    - Hardcore Absorption: `cracking_half_absorbing_hardcore_right` / `cracking_half_absorbing_hardcore_right_blinking`
-    - Poison: `cracking_half_poisoned_right` / `cracking_half_poisoned_right_blinking`
-    - Hardcore Poison: `cracking_half_poisoned_hardcore_right` / `cracking_half_poisoned_hardcore_right_blinking`
-    - Wither: `cracking_half_withered_right` / `cracking_half_withered_right_blinking`
-    - Hardcore Wither: `cracking_half_withered_hardcore_right` / `cracking_half_withered_hardcore_right_blinking`
-    - Frozen: `cracking_half_frozen_right` / `cracking_half_frozen_right_blinking`
-    - Hardcore Frozen: `cracking_half_frozen_hardcore_right` / `cracking_half_frozen_hardcore_right_blinking`
-- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
-
-### 7. Special Render Themes & Zero-Allocation VFX Pipeline ([VisualTheme.java](../src/main/java/com/simonconrad/fireballpredictor/config/VisualTheme.java))
-- **Dynamic Thematic Overrides**: Users can select from a curated suite of 16 visual render themes that dynamically calculate per-vertex colors, alpha modulations, patterns, and pulse dynamics across both the trajectory ribbon and shockwave dome:
-  - `DEFAULT`: Standard user colors and styling.
-  - `RAINBOW`: Continuous chromatic HSV wave cycling along the path and ascending the blast dome with rich, non-desaturated saturation.
-  - `CYBERPUNK`: Dual-tone outrun gradient from electric cyan (`#00F0FF`) to hot neon magenta (`#FF007F`) with high-intensity laser core.
-  - `MATRIX`: Cascading terminal phosphor code rain (`#E6FFE6` $\to$ `#00FF41`) with camera-billboarded digital glyphs aligned on the dome shell.
-  - `INFERNO`: Roaring volcanic firestorm: licking multi-tier flame tongues with uniform small spatial spacing along the ribbon, floating heat embers, and molten magma convection dome with glowing fissure veins.
-  - `HEATMAP`: Scientific FLIR false-color thermal ramp (deep blue $\to$ cyan $\to$ green $\to$ amber $\to$ searing hot red-white).
-  - `CELESTIAL`: Translucent cosmic nebula (galactic violet `#6D28D9` $\to$ nebula teal `#06B6D4` $\to$ lilac `#C084FC`) with diamond star glints and high shader visibility.
-  - `GHOST`: Spectral soul-fire turquoise (`#0D9488` $\to$ `#2DD4BF` $\to$ `#99F6E4`) with undulating soul tendrils and orbiting spirit vortex filaments.
-  - `SCULK_VOID`: Abyssal matte void (`#031A1C`) with pulsing Warden soul-glow veins (`#00F5D4`) drifting backward along the ribbon.
-  - `ELECTRIC_ARC`: High-voltage plasma: blistering white core streamers with turbulent ionized cyan/cobalt gas sheaths, crackling dielectric breakdown streamers, high-frequency voltage jitter, and branching lightning discharge arcs flashing along the trajectory and radiating across the blast dome shell from the trajectory's entry intercept.
-  - `TACTICAL_HUD`: High-contrast aviation radar sweep beam with decaying phosphor trail, range tick marks, altitude rings, and tactical escort fighter jets flying along the trajectory.
-  - `AURORA`: Polar atmospheric shimmer (emerald green `#00FF87` $\to$ glacial cyan `#60EFFF` $\to$ polar violet `#A855F7`) with floating hexagonal ice crystal glints and vertical auroral curtain folds.
-  - `SINGULARITY`: Gravitational singularity with burning solar accretion orange (`#FF6A00`), cosmic ultraviolet event horizon (`#4338CA` $\to$ `#312E81`), dark obsidian trajectory core (`#05010B`), central pitch-black singularity void disc, incandescent white photon sphere lensing ring (`#FFFFFF`), multi-tiered relativistic Doppler-beamed accretion vortex disc, and dual-pass relativistic apex jet.
-  - `SAKURA`: Japanese cherry blossom drift (blossom pink `#FFB7C5` $\to$ rose quartz `#F472B6` $\to$ ivory `#FFF1F2`) with orbiting 5-petal blossom flowers, fluttering drifting petals, and an ultra high-density 640-quad 4-tier notched 5-petal flower base at the dome ground plane.
-  - `CRYSTAL`: Faceted gemstone dispersion (amethyst purple `#7E22CE` $\to$ quartz lilac `#C084FC` $\to$ diamond specular white `#FFFFFF` $\to$ emerald glint `#34D399`) with faceted octahedron crystal billboards and geode sparkle highlights.
-  - `ARCADE`: 8-bit retro arcade CRT scanlines and pixel quantization with 8 unique retro bitmap sprites (Space Invader, Heart, Cherries, Star, Ghost, Pac-Coin, Mushroom, Gem) across a 3-tier constellation on the dome shell.
-- **Theme Animation Rate (`themeAnimationSpeed`)**: Configurable speed multiplier (`0.0x` to `3.0x`, default `1.0x`). Setting to `0.0x` completely freezes theme animations into static gradients for motion-sensitive players.
-- **Distance-Based Decoration LOD**: Particle, glyph, and sprite decorations on the dome scale down linearly with camera distance and fade out entirely beyond ~60 blocks, so many simultaneously tracked projectiles (e.g. a ghast barrage) keep a flat render budget. The base dome shell geometry is never LOD'd.
-- **Arc-Length-Anchored Trail Decorations**: Trajectory decorations (sculk tendrils, spectral soul wisps and orbs, matrix glyphs, singularity glints, sakura blossoms and petals, arcade sprites) anchor to cumulative world-space arc length along the predicted path instead of the per-tick path segment index. Predicted trajectories advance one path point per physics tick — several blocks on long or fast flights — so index-anchored decorations would stretch per-segment quads to the full tick distance and spread every-Nth-segment billboards far apart. The anchor grid uses the preview gallery's reference step length ($\sqrt{R^2 + 8^2} / 30 \approx 0.616$ blocks, where $R = 6.5 / (2\sin(\pi/16))$), so element size and spacing match the preview gallery exactly on trajectories of any length or speed; only the element count grows with the path length. Animation phases are likewise driven by arc length (converted to gallery-step units), keeping wave frequencies spatially uniform.
-- **Zero-Allocation Math Architecture**: All vertex color math, hue sampling, and alpha modulation use bit-packed 32-bit `int` values (`0xRRGGBB`), precomputed 256-entry lookup tables (LUTs), and fast bitwise math, eliminating all object allocations in the per-frame 3D render loop and 2D GUI previews.
-
-### 8. Circular Theme Preview Gallery ([ThemePreviewGallery.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/ThemePreviewGallery.java))
-- **In-Game Command (`/fppreview` or `/fireballpredictor preview`)**: Available in all environments (both production and development).
-- **Config Screen Button & Dropdown**: The Visual Theme option is presented as a convenient dropdown selector, and can be previewed by clicking the "Toggle Preview Gallery" button positioned directly beneath it in the mod configuration menu.
-- **Interactive 3D Circular Exhibition**: Spawns all 16 visual themes simultaneously in a 360-degree circle around the player in 3D world space. The circle radius is dynamically calculated ($R = \max(12.0, \frac{S}{2 \sin(\pi / N)})$ with chord spacing $S = 6.5$ blocks) to guarantee abundant spacing between adjacent blast domes, particle accents, billboard sprites, and shader VFX without visual overlaps.
-- **Clickable Chat Command Link**: Chat feedback messages sent when enabling, disabling, or referencing `/fppreview` format the command as an interactive clickable link (`ClickEvent.RUN_COMMAND` with tooltip hover text) allowing instant one-click toggling of the gallery directly from the chat window.
-- **Interactive Left-Click Theme Selection**: Left-clicking while looking at any theme in the active gallery targets its blast dome, trajectory ribbon, or nameplate via continuous line-of-sight raycasting. A confirmation chat message is sent with an interactive `[Confirm]` clickable link (`/fppreview set <theme>`) allowing players to instantly apply and save that theme as their active visual theme.
-- **Toggle / Clear**: Executing `/fppreview`, clicking the chat link, or pressing the config button toggles the exhibition on/off at the player's current position; subcommands `/fppreview on` and `/fppreview off` (or `/fppreview clear`), as well as `/fppreview set <theme>`, allow explicit command-line control.
-
----
-
-## Mod Configuration
-
-- **Event Registration**: Render calls are hooked into the Fabric rendering pipeline via `LevelRenderEvents.END_MAIN` in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java). This ensures that transparent rendering elements sort correctly against other translucent objects in the world (such as water or glass). HUD overlays are registered via Fabric's `HudElementRegistry`.
-- **YACL Config Integration**: In [ModConfig.java](../src/main/java/com/simonconrad/fireballpredictor/config/ModConfig.java), users can individually toggle and customize these features across General, Visuals, and Tracking categories:
-  - `visualTheme`: Dropdown selector for the active visual theme (`DEFAULT` or one of 15 stylized modes).
-  - `themeAnimationSpeed`: Animation speed numeric field for visual themes (`0.0` to `3.0`).
-  - `renderTrajectory`: Enables/disables the ribbon path.
-  - `trajectoryWidth`: Line width multiplier for the trajectory ribbon trail (`0.1` to `2.0`).
-  - `trajectoryStyle`: Selects visual style (`SOLID`, `DASHED`, `CORE_ONLY`).
-  - `renderCoreGlow`: Enables/disables the inner energy core pass.
-  - `enableRibbonPulse`: Enables/disables the time-based alpha motion pulsing.
-  - `renderShockwaveDome`: Enables/disables the 3D blast sphere.
-  - `domeFresnelStrength`: Strength of the Fresnel rim glow on the shockwave dome (0 = legacy flat shading, 1 = full Fresnel).
-  - `renderBlockHighlights`: Enables/disables the cracking animation overlay.
-  - `renderParticleAccents`: Enables/disables the ambient particles.
-  - `trajectoryColor` & `shockwaveColor`: Custom color configuration for fireballs and wither skulls.
-  - `windChargeTrajectoryColor` & `windChargeShockwaveColor`: Custom color configuration for wind charges (defaults to white).
-  - `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y`: HUD collision warning badge visibility, screen anchor alignment, and pixel offsets.
-  - `renderDamageHeartsOverlay`: Enables/disables the cracking hearts overlay on the player's health bar.
-  - `showKnockbackEstimator`: Enables/disables the numerical damage and knockback speed text readout next to the impact badge.
-  - `globalFallbackFireballPower`, `serverFallbackPowers`, `rayPowerMultiplier`: Fallback explosion power levels, per-server IP power overrides, and ray simulation blast resistance scaling.
-  - `trackProjectiles`, `trackMobProjectiles`, `trackOtherOwnerProjectiles`: Hierarchical master, mob-master, and non-mob master switches.
-  - Per-source filters: `trackFireballs`, `trackWitherSkulls`, `trackWindCharges`, `trackBlazeFireballs`, `trackGhastFireballs`, `trackEnderDragonFireballs`, `trackWitherMob`, `trackPlayerProjectiles`, `trackDispenserProjectiles`, `trackCommandProjectiles`.
-
----
-
-## Sodium & Iris Custom Render Pipeline Compatibility
-
-Shader packs managed by Iris modify the render pipeline lookup mechanism. Custom translucent overlays require explicit pipeline registration and shader program assignment to display correctly alongside active shaders.
-
-### 1. Custom Pipeline (`PredictionPipelines.PREDICTION`)
-- **Base**: `RenderPipelines.DEBUG_FILLED_SNIPPET` (`POSITION_COLOR` quad format, `BlendFunction.TRANSLUCENT`, `DepthStencilState(GREATER_THAN_OR_EQUAL, depthWrite = false)`).
-- **Culling**: Configured with `.withCull(false)` so both inner and outer surfaces of the ribbon billboard and dome hemisphere are rendered.
-- **Cracking Overlay Compatibility**: Using `depthWrite = false` prevents depth buffer conflicts with block breaking overlays (`CRUMBLING`), ensuring block mining crack animations remain legible under all conditions.
-
-### 2. Iris Shader Program Registration (`IrisCompat`)
-- **Primary Registration (`ShaderKey.LIGHTNING`)**: Via internal reflection, `IrisCompat` assigns `PredictionPipelines.PREDICTION` to Iris `ShaderKey.LIGHTNING`. This routes prediction rendering to `gbuffers_lightning`, which shader packs treat as emissive fullbright geometry without dark terrain shading or alpha-testing pixel discards (`AlphaTests.OFF`).
-- **Fallback Registration (`IrisProgram.BASIC`)**: If internal APIs are unavailable, `IrisCompat` falls back to public `IrisApi.assignPipeline(..., IrisProgram.BASIC)` (`gbuffers_basic`). *Note: Fallback geometry receives G-buffer lighting and alpha-discarding, which may appear darker with sharper edges.*
-- **No Shadow Casting**: Shadow passes remain unassigned so HUD-like trajectory ribbons and blast domes do not cast world shadows.
-- **Soft-Loading & Safety**: Guarded by `FabricLoader.getInstance().isModLoaded("iris")` to prevent class-loading exceptions when Iris is not installed.
-
----
-
-## Config Screen Live Previews
-
-YACL3 description side-panel previews are implemented by [ConfigPreviewRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ConfigPreviewRenderer.java) implementing `dev.isxander.yacl3.gui.image.ImageRenderer`.
-
-Options under the **Visuals** and **Tracking** categories annotate `@CustomImage(factory = …)` so the description panel shows a live schematic while you edit:
-
-| Mode | Factory | Reflects pending values of |
-| --- | --- | --- |
-| Visual theme | `VisualThemeFactory` | `visualTheme`, `themeAnimationSpeed`, `trajectoryColor`, `shockwaveColor` |
-| Trajectory ribbon | `TrajectoryFactory` / `TrajectoryWindFactory` | `renderTrajectory`, `trajectoryColor` / `windChargeTrajectoryColor`, `trajectoryWidth`, `trajectoryStyle`, `renderCoreGlow`, `enableRibbonPulse`, `visualTheme`, `themeAnimationSpeed` |
-| Shockwave dome | `ShockwaveFactory` / `ShockwaveWindFactory` | `renderShockwaveDome`, `renderBlockHighlights`, `shockwaveColor` / `windChargeShockwaveColor`, `domeFresnelStrength`, `visualTheme`, `themeAnimationSpeed` |
-| HUD warning badge | `HudFactory` | `renderImpactWarning`, `impactWarningBadgeAnchor`, `impactWarningBadgeOffsetX/Y` |
-| Damage hearts overlay | `DamageHeartsFactory` | `renderDamageHeartsOverlay` |
-| Damage & knockback readout | `KnockbackEstimatorFactory` | `showKnockbackEstimator` |
-| Tracking overviews | `TrackMasterFactory` / `TrackMobMasterFactory` / `TrackOtherMasterFactory` | Master chip overviews & source toggles |
-| Single tracking lock-on | `TrackFireballFactory` / `TrackWitherFactory` / `TrackWindFactory` / etc. | Per-source target tracking toggles |
-
-Each frame the renderer reads `Option.pendingValue()` via the autogen `OptionAccess`, so colour pickers, cyclers, and sliders update the schematic immediately without saving.
-
-### Modular Preview Architecture (`com.simonconrad.fireballpredictor.client.gui.preview`)
-- **[Painter.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Painter.java)**: Immediate-mode drawing context handling clipping rects and GUI primitives.
-- **[Arc.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/Arc.java)**: Bezier curve computation for 2D schematic flight paths.
-- **[TrajectoryRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrajectoryRenderer.java)**: Renders 2D animated path with ribbon width, color, pulse wave, core glow, and `SOLID`/`DASHED`/`CORE_ONLY` styles.
-- **[ShockwaveRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/ShockwaveRenderer.java)**: Renders 3x3 block grid, animated dome disc via banded horizontal scanlines, Fresnel rim shading, and crack overlays.
-- **[HudRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/HudRenderer.java)**: Renders miniature screen frame showing HUD anchor alignment, X/Y pixel offsets, and dynamic progress bar.
-- **[PreviewThemeDecorations.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/PreviewThemeDecorations.java)**: Renders theme-specific 2D trajectory and dome overlays (arcs, tendrils, flames, code rain, radar sweeps, blossoms, arcade sprites) and 2D drawing primitives.
-- **[DamageEstimatorRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/DamageEstimatorRenderer.java)**: Renders animated cracking damage hearts on a 10-heart health bar with rising fiery embers, and the impact badge with damage/knockback readout.
-- **[TrackingRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/TrackingRenderer.java)**: Renders master chip overviews and target lock-on badges.
-- **[RenderUtils.java](../src/main/java/com/simonconrad/fireballpredictor/client/gui/preview/RenderUtils.java)**: Color interpolation and alpha math helpers with dynamic icon texture cache invalidation on resource reload.
-
-# Fireball Visualization and Rendering
-
-This document describes the client-side visual effects (VFX) used to represent predicted fireball trajectories and blast zones. All rendering is performed using standard Minecraft rendering frameworks, ensuring compatibility and stability.
-
-## Implemented Visual Effects
-
-### 1. Trajectory Ribbon Trail
-- **Render Buffer**: Shared custom `RenderPipeline` ([PredictionPipelines.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionPipelines.java)), registered as a mod-owned pipeline built from `RenderPipelines.DEBUG_FILLED_SNIPPET` (`core/position_color`, `POSITION_COLOR` quad format, `BlendFunction.TRANSLUCENT`, `DepthStencilState(GREATER_THAN_OR_EQUAL, depthWrite = false)`, `withCull(false)`). Vertices carry UV=(0,0) and a full-bright lightmap so output equals the configured vertex color.
-- **Billboard Geometry**: Builds a 3D procedural billboarded ribbon by mapping coordinates along the predicted path. The ribbon's width is dynamically calculated based on the camera look vector to maintain visual thickness.
-- **Core-and-Glow Dual Pass**: Draws a dual-pass ribbon consisting of a wider, soft outer shroud (base color with edge transparency) and a vibrant, high-alpha inner energy core (~35% width) to add volumetric depth.
-- **Dynamic Taper & Landing Readability**: Tapers smoothly from 40% width / 30% alpha at the projectile position to full width over 1 tick, and tapers inward slightly near the collision point to pinpoint the exact landing location without cone distortion.
-- **Motion & Pulse Effects**: Time-based sine-wave alpha pulsing (`enableRibbonPulse`) modulates alpha along the path, with frequency scaling near impact to build visual anticipation.
-- **Visual Styles**: Configurable via `trajectoryStyle` (`SOLID`, `DASHED` HUD indicator style, or `CORE_ONLY` high-contrast minimalist line).
-
-### 2. Shockwave Dome
-- **Render Buffer**: Shares `PredictionPipelines.PREDICTION`; dome quads are emitted first so the ribbon blends on top.
-- **Procedural Dome Quads**: Renders a procedural hemisphere built from smooth quadrilateral latitude/longitude strips.
-- **Fresnel Rim Effect**: Per-vertex Schlick Fresnel (`F0 = 0.04`, exponent 5) is evaluated on the CPU in [PredictionFeatureRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionFeatureRenderer.java) and baked into the vertex alpha. Patches facing the camera become transparent while the silhouette rim (grazing angle) is pushed toward the alpha ceiling, giving the dome a glass-bubble look that tracks the camera. Because culling is disabled, the far side of the hemisphere receives the full rim term and reads as the bright shell of the blast. The latitude profile remains as a base density; `domeFresnelStrength` blends between the legacy flat profile (0) and full Fresnel shading (1).
-- **Pulse Animation**: Pulsates gracefully using a time-based sine wave algorithm to draw player attention.
-
-### 3. Block Break Highlights & Mining Safeguards
-- **Vanilla Cracking Overlay**: Sends virtual `destroyBlockProgress` network packets directly to the client render engine.
-- **Phase Mapping**: Maps predicted explosion damage cleanly to block destruction stages `0` through `9`.
-- **Flashing Pre-Impact Alert**: Oscillates cracking severity as the fireball gets closer to impact.
-- **Depth & Overlay Safeguards**: Translucent prediction rendering uses `depthWrite = false` in `PredictionPipelines.PREDICTION` to prevent depth buffer conflicts with block breaking overlays (`CRUMBLING`), ensuring vanilla cracking overlays remain completely legible without obscuring block mining progress.
-
-### 4. Ambient Particle Accents
-- **Heat Visuals**: Randomly spawns client-side `FLAME`, `LAVA`, and `CAMPFIRE_COSY_SMOKE` particles on top of the predicted breakable blocks.
-- **Density**: Simulates heat build-up prior to impact. The spawning is throttle-controlled in [FireballPredictorClient.java](../src/main/java/com/simonconrad/fireballpredictor/client/FireballPredictorClient.java) to maintain high performance and automatically paused when the game is paused.
-
-### 5. HUD Impact Warning Badge
-- **Collision Warning**: When the local player is directly in the path of an incoming projectile or within its blast danger radius, [PredictionRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/PredictionRenderer.java) renders an anchorable HUD warning badge via `HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT, ...)`.
-- **Projectile Category Theming ([WarningProjectileType.java](../src/main/java/com/simonconrad/fireballpredictor/projectile/WarningProjectileType.java))**: The warning badge adapts dynamically to the incoming projectile type:
-  - **Fireballs** (`FIREBALL`): Renders `Items.FIRE_CHARGE` with a fiery orange progress bar (`#FFE67A00`).
-  - **Wither Skulls** (`WITHER_SKULL`): Renders `Items.WITHER_SKELETON_SKULL` with a slate-grey progress bar (`#FFA0A8B0`).
-  - **Wind Charges** (`WIND_CHARGE`): Renders `Items.WIND_CHARGE` with an ice-blue progress bar (`#FFCFD6F7`).
-  - **Dragon Fireballs** (`DRAGON_FIREBALL`): Renders a custom dragon fireball texture (`textures/entity/enderdragon/dragon_fireball.png`, fallback `Items.DRAGON_HEAD`) with a distinct magenta/purple progress bar (`#FFC832D4`).
-- **Dynamic Countdown Progress Bar**: Fills or depletes smoothly based on the ratio of remaining travel ticks to total trajectory flight time.
-- **Shared Positioning Helper**: `PredictionRenderer.impactBadgePosition(client)` calculates the exact on-screen position accounting for screen dimensions, anchor placement, and user-configured X/Y pixel offsets.
-
-### 6. Cracking Damage Hearts Overlay & Knockback Readout ([HeartOverlayRenderer.java](../src/main/java/com/simonconrad/fireballpredictor/client/render/HeartOverlayRenderer.java))
-- **Health Bar Overlay**: Hooked after `VanillaHudElements.HEALTH_BAR` via Fabric HUD Element Registry. Overlays fiery, cracking heart sprites directly on top of the health bar to show the exact health/absorption points predicted to be lost upon detonation.
-- **Two-Stage Damage Allocation**: Replicates Minecraft's vanilla damage consumption order:
-  1. Absorption hearts are consumed first, starting from the highest absorption point.
-  2. Any remaining unmitigated damage consumes current health, starting from the highest health point.
-- **Independent Half-Heart Evaluation**: Evaluates left and right half-heart units independently per slot to support odd health values, partial absorption, and multiple stacked heart rows without visual misalignments.
-- **Flashing Pre-Impact Alert**: Alternates between steady and blinking sprite states based on `player.level().getGameTime()`:
-  - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
-  - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
-  - Right-half-lost variants preserve the player's intact left-half heart appearance across all vanilla heart variations:
-    - Normal: `cracking_half_right` / `cracking_half_right_blinking`
-    - Hardcore Normal: `cracking_half_hardcore_right` / `cracking_half_hardcore_right_blinking`
-    - Absorption: `cracking_half_absorbing_right` / `cracking_half_absorbing_right_blinking`
-    - Hardcore Absorption: `cracking_half_absorbing_hardcore_right` / `cracking_half_absorbing_hardcore_right_blinking`
-    - Poison: `cracking_half_poisoned_right` / `cracking_half_poisoned_right_blinking`
-    - Hardcore Poison: `cracking_half_poisoned_hardcore_right` / `cracking_half_poisoned_hardcore_right_blinking`
-    - Wither: `cracking_half_withered_right` / `cracking_half_withered_right_blinking`
-    - Hardcore Wither: `cracking_half_withered_hardcore_right` / `cracking_half_withered_hardcore_right_blinking`
-    - Frozen: `cracking_half_frozen_right` / `cracking_half_frozen_right_blinking`
-    - Hardcore Frozen: `cracking_half_frozen_hardcore_right` / `cracking_half_frozen_hardcore_right_blinking`
-- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) next to the impact warning badge indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Automatically mirrors alignment (left vs right of badge) depending on screen anchor.
+  - Standard/Status Hearts:
+    - `hud/heart/cracking_full` / `hud/heart/cracking_full_blinking`
+    - `hud/heart/cracking_half` / `hud/heart/cracking_half_blinking`
+    - `hud/heart/cracking_half_right` / `hud/heart/cracking_half_right_blinking`
+  - Fully Frozen Hearts (`player.isFullyFrozen()`):
+    - `hud/heart/cracking_frozen_scorch_full` / `hud/heart/cracking_frozen_scorch_full_blinking`
+    - `hud/heart/cracking_frozen_scorch_half` / `hud/heart/cracking_frozen_scorch_half_blinking`
+    - `hud/heart/cracking_frozen_scorch_half_right` / `hud/heart/cracking_frozen_scorch_half_right_blinking`
+  - Right-half-lost variants preserve strict transparency on the left half ($x \le 4$), so the player's intact left-half heart appearance (normal, hardcore, absorption, poison, wither) shows through unaltered.
+- **Damage & Knockback Readout**: Renders a compact, high-contrast text readout (e.g. `-4.5❤  ⚡12.3b/s`) indicating exact heart loss and predicted initial knockback velocity in blocks per second. Supports displaying knockback even when damage is zero (e.g. Wind Charges or heavy blast protection). Positioned next to the impact warning badge and automatically mirrors alignment (left vs right of badge) depending on screen anchor; when the impact warning badge is hidden/disabled (`renderImpactWarning = false`), the readout dynamically anchors flush with the vanilla health bar.
 
 ### 7. Special Render Themes & Zero-Allocation VFX Pipeline ([VisualTheme.java](../src/main/java/com/simonconrad/fireballpredictor/config/VisualTheme.java))
 - **Dynamic Thematic Overrides**: Users can select from a curated suite of 16 visual render themes that dynamically calculate per-vertex colors, alpha modulations, patterns, and pulse dynamics across both the trajectory ribbon and shockwave dome:
@@ -342,18 +171,23 @@ The mod attaches a custom HUD layer after vanilla `HEALTH_BAR` via Fabric API's 
 
 ### 1. Pure Overlay Architecture & Silhouette Independence
 Instead of using baked composite textures that replicate vanilla red, golden, or withered heart pixels, the damage indicator utilizes **pure translucent overlays** with authentic 9x9 Minecraft pixel art representing physical fissures and an intense thermal heat wash:
-- **`cracking_full.png` / `cracking_full_blinking.png`**: Applied when an entire heart slot (both half units) is projected to be destroyed.
-- **`cracking_half.png` / `cracking_half_blinking.png`**: Applied when the left half-unit of a heart is lost (`rightLost == false`). Pixels for $x \ge 5$ have `alpha = 0`, leaving the right half unaffected.
-- **`cracking_half_right.png` / `cracking_half_right_blinking.png`**: Applied when only the right half-unit of a heart is lost (`leftLost == false`). Pixels for $x \le 4$ have strict `alpha = 0`, allowing the intact left half to show through unaltered.
+- **Standard Sprites**:
+  - `cracking_full.png` / `cracking_full_blinking.png`: Applied when an entire heart slot (both half units) is projected to be destroyed.
+  - `cracking_half.png` / `cracking_half_blinking.png`: Applied when the left half-unit of a heart is lost (`rightLost == false`). Pixels for $x \ge 5$ have `alpha = 0`, leaving the right half unaffected.
+  - `cracking_half_right.png` / `cracking_half_right_blinking.png`: Applied when only the right half-unit of a heart is lost (`leftLost == false`). Pixels for $x \le 4$ have strict `alpha = 0`, allowing the intact left half to show through unaltered.
+- **Dedicated Frozen Sprites (Thermal Scorch)**:
+  - Applied when the player is fully frozen (`player.isFullyFrozen()`). Uses charred basalt borders and molten magma cores (`cracking_frozen_scorch_full`, `cracking_frozen_scorch_half`, `cracking_frozen_scorch_half_right` and their corresponding `_blinking` variants).
+- **Modern Sprite Structure**: All active sprites reside under `assets/fireballpredictor/textures/gui/sprites/hud/heart/` (the legacy `assets/fireballpredictor/textures/hud/` directory is obsolete and removed for Minecraft 26.2 compatibility).
 
-### 2. Silhouette-Adaptive Dynamic Synthesis (`DynamicHeartOverlayManager`)
+### 2. Silhouette-Adaptive Dynamic Synthesis (`DynamicHeartOverlayManager` & `HeartMaskHelper`)
 To ensure that custom texture packs displaying non-heart shapes (e.g. square health boxes, circles, or shields) do not have a mini-heart silhouette stamped onto them:
-- **9x9 Master Pixel Art**: `cracking_master_full.png` and `cracking_master_full_blinking.png` extend the authentic crack lines (`#280500`), molten cores (`#FFDC64`), and ember washes across the entire $7\times7$ interior of the icon box.
-- **Runtime Alpha Masking**: On client resource reload (`SimpleSynchronousResourceReloadListener`), the mod inspects the active resource pack's heart sprite (`minecraft:textures/gui/sprites/hud/heart/full.png`). It samples its 9x9 alpha mask and clips the master pixel art to the exact silhouette:
-  - On **Vanilla Hearts**: Corner and notch pixels outside the heart are masked to alpha 0, making the synthesized texture **100% byte-for-byte identical** to the original vanilla heart cracking.
-  - On **Square Hearts**: The crack network spans the entire square face from corner to corner with authentic 1-to-1 Minecraft pixel sizing.
-  - On **Custom Shapes**: Clips cleanly to the custom geometry.
-- The synthesized textures are uploaded to Minecraft's `TextureManager` via `DynamicTexture` and drawn via standard `graphics.blit(RenderPipelines.GUI_TEXTURED, ...)`.
+- **9x9 Master Pixel Art**: `cracking_master_full.png` / `cracking_master_full_blinking.png` and dedicated frozen variants `cracking_master_frozen_scorch_full.png` / `cracking_master_frozen_scorch_full_blinking.png` extend the authentic crack lines (`#280500`), molten cores (`#FFDC64`), and ember washes across the entire $7\times7$ interior of the icon box without residual heart cutouts.
+- **Heart Border Preservation (`HeartMaskHelper`)**: Custom resource pack borders are protected by filtering out dark outer border outline pixels (`isDarkBorderPixel` checking max channel < 55 or luminance < 40) at standard 20-pixel outer heart border coordinates, as well as cross-referencing `container.png` pixels if present. This ensures cracking overlays exclusively cover the interior fill and never overwrite structural border lines.
+- **Runtime Alpha Masking**: On client resource reload (`SimpleSynchronousResourceReloadListener`), the mod inspects the active resource pack's heart sprite (`minecraft:textures/gui/sprites/hud/heart/full.png`). It samples its 9x9 alpha mask, strips border outline pixels, and clips the master pixel art to the interior silhouette:
+  - On **Vanilla Hearts**: Corner, cleft, and border pixels outside the heart fill are masked to alpha 0, making the synthesized texture **100% byte-for-byte identical** to the original vanilla heart cracking.
+  - On **Square Hearts**: The crack network spans the entire square interior from corner to corner with authentic 1-to-1 Minecraft pixel sizing.
+  - On **Custom Shapes**: Clips cleanly to the custom geometry while preserving the container border.
+- The synthesized textures are uploaded to Minecraft's `TextureManager` via `DynamicTexture` and drawn via standard `graphics.blit(RenderPipelines.GUI_TEXTURED, ...)`. `DamageEstimatorRenderer` likewise utilizes dynamic master-synthesized textures in config GUI previews.
 
 ### 3. Universal Status Effect & Game Mode Support
 Because intact halves and surrounding backgrounds are 100% transparent, standard OpenGL translucent blending preserves whatever underlying texture was drawn by vanilla or a custom resource pack. This guarantees seamless compatibility with:
@@ -364,4 +198,4 @@ Because intact halves and surrounding backgrounds are 100% transparent, standard
 ### 4. Damage Allocation & Animation
 - Damage is deducted first from **Absorption** health slots, and subsequently from **Base Health**.
 - Slots toggle between steady cracking and blinking sprites synchronized with `client.gui.getGuiTicks() % 6 < 3` to create an urgent visual warning.
-- Displays an adjacent numerical readout (`-X.X❤  ⚡Y.Yb/s`) aligned relative to the impact badge.
+- Displays an adjacent numerical readout (`-X.X❤  ⚡Y.Yb/s`) aligned relative to the impact badge, or positioned flush with the health bar when the badge is hidden.
