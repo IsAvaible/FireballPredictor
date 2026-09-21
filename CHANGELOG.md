@@ -1,7 +1,12 @@
 # Changelog
 
+## 1.11.0
+- **Minecraft 26.3 Compatibility:** Updated Fireball Predictor for Minecraft 26.3 ("Wilderness Bound"), including the SDL input backend and modern dynamic registry loot conditions.
+- **Dependency Upgrades:** Bumped Fabric Loader, Fabric API, YetAnotherConfigLib, ModMenu, Sodium, and Iris.
+- **Rendering Pipeline Migration:** Migrated custom translucent dome and ribbon pipelines to the updated RenderPearl API.
+
 ## 1.10.6
-- **Multiplayer, Damage & Visual Fixes:** Improved server networking safety, preserved player deflection ownership, fixed shockwave and gallery render sorting, aligned HUD damage text without warning badges, strictly enforced equipment slots for damage protection calculation, and hardened explosion power learning across anti-cheat servers and long-distance flights.
+- **Multiplayer, Damage & Visual Fixes:** Improved server networking safety, preserved player deflection ownership, fixed shockwave and gallery render sorting, aligned HUD damage text without warning badges, strictly enforced equipment slots for damage protection calculation, and hardened explosion power learning across servers and long-distance flights.
 - **Inference, Memory & Defensive Fixes:** Guarded against secondary explosion ghost matches, resolved off-heap dynamic texture memory leaks, clamped negative knockback impulses, added defensive null checks for preview badges and profiles, and unified ownership resolution across client systems.
 
 ## 1.10.5
