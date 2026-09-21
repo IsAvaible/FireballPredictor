@@ -1,6 +1,6 @@
 package com.simonconrad.fireballpredictor.client.compat;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;

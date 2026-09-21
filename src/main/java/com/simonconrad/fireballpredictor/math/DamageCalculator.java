@@ -315,8 +315,8 @@ public final class DamageCalculator {
         return factor * seenPercent * knockbackMultiplier * Math.max(0.0, 1.0 - knockbackResistance);
     }
 
-    private static boolean matchesCondition(Optional<LootItemCondition> requirements, DamageSource source) {
-        return requirements.isEmpty() || matchesCondition(requirements.get(), source);
+    private static boolean matchesCondition(Optional<Holder<LootItemCondition>> requirements, DamageSource source) {
+        return requirements.isEmpty() || matchesCondition(requirements.get().value(), source);
     }
 
     private static boolean matchesCondition(LootItemCondition condition, DamageSource source) {
@@ -337,19 +337,19 @@ public final class DamageCalculator {
             return true;
         }
         if (condition instanceof InvertedLootItemCondition inverted) {
-            return !matchesCondition(inverted.term(), source);
+            return !matchesCondition(inverted.term().value(), source);
         }
         if (condition instanceof AllOfCondition allOf) {
-            for (LootItemCondition term : ((CompositeLootItemConditionAccessor) allOf).getTerms()) {
-                if (!matchesCondition(term, source)) {
+            for (Holder<LootItemCondition> term : ((CompositeLootItemConditionAccessor) allOf).getTerms()) {
+                if (!matchesCondition(term.value(), source)) {
                     return false;
                 }
             }
             return true;
         }
         if (condition instanceof AnyOfCondition anyOf) {
-            for (LootItemCondition term : ((CompositeLootItemConditionAccessor) anyOf).getTerms()) {
-                if (matchesCondition(term, source)) {
+            for (Holder<LootItemCondition> term : ((CompositeLootItemConditionAccessor) anyOf).getTerms()) {
+                if (matchesCondition(term.value(), source)) {
                     return true;
                 }
             }

@@ -42,7 +42,7 @@ public class DamageTests extends GameTestBase {
             throw fail("WindCharge should have 1.2 power, but got resolved=" + resolvedPower);
         }
 
-        Player player = context.makeMockPlayer(GameType.SURVIVAL);
+        Player player = spawnMockPlayer(context, SPAWN_POS);
         DamageEstimate directEstimate = DamageCalculator.calculateDirectHit(
                 player.position(), resolvedPower, player, context.getLevel(), windCharge, null);
         if (!directEstimate.inRange()) {
@@ -67,7 +67,7 @@ public class DamageTests extends GameTestBase {
             throw fail("BreezeWindCharge should have 3.0 power, but got resolved=" + resolvedPower);
         }
 
-        Player player = context.makeMockPlayer(GameType.SURVIVAL);
+        Player player = spawnMockPlayer(context, SPAWN_POS);
         DamageEstimate directEstimate = DamageCalculator.calculateDirectHit(
                 player.position(), resolvedPower, player, context.getLevel(), breezeCharge, null);
         if (!directEstimate.inRange()) {

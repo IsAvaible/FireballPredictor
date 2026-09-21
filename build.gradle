@@ -32,7 +32,7 @@ dependencies {
 	implementation libs.fabric.api
 	implementation libs.yacl
 	implementation libs.modmenu
-	compileOnly "maven.modrinth:iris:1.11.2+26.2-fabric"
+	compileOnly libs.iris
 
 	if (enableShaders) {
         localRuntime libs.sodium

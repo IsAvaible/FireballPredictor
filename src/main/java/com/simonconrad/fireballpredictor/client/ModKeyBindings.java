@@ -19,7 +19,7 @@ public final class ModKeyBindings {
 
     public static final KeyMapping TOGGLE_TRACKING = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             KEY_TOGGLE_TRACKING,
-            InputConstants.Type.KEYSYM,
+            InputConstants.Type.KEYBOARD,
             InputConstants.UNKNOWN.getValue(),
             CATEGORY
     ));

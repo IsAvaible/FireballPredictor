@@ -1,6 +1,6 @@
 # Fireball Predictor
 
-A client-side Fabric mod for Minecraft 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
+A client-side Fabric mod for Minecraft 26.3, 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
 
 [![Fireball Predictor Video](https://img.youtube.com/vi/_VXAXr188n0/maxresdefault.jpg)](https://www.youtube.com/watch?v=_VXAXr188n0)
 
@@ -52,10 +52,10 @@ Restrictions are pushed to clients when they join and override their local setti
 
 | Side | Requirement | Details |
 | --- | --- | --- |
-| **Minecraft** | `26.2` / `1.21.11` | Fabric Loader `>=0.19.3` |
+| **Minecraft** | `26.3` / `26.2` / `1.21.11` | Fabric Loader `>=0.19.5` |
 | **Java** | `Java 25` | Gradle toolchain target |
 | **Required Mods** | [Fabric API](https://modrinth.com/mod/fabric-api) | Core networking and lifecycle hooks |
-| | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.6` — In-game config screen & live previews |
+| | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.7` — In-game config screen & live previews |
 | **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) | In-game configuration screen button |
 | | [Iris Shaders](https://modrinth.com/mod/iris) + [Sodium](https://modrinth.com/mod/sodium) | Soft-loaded fullbright translucent pipeline integration |
 

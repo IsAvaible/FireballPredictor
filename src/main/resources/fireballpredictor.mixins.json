@@ -14,7 +14,8 @@
     "ClientWorldEntityTracker",
     "FeatureRenderDispatcherMixin",
     "ClientPacketListenerMixin",
-    "MinecraftMixin"
+    "MinecraftMixin",
+    "RenderPipelinesAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
