@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.11.1
+- **Default Tracking Change:** Disabled Blaze fireball tracking by default to reduce visual clutter during Nether combat; can be re-enabled in the mob tracking settings.
+
 ## 1.11.0
 - **Minecraft 26.3 Compatibility:** Updated Fireball Predictor for Minecraft 26.3 ("Wilderness Bound"), including the SDL input backend and modern dynamic registry loot conditions.
 - **Dependency Upgrades:** Bumped Fabric Loader, Fabric API, YetAnotherConfigLib, ModMenu, Sodium, and Iris.

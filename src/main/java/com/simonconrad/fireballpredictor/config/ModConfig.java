@@ -150,7 +150,7 @@ public class ModConfig {
     @AutoGen(category = "general", group = "tracking_mobs")
     @CustomImage(factory = ConfigPreviewRenderer.TrackBlazeFactory.class)
     @TickBox
-    public boolean trackBlazeFireballs = true;
+    public boolean trackBlazeFireballs = false;
 
     @SerialEntry
     @AutoGen(category = "general", group = "tracking_mobs")
