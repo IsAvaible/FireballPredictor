@@ -974,4 +974,57 @@ public class TrajectoryTests extends GameTestBase {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testProtectedMapBlockRadiusRetention(GameTestHelper context) {
+        resetGlobalState();
+
+        Vec3 explosionPos = new Vec3(10.0, 64.0, 10.0);
+        LargeFireball fireball = new LargeFireball(EntityTypes.FIREBALL, context.getLevel());
+        fireball.setPos(explosionPos.x, explosionPos.y, explosionPos.z);
+        FireballInferenceTracker.registerFireballLocation(fireball, explosionPos);
+
+        // Simulate Bedwars protected terrain: packet radius 3.0, but server plugin cancels block breaking (only 2 broken)
+        ExplosionInferenceHandler.onExplosion(explosionPos, 3.0f, 2, null);
+
+        // Verify that 3.0f was NOT rejected because 3.0 <= SUSPICIOUS_INFLATED_RADIUS_THRESHOLD (3.75)
+        Float inferredRadius = ClientPowerLookup.getInferredPacketRadius();
+        if (inferredRadius == null || Math.abs(inferredRadius - 3.0f) > 0.001f) {
+            throw fail("Expected packet radius 3.0f to be retained despite low blockCount on protected terrain, but got: " + inferredRadius);
+        }
+
+        float power = ClientPowerLookup.getPower(fireball);
+        if (Math.abs(power - 3.0f) > 0.001f) {
+            throw fail("Expected getPower to resolve to 3.0f, got: " + power);
+        }
+
+        fireball.discard();
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testTwoLayerBedDefenseSampling(GameTestHelper context) {
+        resetGlobalState();
+
+        BlockPos relCenter = new BlockPos(3, 4, 3);
+        BlockPos absCenter = context.absolutePos(relCenter);
+        Vec3 detonationPos = Vec3.atCenterOf(absCenter);
+
+        // 1. Single layer of dirt at dy = -1 (rel y = 3), air at dy = -2 (rel y = 2)
+        context.setBlock(new BlockPos(3, 3, 3), Blocks.DIRT);
+        context.setBlock(new BlockPos(3, 2, 3), Blocks.AIR);
+        float singleLayerNorm = ExplosionInferenceHandler.normalizeBlockCount(detonationPos, 10, context.getLevel());
+
+        // 2. Two-layer defense: dirt at dy = -1, end stone at dy = -2
+        context.setBlock(new BlockPos(3, 2, 3), Blocks.END_STONE);
+        float twoLayerNorm = ExplosionInferenceHandler.normalizeBlockCount(detonationPos, 10, context.getLevel());
+
+        // The 5x5x5 neighborhood reaches dy = -2, so the high blast resistance of end stone (9.0 vs air/wool 0.8)
+        // must increase the resistance factor and therefore the normalized block count
+        if (twoLayerNorm <= singleLayerNorm) {
+            throw fail("Expected 2-layer defense (wool + end stone at dy=-2) to yield higher normalized block count than single wool layer! Got single=" + singleLayerNorm + ", twoLayer=" + twoLayerNorm);
+        }
+
+        context.succeed();
+    }
 }

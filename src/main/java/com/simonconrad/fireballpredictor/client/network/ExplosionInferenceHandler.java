@@ -14,6 +14,8 @@ import java.util.List;
 
 public class ExplosionInferenceHandler {
 
+    public static final float SUSPICIOUS_INFLATED_RADIUS_THRESHOLD = 3.75f;
+
     /**
      * Called when an explosion packet is received on the client.
      * Matches the explosion location against recently active fireballs and updates the inferred power.
@@ -70,11 +72,17 @@ public class ExplosionInferenceHandler {
         ProjectileOwner owner = matched.owner != null ? matched.owner : ProjectileOwner.UNKNOWN;
 
         if (radius > 0.0f) {
-            // Check if packet radius diverges significantly from observable block destruction
-            // (e.g. anti-cheat servers sending inflated 4.0 or deflated 1.0/0.5 dummy radii).
-            boolean diverges = estimatedBlockPower != null
-                    && (estimatedBlockPower < radius * 0.75f || estimatedBlockPower > radius * 1.35f);
-            if (diverges) {
+            // Asymmetric Sanity Check:
+            // 1. Upward divergence: block destruction implies far greater power than packet radius claims.
+            // 2. Downward divergence: only override radius downward if radius itself is suspiciously inflated
+            //    (e.g. anti-cheat servers sending dummy radius >= 4.0), not when normal radii (<= 3.75) break few
+            //    blocks due to minigame map protection, spawn protection, or bed defenses.
+            boolean brokenFarMore = estimatedBlockPower != null && estimatedBlockPower > radius * 1.35f;
+            boolean suspiciouslyInflated = estimatedBlockPower != null
+                    && estimatedBlockPower < radius * 0.75f
+                    && radius > SUSPICIOUS_INFLATED_RADIUS_THRESHOLD;
+
+            if (brokenFarMore || suspiciouslyInflated) {
                 ClientPowerLookup.recordInferredBlockEstimation(owner, estimatedBlockPower);
             } else {
                 ClientPowerLookup.recordInferredPacketRadius(owner, radius);
@@ -86,6 +94,7 @@ public class ExplosionInferenceHandler {
 
     /**
      * Normalizes the destroyed block count based on surrounding solid terrain geometry and blast resistance.
+     * Uses a 5x5x5 neighborhood with inverse-distance weighting to penetrate multi-layer bed defenses.
      */
     public static float normalizeBlockCount(Vec3 explosionPos, int blockCount, BlockGetter world) {
         if (world == null || blockCount <= 0) {
@@ -93,38 +102,41 @@ public class ExplosionInferenceHandler {
         }
 
         BlockPos centerPos = BlockPos.containing(explosionPos);
-        int solidCount = 0;
+        float solidWeight = 0.0f;
         float totalResistance = 0.0f;
-        int totalSampled = 0;
+        float totalSampledWeight = 0.0f;
 
-        // Sample 3x3x3 neighborhood around impact point
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    totalSampled++;
+        // Sample 5x5x5 neighborhood around impact point with inverse-distance weighting
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    float weight = (float) (1.0 / (1.0 + dist));
+                    totalSampledWeight += weight;
+
                     BlockPos pos = centerPos.offset(dx, dy, dz);
                     BlockState state = world.getBlockState(pos);
                     FluidState fluid = world.getFluidState(pos);
 
                     float resistance = Math.max(state.getBlock().getExplosionResistance(), fluid.getExplosionResistance());
                     if (!state.isAir() || !fluid.isEmpty()) {
-                        solidCount++;
+                        solidWeight += weight;
                         // Clamp individual block blast resistance to prevent indestructible/extreme blocks from distorting the estimate
-                        totalResistance += Math.min(15.0f, Math.max(0.5f, resistance));
+                        totalResistance += weight * Math.min(15.0f, Math.max(0.5f, resistance));
                     }
                 }
             }
         }
 
-        if (solidCount == 0) {
+        if (solidWeight <= 0.0f) {
             return (float) blockCount;
         }
 
-        float solidRatio = (float) solidCount / (float) totalSampled;
+        float solidRatio = solidWeight / totalSampledWeight;
         // Baseline solid ratio for flat ground is ~0.50 (hemisphere)
         float geometryFactor = 0.50f / Math.max(0.15f, Math.min(1.0f, solidRatio));
 
-        float avgResistance = totalResistance / (float) solidCount;
+        float avgResistance = totalResistance / solidWeight;
         // Baseline blast resistance is ~0.8 (wool standard in Bedwars / minigames)
         float resistanceFactor = (float) Math.pow((avgResistance + 0.3f) / (0.8f + 0.3f), 0.6);
 
