@@ -1,9 +1,9 @@
 # Changelog
 
-# 1.11.2
+## 1.11.2
 - **Explosion Power Inference:** Added an asymmetric divergence check to protect radii on protected blocks and expanded terrain sampling to a 5x5x5 distance-weighted kernel for layered blocks.
 
-# 1.11.1
+## 1.11.1
 - **Default Tracking Change:** Disabled Blaze fireball tracking by default to reduce visual clutter during Nether combat; can be re-enabled in the mob tracking settings.
 
 ## 1.11.0

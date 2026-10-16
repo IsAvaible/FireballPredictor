@@ -131,8 +131,13 @@ def getLatestChangelog() {
 	def changelogFile = file("CHANGELOG.md")
 	if (!changelogFile.exists()) return "See release notes for details."
 	def text = changelogFile.text
-	def matcher = (text =~ /(?s)##\s*\[?${project.mod_version}\]?.*?\n(.*?)(?=\n##\s*\[?\d|\z)/)
-	return matcher.find() ? matcher.group(1).trim() : "Release notes for version ${project.mod_version}"
+	def versionPattern = java.util.regex.Pattern.quote(project.mod_version.toString())
+	def matcher = (text =~ /(?s)##\s*\[?${versionPattern}\]?.*?\r?\n(.*?)(?=\r?\n#{1,2}\s*\[?\d|\z)/)
+	if (matcher.find()) {
+		return matcher.group(1).trim()
+	}
+	logger.warn("Could not find changelog entry for version ${project.mod_version} in CHANGELOG.md; falling back to default message.")
+	return "Release notes for version ${project.mod_version}"
 }
 
 publishMods {
