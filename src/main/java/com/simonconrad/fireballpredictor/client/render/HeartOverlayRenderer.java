@@ -119,7 +119,7 @@ public final class HeartOverlayRenderer {
             return;
         }
 
-        int heartRows = Mth.ceil((Math.max(maxHealth, displayHealth) + absorbHeartsRaw) / 2.0F / NUM_HEARTS_PER_ROW);
+        int heartRows = Mth.ceil((float) totalHearts / NUM_HEARTS_PER_ROW);
         int rowSpacing = Math.max(3, NUM_HEARTS_PER_ROW - (heartRows - 2));
 
         // Damage allocation: absorption first, then health

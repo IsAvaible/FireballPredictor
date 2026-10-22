@@ -145,8 +145,7 @@ public class FireballPredictorClient implements ClientModInitializer {
                         && !tracked.shouldRender();
 
                 if (filteredOut) {
-                    ClientPowerCache.remove(entityId);
-                    // Keep owner attribution so re-enabling a filter can restore tracking without re-inferring
+                    // Keep owner attribution and cached power so re-enabling a filter can restore tracking without re-inferring
                     it.remove();
                 }
             }

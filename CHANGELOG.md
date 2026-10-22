@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.3
+- **Minor Bugs:** Fix power cache eviction on filter toggle, heart row spacing, and power sanity checks
+- **Branding:** Update the icon, removing the text badge in the lower left
+
 ## 1.11.2
 - **Explosion Power Inference:** Added an asymmetric divergence check to protect radii on protected blocks and expanded terrain sampling to a 5x5x5 distance-weighted kernel for layered blocks.
 

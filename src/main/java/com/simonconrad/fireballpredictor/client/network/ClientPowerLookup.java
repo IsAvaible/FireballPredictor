@@ -90,7 +90,7 @@ public class ClientPowerLookup {
      * matching standard Minecraft server explosion power levels.
      */
     public static float snapToCanonicalPower(float rawPower) {
-        if (Float.isNaN(rawPower) || rawPower <= 1.0f) {
+        if (Float.isNaN(rawPower) || Float.isInfinite(rawPower) || rawPower <= 1.0f) {
             return 1.0f;
         }
 
