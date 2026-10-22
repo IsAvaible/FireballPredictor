@@ -558,10 +558,6 @@ public class FireballPredictorClient {
         trackedOwners.clear();
         highlightedBlocks.clear();
         previousHighlightedBlocks.clear();
-        ClientPowerCache.clear();
-        ClientOwnerCache.clear();
-        FireballInferenceTracker.clear();
-        ClientPowerLookup.resetInferredPower();
         com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.disable(null);
         impactWarningVisible = false;
         impactWarningProgress = 0.0f;
@@ -570,6 +566,10 @@ public class FireballPredictorClient {
         currentDamageEstimateType = WarningProjectileType.FIREBALL;
         damageOverlayActive = false;
         if (world == null) {
+            ClientPowerCache.clear();
+            ClientOwnerCache.clear();
+            FireballInferenceTracker.clear();
+            ClientPowerLookup.resetInferredPower();
             ServerTrackingRules.clear();
             MobGriefingState.clear();
         }

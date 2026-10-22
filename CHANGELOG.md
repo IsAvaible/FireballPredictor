@@ -2,6 +2,7 @@
 
 ## 1.12.0
 - **NeoForge Support:** Added native support for NeoForge alongside Fabric
+- **Stationary Fireball Power Sync:** Fixed an issue where exiting and re-entering a world with stationary fireballs caused them to lose their synced explosion power and fall back until impact
 - **Minor Bugs:** Fix power cache eviction on filter toggle, heart row spacing, and power sanity checks
 - **Branding:** Update the icon, removing the text badge in the lower left
 
