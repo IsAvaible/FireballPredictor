@@ -7,9 +7,9 @@ import com.simonconrad.fireballpredictor.config.ModConfig;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
+
+
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -261,7 +261,7 @@ public class ClientPowerLookup {
         if (testServerIpOverride != null) {
             return ModConfig.normalizeServerAddress(testServerIpOverride);
         }
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+        if (PlatformHelper.isClient()) {
             return ClientHelper.getClientServerIp();
         }
         return null;
@@ -271,7 +271,7 @@ public class ClientPowerLookup {
         return ClientOwnerCache.resolveOwner(fireball);
     }
 
-    @Environment(EnvType.CLIENT)
+
     private static class ClientHelper {
         private static String getClientServerIp() {
             net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();

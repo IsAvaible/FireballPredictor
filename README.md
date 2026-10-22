@@ -2,7 +2,7 @@
 
 # Fireball Predictor
 
-A client-side Fabric mod for Minecraft 26.3, 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
+A client-side Fabric and NeoForge mod for Minecraft 26.3, 26.2 and 1.21.11 that visualizes the trajectory and impact of fireballs, wither skulls, and wind charges in real-time.
 
 [![Fireball Predictor Video](https://img.youtube.com/vi/_VXAXr188n0/maxresdefault.jpg)](https://www.youtube.com/watch?v=_VXAXr188n0)
 
@@ -10,7 +10,7 @@ A client-side Fabric mod for Minecraft 26.3, 26.2 and 1.21.11 that visualizes th
 [![CurseForge Downloads](https://img.shields.io/curseforge/dt/1613094?logo=curseforge&logoColor=white&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/fireball-predictor/)
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.8.9%20%7C%201.21.11%20%7C%2026.3-brightgreen.svg)](https://minecraft.net/)
-[![Platform](https://img.shields.io/badge/Platform-Fabric%20%7C%20Forge-blue.svg)](https://fabricmc.net/)
+[![Platform](https://img.shields.io/badge/Platform-Fabric%20%7C%20NeoForge%20%7C%20Forge-blue.svg)](https://fabricmc.net/)
 [![License](https://img.shields.io/badge/License-LGPL--3.0-lightgrey.svg)](LICENSE)
 </div>
 
@@ -58,11 +58,11 @@ Restrictions are pushed to clients when they join and override their local setti
 
 | Side | Requirement | Details |
 | --- | --- | --- |
-| **Minecraft** | `26.3` / `26.2` / `1.21.11` | Fabric Loader `>=0.19.5` |
+| **Minecraft** | `26.3` / `26.2` / `1.21.11` | Fabric Loader `>=0.19.5` or NeoForge `>=26.3.0` |
 | **Java** | `Java 25` | Gradle toolchain target |
-| **Required Mods** | [Fabric API](https://modrinth.com/mod/fabric-api) | Core networking and lifecycle hooks |
+| **Required Mods** | [Fabric API](https://modrinth.com/mod/fabric-api) *(Fabric only)* | Core networking and lifecycle hooks |
 | | [YetAnotherConfigLib (YACL v3)](https://modrinth.com/mod/yacl) | `>=3.9.7` — In-game config screen & live previews |
-| **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) | In-game configuration screen button |
+| **Optional Mods** | [ModMenu](https://modrinth.com/mod/modmenu) *(Fabric only)* | In-game configuration screen button |
 | | [Iris Shaders](https://modrinth.com/mod/iris) + [Sodium](https://modrinth.com/mod/sodium) | Soft-loaded fullbright translucent pipeline integration |
 
 ## A Note on 1.8.9

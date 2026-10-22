@@ -2,9 +2,7 @@ package com.simonconrad.fireballpredictor.mixin;
 
 import com.simonconrad.fireballpredictor.FireballEntityAccessor;
 import com.simonconrad.fireballpredictor.network.FireballPowerPayload;
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.level.ServerPlayer;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,11 +36,7 @@ public abstract class LargeFireballMixin implements FireballEntityAccessor {
     private void fireballpredictor$syncPower() {
         LargeFireball fireball = (LargeFireball) (Object) this;
         if (fireball.level() != null && !fireball.level().isClientSide()) {
-            for (ServerPlayer player : PlayerLookup.tracking(fireball)) {
-                if (ServerPlayNetworking.canSend(player, FireballPowerPayload.ID)) {
-                    ServerPlayNetworking.send(player, new FireballPowerPayload(fireball.getId(), (float) this.explosionPower));
-                }
-            }
+            PlatformHelper.sendToTrackingPlayers(fireball, new FireballPowerPayload(fireball.getId(), (float) this.explosionPower));
         }
     }
 }

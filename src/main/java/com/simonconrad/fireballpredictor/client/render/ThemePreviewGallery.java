@@ -1,6 +1,10 @@
 package com.simonconrad.fireballpredictor.client.render;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simonconrad.fireballpredictor.client.FireballPredictorClient;
 import com.simonconrad.fireballpredictor.config.ModConfig;
@@ -13,10 +17,9 @@ import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
 import com.simonconrad.fireballpredictor.mixin.ChatComponentAccessor;
 import com.simonconrad.fireballpredictor.projectile.ProjectileKind;
 import com.simonconrad.fireballpredictor.projectile.VanillaProfiles;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//? if fabric {
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+//?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -53,7 +56,7 @@ import java.util.List;
  * <p>Available in both development and production client environments via {@code /fppreview},
  * {@code /fireballpredictor preview}, or the button in the visual theme configuration screen.
  */
-@Environment(EnvType.CLIENT)
+
 public final class ThemePreviewGallery {
 
     private static boolean active = false;
@@ -165,53 +168,59 @@ public final class ThemePreviewGallery {
                 .withHoverEvent(new HoverEvent.ShowText(Component.translatable(KEY_TOGGLE_HOVER))));
     }
 
+    //? if fabric {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            var themeArg = ClientCommands.argument("theme", StringArgumentType.greedyString())
-                .suggests((context, builder) -> {
-                    for (VisualTheme theme : VisualTheme.values()) {
-                        builder.suggest(theme.getKey());
-                    }
-                    return builder.buildFuture();
-                })
-                .executes(context -> {
-                    String input = StringArgumentType.getString(context, "theme");
-                    applyThemeByCommandInput(input, context.getSource().getClient().player);
-                    return 1;
-                });
-
-            var root = ClientCommands.literal("fppreview");
-            var previewSub = ClientCommands.literal("preview");
-            attachPreviewSubcommands(root, themeArg);
-            attachPreviewSubcommands(previewSub, themeArg);
-
-            dispatcher.register(root);
-            dispatcher.register(ClientCommands.literal("fireballpredictor").then(previewSub));
+            registerCommands(dispatcher);
         });
     }
+    //?}
 
-    private static <T extends com.mojang.brigadier.builder.ArgumentBuilder<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource, T>> void attachPreviewSubcommands(
+    public static <S> void registerCommands(CommandDispatcher<S> dispatcher) {
+        var themeArg = RequiredArgumentBuilder.<S, String>argument("theme", StringArgumentType.greedyString())
+            .suggests((context, builder) -> {
+                for (VisualTheme theme : VisualTheme.values()) {
+                    builder.suggest(theme.getKey());
+                }
+                return builder.buildFuture();
+            })
+            .executes(context -> {
+                String input = StringArgumentType.getString(context, "theme");
+                applyThemeByCommandInput(input, Minecraft.getInstance().player);
+                return 1;
+            });
+
+        var root = LiteralArgumentBuilder.<S>literal("fppreview");
+        var previewSub = LiteralArgumentBuilder.<S>literal("preview");
+        attachPreviewSubcommands(root, themeArg);
+        attachPreviewSubcommands(previewSub, themeArg);
+
+        dispatcher.register(root);
+        dispatcher.register(LiteralArgumentBuilder.<S>literal("fireballpredictor").then(previewSub));
+    }
+
+    private static <S, T extends ArgumentBuilder<S, T>> void attachPreviewSubcommands(
             T builder,
-            com.mojang.brigadier.builder.ArgumentBuilder<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource, ?> themeArg
+            ArgumentBuilder<S, ?> themeArg
     ) {
         builder.executes(context -> {
-            toggle(context.getSource().getClient().player);
+            toggle(Minecraft.getInstance().player);
             return 1;
         })
-        .then(ClientCommands.literal("on").executes(context -> {
-            enable(context.getSource().getClient().player);
+        .then(LiteralArgumentBuilder.<S>literal("on").executes(context -> {
+            enable(Minecraft.getInstance().player);
             return 1;
         }))
-        .then(ClientCommands.literal("off").executes(context -> {
-            disable(context.getSource().getClient().player);
+        .then(LiteralArgumentBuilder.<S>literal("off").executes(context -> {
+            disable(Minecraft.getInstance().player);
             return 1;
         }))
-        .then(ClientCommands.literal("clear").executes(context -> {
-            disable(context.getSource().getClient().player);
+        .then(LiteralArgumentBuilder.<S>literal("clear").executes(context -> {
+            disable(Minecraft.getInstance().player);
             return 1;
         }))
-        .then(ClientCommands.literal("set").then(themeArg))
-        .then(ClientCommands.literal("select").then(themeArg));
+        .then(LiteralArgumentBuilder.<S>literal("set").then(themeArg))
+        .then(LiteralArgumentBuilder.<S>literal("select").then(themeArg));
     }
 
     private static net.minecraft.network.chat.MessageSignature lastPromptSignature = null;

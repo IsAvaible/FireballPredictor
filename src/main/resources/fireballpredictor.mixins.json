@@ -13,6 +13,7 @@
     "ChatComponentAccessor",
     "ClientWorldEntityTracker",
     "FeatureRenderDispatcherMixin",
+    "LevelRendererMixin",
     "ClientPacketListenerMixin",
     "MinecraftMixin",
     "RenderPipelinesAccessor"

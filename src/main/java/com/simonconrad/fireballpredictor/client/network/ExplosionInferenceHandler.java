@@ -2,8 +2,8 @@ package com.simonconrad.fireballpredictor.client.network;
 
 import com.simonconrad.fireballpredictor.client.network.FireballInferenceTracker.FireballLocationRecord;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
@@ -46,7 +46,7 @@ public class ExplosionInferenceHandler {
             return;
         }
 
-        if (world == null && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+        if (world == null && PlatformHelper.isClient()) {
             world = getClientLevel();
         }
 

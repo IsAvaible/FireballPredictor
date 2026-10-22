@@ -8,8 +8,8 @@ import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import com.simonconrad.fireballpredictor.tracking.TrackingRules;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.FloatFieldControllerBuilder;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -17,7 +17,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 
 import java.util.Set;
 
-@Environment(EnvType.CLIENT)
+
 public final class ModConfigGui {
 
     private static final Set<String> COLLAPSED_GROUP_KEYS = Set.of(

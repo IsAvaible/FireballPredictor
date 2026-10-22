@@ -2,33 +2,58 @@ package com.simonconrad.fireballpredictor.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.simonconrad.fireballpredictor.config.ModConfig;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
+//? if fabric {
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+*///?}
+
 public final class ModKeyBindings {
-    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
-            Identifier.fromNamespaceAndPath("fireballpredictor", "general")
-    );
+    public static final KeyMapping.Category CATEGORY =
+            //? if fabric {
+            KeyMapping.Category.register(Identifier.fromNamespaceAndPath("fireballpredictor", "general"));
+            //?} elif neoforge {
+            /*new KeyMapping.Category(Identifier.fromNamespaceAndPath("fireballpredictor", "general"));
+            *///?}
 
     public static final String KEY_TOGGLE_TRACKING = "key.fireballpredictor.toggle_tracking";
     public static final String MSG_MOD_ENABLED = "fireballpredictor.message.mod_enabled";
     public static final String MSG_MOD_DISABLED = "fireballpredictor.message.mod_disabled";
 
-    public static final KeyMapping TOGGLE_TRACKING = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            KEY_TOGGLE_TRACKING,
-            InputConstants.Type.KEYBOARD,
-            InputConstants.UNKNOWN.getValue(),
-            CATEGORY
-    ));
+    public static final KeyMapping TOGGLE_TRACKING =
+            //? if fabric {
+            KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                    KEY_TOGGLE_TRACKING,
+                    InputConstants.Type.KEYBOARD,
+                    InputConstants.UNKNOWN.getValue(),
+                    CATEGORY
+            ));
+            //?} elif neoforge {
+            /*new KeyMapping(
+                    KEY_TOGGLE_TRACKING,
+                    InputConstants.Type.KEYBOARD,
+                    InputConstants.UNKNOWN.getValue(),
+                    CATEGORY
+            );
+            *///?}
 
     private ModKeyBindings() {}
 
     public static void init() {
         // Triggers static class loading and Fabric registration
     }
+
+    //? if neoforge {
+    /*public static void register(RegisterKeyMappingsEvent event) {
+        event.registerCategory(CATEGORY);
+        event.register(TOGGLE_TRACKING);
+    }
+    *///?}
 
     public static void handleInput(Minecraft client) {
         while (TOGGLE_TRACKING.consumeClick()) {

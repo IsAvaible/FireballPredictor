@@ -3,7 +3,7 @@
   "id": "fireballpredictor",
   "version": "${version}",
   "name": "Fireball Predictor",
-  "description": "Predicts and visualizes the trajectory and explosive impact of fireballs and Wither skulls in real-time.",
+  "description": "Predicts and visualizes the trajectory and explosive impact of fireballs, wither skulls, and wind charges in real-time.",
   "authors": [
     "simonconrad"
   ],

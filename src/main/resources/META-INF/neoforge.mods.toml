@@ -1,0 +1,39 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "LGPL-3.0-only"
+issueTrackerURL = "https://github.com/IsAvaible/FireballPredictor/issues"
+
+[[mods]]
+modId = "fireballpredictor"
+version = "${version}"
+displayName = "Fireball Predictor"
+displayURL = "https://modrinth.com/mod/fireball-predictor"
+iconFile = "assets/fireballpredictor/icon.png"
+authors = "simonconrad"
+description = '''
+Predicts and visualizes the trajectory and explosive impact of fireballs, wither skulls, and wind charges in real-time.
+'''
+
+[[mixins]]
+config = "fireballpredictor.mixins.json"
+
+[[dependencies.fireballpredictor]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.3.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.fireballpredictor]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.3,26.4)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.fireballpredictor]]
+modId = "yet_another_config_lib_v3"
+type = "required"
+versionRange = "[3.9.7,)"
+ordering = "NONE"
+side = "CLIENT"

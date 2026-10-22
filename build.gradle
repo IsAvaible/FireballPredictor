@@ -1,10 +1,20 @@
 plugins {
-	alias(libs.plugins.loom)
+	id 'java-library'
 	alias(libs.plugins.mod.publish)
 	id 'maven-publish'
 }
 
-version = "${project.mod_version}+${project.minecraft_version}"
+String loader = project.property("loader").toString()
+boolean isFabric = loader == "fabric"
+boolean isNeoForge = loader == "neoforge"
+
+if (isFabric) {
+	apply plugin: libs.plugins.loom.get().pluginId
+} else if (isNeoForge) {
+	apply plugin: libs.plugins.moddev.get().pluginId
+}
+
+version = "${project.mod_version}+${project.minecraft_version}-${loader}"
 group = project.maven_group
 
 base {
@@ -13,6 +23,10 @@ base {
 
 repositories {
 	mavenCentral()
+	maven {
+		name = "NeoForge"
+		url = "https://maven.neoforged.net/releases/"
+	}
 	maven {
 		name = "Xander Maven"
 		url = "https://maven.isxander.dev/releases"
@@ -32,28 +46,62 @@ configurations {
 	}
 }
 
+if (isNeoForge) {
+	neoForge {
+		version = libs.versions.neoforge.get()
+
+		runs {
+			client {
+				client()
+				systemProperty "neoforge.disableBlaze3DValidation", "true"
+			}
+			server {
+				server()
+			}
+		}
+
+		mods {
+			"${project.archives_base_name}" {
+				sourceSet sourceSets.main
+			}
+		}
+	}
+}
+
 dependencies {
-	minecraft libs.minecraft
-	implementation libs.fabric.loader
-	implementation libs.fabric.api
-	implementation libs.yacl
-	implementation libs.modmenu
-	compileOnly libs.iris
+	if (isFabric) {
+		minecraft libs.minecraft
+		implementation libs.fabric.loader
+		implementation libs.fabric.api
+		implementation libs.yacl.fabric
+		implementation libs.modmenu
+		compileOnly libs.iris.fabric
 
-	if (enableShaders) {
-        localRuntime libs.sodium
-        localRuntime libs.iris
+		if (enableShaders) {
+			localRuntime libs.sodium.fabric
+			localRuntime libs.iris.fabric
 
-		// Add the GLSL Transformer and JCPP dependencies for Iris
-		localRuntime libs.jcpp
-		localRuntime libs.glslTransformer
-    }
+			// Add the GLSL Transformer and JCPP dependencies for Iris
+			localRuntime libs.jcpp
+			localRuntime libs.glslTransformer
+		}
+	} else if (isNeoForge) {
+		implementation libs.yacl.neoforge
+		compileOnly libs.iris.neoforge
+
+		if (enableShaders) {
+			runtimeOnly libs.sodium.neoforge
+			runtimeOnly libs.iris.neoforge
+			runtimeOnly libs.jcpp
+			runtimeOnly libs.glslTransformer
+		}
+	}
 
 	shaderPack "maven.modrinth:complementary-reimagined:${libs.versions.complementary.reimagined.get()}@zip"
 }
 
 tasks.register("setupShaders", Copy) {
-	group = "fabric"
+	group = isFabric ? "fabric" : "neoforge"
 	description = "Prepares shader packs and configures Iris for shader testing."
 	from configurations.shaderPack
 	into "run/shaderpacks"
@@ -77,34 +125,45 @@ tasks.register("setupShaders", Copy) {
 }
 
 if (enableShaders) {
-	tasks.named("runClient").configure {
+	tasks.matching { it.name == "runClient" }.configureEach {
 		dependsOn(tasks.named("setupShaders"))
 	}
 }
 
 tasks.register("runClientWithShaders") {
-	group = "fabric"
+	group = isFabric ? "fabric" : "neoforge"
 	description = "Runs the Minecraft client with Sodium, Iris, and Complementary Reimagined pre-selected."
 	dependsOn(tasks.named("setupShaders"), tasks.named("runClient"))
 }
 
-fabricApi {
-    configureTests {
-        createSourceSet = true
-        modId = "fireballpredictor_testmod"
-    }
+if (isFabric) {
+	fabricApi {
+		configureTests {
+			createSourceSet = true
+			modId = "fireballpredictor_testmod"
+		}
+	}
+
+	tasks.named("check") {
+		dependsOn(tasks.named("runGameTest"))
+	}
 }
 
 tasks.withType(ProcessResources).configureEach {
 	inputs.property "version", project.version
+	inputs.property "loader", loader
 
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+	if (isFabric) {
+		exclude("META-INF/neoforge.mods.toml")
+		filesMatching("fabric.mod.json") {
+			expand "version": project.version
+		}
+	} else if (isNeoForge) {
+		exclude("fabric.mod.json")
+		filesMatching("META-INF/neoforge.mods.toml") {
+			expand "version": project.version
+		}
 	}
-}
-
-tasks.named("check") {
-	dependsOn(tasks.named("runGameTest"))
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -122,13 +181,13 @@ java {
 }
 
 jar {
-	from("LICENSE") {
+	from(rootProject.file("LICENSE")) {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 }
 
 def getLatestChangelog() {
-	def changelogFile = file("CHANGELOG.md")
+	def changelogFile = rootProject.file("CHANGELOG.md")
 	if (!changelogFile.exists()) return "See release notes for details."
 	def text = changelogFile.text
 	def versionPattern = java.util.regex.Pattern.quote(project.mod_version.toString())
@@ -144,9 +203,10 @@ publishMods {
 	file = tasks.jar.archiveFile
 	changelog = providers.environmentVariable("CHANGELOG").orElse(provider { getLatestChangelog() })
 	type = STABLE
-	modLoaders.add("fabric")
+	modLoaders.add(loader)
 
-	displayName = "FireballPredictor ${project.mod_version} (MC ${project.minecraft_version})"
+	String loaderDisplay = isFabric ? "Fabric" : "NeoForge"
+	displayName = "FireballPredictor ${project.mod_version} (${loaderDisplay} ${project.minecraft_version})"
 
 	modrinth {
 		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
@@ -154,16 +214,23 @@ publishMods {
 		minecraftVersions.add(project.minecraft_version)
 		environment = CLIENT_ONLY_SERVER_OPTIONAL
 
-		requires {
-			slug = "fabric-api"
-			version = libs.versions.fabric.api.get()
-		}
-		requires {
-			slug = "yacl"
-			version = libs.versions.yacl.get()
-		}
-		optional {
-			slug = "modmenu"
+		if (isFabric) {
+			requires {
+				slug = "fabric-api"
+				version = libs.versions.fabric.api.get()
+			}
+			requires {
+				slug = "yacl"
+				version = libs.versions.yacl.fabric.get()
+			}
+			optional {
+				slug = "modmenu"
+			}
+		} else if (isNeoForge) {
+			requires {
+				slug = "yacl"
+				version = libs.versions.yacl.neoforge.get()
+			}
 		}
 	}
 
@@ -175,14 +242,20 @@ publishMods {
 		client = true
 		server = true
 
-		requires {
-			slug = "fabric-api"
-		}
-		requires {
-			slug = "yacl"
-		}
-		optional {
-			slug = "modmenu"
+		if (isFabric) {
+			requires {
+				slug = "fabric-api"
+			}
+			requires {
+				slug = "yacl"
+			}
+			optional {
+				slug = "modmenu"
+			}
+		} else if (isNeoForge) {
+			requires {
+				slug = "yacl"
+			}
 		}
 	}
 
@@ -191,6 +264,11 @@ publishMods {
 		repository = providers.environmentVariable("GITHUB_REPOSITORY").orElse("user/FireballPredictor")
 		commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
 		tagName = providers.environmentVariable("GITHUB_REF_NAME").orElse("v${project.mod_version}+${project.minecraft_version}")
+		displayName = "FireballPredictor ${project.mod_version} (MC ${project.minecraft_version})"
+
+		if (isNeoForge) {
+			parent project(":26.3-fabric").tasks.named("publishGithub")
+		}
 	}
 }
 
@@ -202,7 +280,7 @@ tasks.named("publishMods") {
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
+			artifactId = "${project.archives_base_name}-${loader}"
 			from components.java
 		}
 	}

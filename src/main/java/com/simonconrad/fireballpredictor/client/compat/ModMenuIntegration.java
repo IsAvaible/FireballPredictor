@@ -1,3 +1,4 @@
+//? if fabric {
 package com.simonconrad.fireballpredictor.client.compat;
 
 import com.simonconrad.fireballpredictor.client.gui.ModConfigGui;
@@ -10,3 +11,4 @@ public class ModMenuIntegration implements ModMenuApi {
         return ModConfigGui::createScreen;
     }
 }
+//?}

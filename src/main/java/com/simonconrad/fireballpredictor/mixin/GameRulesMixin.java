@@ -1,7 +1,7 @@
 package com.simonconrad.fireballpredictor.mixin;
 
 import com.simonconrad.fireballpredictor.network.MobGriefingPayload;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.gamerules.GameRule;
@@ -19,9 +19,7 @@ public class GameRulesMixin {
         if (rule == GameRules.MOB_GRIEFING && value instanceof Boolean boolValue && server != null && server.getPlayerList() != null) {
             MobGriefingPayload payload = new MobGriefingPayload(boolValue);
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (ServerPlayNetworking.canSend(player, MobGriefingPayload.ID)) {
-                    ServerPlayNetworking.send(player, payload);
-                }
+                PlatformHelper.sendToPlayer(player, payload);
             }
         }
     }

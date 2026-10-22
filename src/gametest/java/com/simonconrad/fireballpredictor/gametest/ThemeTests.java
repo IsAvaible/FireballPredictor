@@ -182,7 +182,7 @@ public class ThemeTests extends GameTestBase {
     public void testVisualThemeConfigOptionDisabling(GameTestHelper context) {
         resetGlobalState();
 
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().getEnvironmentType() != net.fabricmc.api.EnvType.CLIENT) {
+        if (!com.simonconrad.fireballpredictor.platform.PlatformHelper.isClient()) {
             context.succeed();
             return;
         }

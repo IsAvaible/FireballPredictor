@@ -1,0 +1,61 @@
+plugins {
+	id "dev.kikugie.stonecutter"
+	alias(libs.plugins.loom) apply false
+	alias(libs.plugins.moddev) apply false
+	alias(libs.plugins.mod.publish) apply false
+}
+
+stonecutter.active "26.3-fabric" /* [SC] DO NOT EDIT */
+
+stonecutter.parameters {
+	def loader = node.project.property("loader").toString()
+	constants.match(loader, "fabric", "neoforge")
+}
+
+tasks.register("build") {
+	group = "build"
+	description = "Builds all Stonecutter subprojects."
+	dependsOn(subprojects.collect { "${it.path}:build" })
+}
+
+tasks.register("check") {
+	group = "verification"
+	description = "Runs checks across all Stonecutter subprojects."
+	dependsOn(subprojects.collect { "${it.path}:check" })
+}
+
+tasks.register("clean") {
+	group = "build"
+	description = "Cleans all Stonecutter subprojects."
+	dependsOn(subprojects.collect { "${it.path}:clean" })
+}
+
+tasks.register("publishMods") {
+	group = "publishing"
+	description = "Publishes all Stonecutter subprojects."
+	dependsOn(subprojects.collect { "${it.path}:publishMods" })
+}
+
+tasks.register("runGameTest") {
+	group = "fabric"
+	description = "Runs GameTests on the active Fabric subproject."
+	dependsOn(":26.3-fabric:runGameTest")
+}
+
+tasks.register("runClient") {
+	group = "run"
+	description = "Runs the client for the currently active Stonecutter version."
+	dependsOn(":${stonecutter.current.project}:runClient")
+}
+
+tasks.register("runClientWithShaders") {
+	group = "run"
+	description = "Runs the client with shaders for the currently active Stonecutter version."
+	dependsOn(":${stonecutter.current.project}:runClientWithShaders")
+}
+
+tasks.register("runServer") {
+	group = "run"
+	description = "Runs the server for the currently active Stonecutter version."
+	dependsOn(":${stonecutter.current.project}:runServer")
+}

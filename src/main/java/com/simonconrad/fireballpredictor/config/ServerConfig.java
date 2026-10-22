@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.simonconrad.fireballpredictor.FireballPredictor;
 import com.simonconrad.fireballpredictor.tracking.TrackingRules;
-import net.fabricmc.loader.api.FabricLoader;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -29,7 +29,7 @@ import java.nio.file.Path;
 public final class ServerConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path PATH = FabricLoader.getInstance().getConfigDir()
+    private static final Path PATH = PlatformHelper.getConfigDir()
             .resolve("fireballpredictor-server.json");
 
     private static final ServerConfig INSTANCE = new ServerConfig();

@@ -2,7 +2,7 @@ package com.simonconrad.fireballpredictor.client.compat;
 
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.simonconrad.fireballpredictor.client.render.PredictionPipelines;
-import net.fabricmc.loader.api.FabricLoader;
+import com.simonconrad.fireballpredictor.platform.PlatformHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ public final class IrisCompat {
     }
 
     public static boolean isIrisLoaded() {
-        return FabricLoader.getInstance().isModLoaded(IRIS_ID);
+        return PlatformHelper.isModLoaded(IRIS_ID);
     }
 
     /** Call once from {@code ClientModInitializer#onInitializeClient}. */

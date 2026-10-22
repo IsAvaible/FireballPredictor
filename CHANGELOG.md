@@ -1,6 +1,7 @@
 # Changelog
 
-## 1.11.3
+## 1.12.0
+- **NeoForge Support:** Added native support for NeoForge alongside Fabric
 - **Minor Bugs:** Fix power cache eviction on filter toggle, heart row spacing, and power sanity checks
 - **Branding:** Update the icon, removing the text badge in the lower left
 

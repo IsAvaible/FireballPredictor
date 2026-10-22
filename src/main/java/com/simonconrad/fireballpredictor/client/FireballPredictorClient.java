@@ -26,11 +26,9 @@ import com.simonconrad.fireballpredictor.math.DamageCalculator.DamageEstimate;
 import com.simonconrad.fireballpredictor.math.ImpactPredictor;
 import com.simonconrad.fireballpredictor.math.PredictionData;
 import com.simonconrad.fireballpredictor.math.TrajectoryPredictor;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.client.Minecraft;
@@ -48,7 +46,39 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+//? if fabric {
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+//?} elif neoforge {
+/*import com.simonconrad.fireballpredictor.network.FireballOwnerPayload;
+import com.simonconrad.fireballpredictor.network.FireballPowerPayload;
+import com.simonconrad.fireballpredictor.network.MobGriefingPayload;
+import com.simonconrad.fireballpredictor.network.TrackingRulesPayload;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import net.neoforged.neoforge.common.NeoForge;
+*///?}
+
+//? if fabric {
 public class FireballPredictorClient implements ClientModInitializer {
+//?} elif neoforge {
+/*@Mod(value = FireballPredictor.MOD_ID, dist = Dist.CLIENT)
+public class FireballPredictorClient {
+*///?}
     private static FireballPredictorClient INSTANCE;
 
     private final Map<Integer, TrackedPrediction> activePredictions = new HashMap<>();
@@ -63,9 +93,55 @@ public class FireballPredictorClient implements ClientModInitializer {
     private boolean damageOverlayActive;
     private ClientLevel trackedWorld;
 
+    //? if fabric {
     public FireballPredictorClient() {
         INSTANCE = this;
     }
+    //?} elif neoforge {
+    /*public FireballPredictorClient(IEventBus modBus, ModContainer modContainer) {
+        INSTANCE = this;
+        initClientCommon();
+
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, (container, parent) -> ModConfig.createScreen(parent));
+
+        modBus.addListener(RegisterClientPayloadHandlersEvent.class, event -> {
+            event.register(FireballPowerPayload.ID, (payload, ctx) -> ClientPowerCacheReceiver.handlePayload(payload, Minecraft.getInstance()));
+            event.register(FireballOwnerPayload.ID, (payload, ctx) -> ClientOwnerCacheReceiver.handlePayload(payload, Minecraft.getInstance()));
+            event.register(TrackingRulesPayload.ID, (payload, ctx) -> ServerTrackingRulesReceiver.handlePayload(payload, Minecraft.getInstance()));
+            event.register(MobGriefingPayload.ID, (payload, ctx) -> MobGriefingReceiver.handlePayload(payload, Minecraft.getInstance()));
+        });
+
+        modBus.addListener(RegisterKeyMappingsEvent.class, ModKeyBindings::register);
+
+        modBus.addListener(AddClientReloadListenersEvent.class, event -> event.addListener(
+                Identifier.fromNamespaceAndPath("fireballpredictor", "preview_icons"),
+                (ResourceManagerReloadListener) FireballPredictorClient::onResourceReload
+        ));
+
+        modBus.addListener(RegisterGuiLayersEvent.class, event -> {
+            event.registerBelow(
+                    VanillaGuiLayers.CHAT,
+                    Identifier.fromNamespaceAndPath("fireballpredictor", "impact_warning"),
+                    (graphics, tickCounter) -> renderImpactWarningHud(graphics)
+            );
+            event.registerAbove(
+                    VanillaGuiLayers.PLAYER_HEALTH,
+                    Identifier.fromNamespaceAndPath("fireballpredictor", "damage_hearts"),
+                    (graphics, tickCounter) -> renderDamageHeartsHud(graphics)
+            );
+        });
+
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick(Minecraft.getInstance()));
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
+            ClientPowerCacheReceiver.onDisconnect();
+            ClientOwnerCacheReceiver.onDisconnect();
+            ServerTrackingRulesReceiver.onDisconnect();
+            MobGriefingReceiver.onDisconnect();
+        });
+        NeoForge.EVENT_BUS.addListener(RegisterClientCommandsEvent.class, event ->
+                com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.registerCommands(event.getDispatcher()));
+    }
+    *///?}
 
     public static void trackWorldEntity(Entity entity) {
         if (INSTANCE != null) {
@@ -79,19 +155,29 @@ public class FireballPredictorClient implements ClientModInitializer {
         }
     }
 
-    @Override
-    public void onInitializeClient() {
+    private void initClientCommon() {
         ModConfig.load();
         PredictionPipelines.class.getName();
-        IrisCompat.init(); 
+        IrisCompat.init();
+        ClientOwnerCacheReceiver.init();
+        ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
+        ModKeyBindings.init();
+    }
+
+    private static void onResourceReload(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.invalidateIconTextureCache();
+        com.simonconrad.fireballpredictor.client.render.DynamicHeartOverlayManager.reload(resourceManager);
+    }
+
+    //? if fabric {
+    @Override
+    public void onInitializeClient() {
+        initClientCommon();
+        com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.register();
         ClientPowerCacheReceiver.registerReceivers();
         ClientOwnerCacheReceiver.registerReceivers();
-        ClientOwnerCache.setUpdateListener(this::onOwnerPacketReceived);
         ServerTrackingRulesReceiver.registerReceivers();
         MobGriefingReceiver.registerReceivers();
-
-        com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.register();
-        ModKeyBindings.init();
 
         net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
                 .registerReloadListener(new net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener() {
@@ -102,12 +188,27 @@ public class FireballPredictorClient implements ClientModInitializer {
 
                     @Override
                     public void onResourceManagerReload(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
-                        com.simonconrad.fireballpredictor.client.gui.preview.RenderUtils.invalidateIconTextureCache();
-                        com.simonconrad.fireballpredictor.client.render.DynamicHeartOverlayManager.reload(resourceManager);
+                        onResourceReload(resourceManager);
                     }
                 });
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.CHAT,
+                Identifier.fromNamespaceAndPath("fireballpredictor", "impact_warning"),
+                (graphics, tickCounter) -> renderImpactWarningHud(graphics)
+        );
+
+        HudElementRegistry.attachElementAfter(
+                VanillaHudElements.HEALTH_BAR,
+                Identifier.fromNamespaceAndPath("fireballpredictor", "damage_hearts"),
+                (graphics, tickCounter) -> renderDamageHeartsHud(graphics)
+        );
+    }
+    //?}
+
+    private void onClientTick(Minecraft client) {
             if (client.level == null) {
                 resetClientState(null);
                 return;
@@ -371,51 +472,48 @@ public class FireballPredictorClient implements ClientModInitializer {
             currentDamageEstimateType = estimateFound ? bestEstimateType : WarningProjectileType.FIREBALL;
             damageOverlayActive = estimateFound;
 
-            if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
-                com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.tick(client);
-            }
-        });
+        if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
+            com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.tick(client);
+        }
+    }
 
-        HudElementRegistry.attachElementBefore(
-            VanillaHudElements.CHAT,
-            Identifier.fromNamespaceAndPath("fireballpredictor", "impact_warning"),
-            (graphics, tickCounter) -> {
-                PredictionRenderer.renderImpactWarningBadge(graphics, Minecraft.getInstance(), impactWarningVisible, impactWarningProgress, impactWarningType);
-            }
-        );
+    private void renderImpactWarningHud(GuiGraphicsExtractor graphics) {
+        PredictionRenderer.renderImpactWarningBadge(graphics, Minecraft.getInstance(), impactWarningVisible, impactWarningProgress, impactWarningType);
+    }
 
-        HudElementRegistry.attachElementAfter(
-            VanillaHudElements.HEALTH_BAR,
-            Identifier.fromNamespaceAndPath("fireballpredictor", "damage_hearts"),
-            (graphics, tickCounter) -> {
-                boolean badgeVisible = impactWarningVisible && ModConfig.instance().renderImpactWarning;
-                HeartOverlayRenderer.render(graphics, Minecraft.getInstance(), damageOverlayActive, currentDamageEstimate, currentDamageEstimateType, badgeVisible);
-            }
-        );
+    private void renderDamageHeartsHud(GuiGraphicsExtractor graphics) {
+        boolean badgeVisible = impactWarningVisible && ModConfig.instance().renderImpactWarning;
+        HeartOverlayRenderer.render(graphics, Minecraft.getInstance(), damageOverlayActive, currentDamageEstimate, currentDamageEstimateType, badgeVisible);
+    }
 
-        LevelRenderEvents.END_MAIN.register(context -> {
-            if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
-                com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.render(
-                    context.poseStack(),
-                    context.submitNodeCollector(),
-                    net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera(),
-                    net.minecraft.client.Minecraft.getInstance().level
-                );
-            }
+    public static void onSubmitFeatures(PoseStack poseStack, SubmitNodeCollector submitNodeCollector) {
+        if (INSTANCE != null) {
+            INSTANCE.submitWorldFeatures(poseStack, submitNodeCollector);
+        }
+    }
 
-            if (activePredictions.isEmpty()) return;
+    private void submitWorldFeatures(PoseStack poseStack, SubmitNodeCollector submitNodeCollector) {
+        if (com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.isActive()) {
+            com.simonconrad.fireballpredictor.client.render.ThemePreviewGallery.render(
+                poseStack,
+                submitNodeCollector,
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera(),
+                net.minecraft.client.Minecraft.getInstance().level
+            );
+        }
 
-            ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
-            for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
-                AbstractHurtingProjectile fireball = getProjectile(level, entry.getKey());
-                if (fireball != null && fireball.isAlive()) {
-                    PredictionData predictionData = entry.getValue().predictionData;
-                    if (predictionData != null) {
-                        PredictionRenderer.render(context.poseStack(), context.submitNodeCollector(), net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera(), level, predictionData, fireball);
-                    }
+        if (activePredictions.isEmpty()) return;
+
+        ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
+        for (Map.Entry<Integer, TrackedPrediction> entry : activePredictions.entrySet()) {
+            AbstractHurtingProjectile fireball = getProjectile(level, entry.getKey());
+            if (fireball != null && fireball.isAlive()) {
+                PredictionData predictionData = entry.getValue().predictionData;
+                if (predictionData != null) {
+                    PredictionRenderer.render(poseStack, submitNodeCollector, net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera(), level, predictionData, fireball);
                 }
             }
-        });
+        }
     }
 
     private static AbstractHurtingProjectile getProjectile(ClientLevel level, int entityId) {
