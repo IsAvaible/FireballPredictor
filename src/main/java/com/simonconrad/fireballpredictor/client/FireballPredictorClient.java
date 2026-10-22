@@ -311,7 +311,7 @@ public class FireballPredictorClient {
 
                 int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
 
-                if (player != null && data.hitResult() != null && data.path() != null && data.path().size() > 1) {
+                if (player != null && data.path() != null && data.path().size() > 1) {
                     int ticksToImpact = Math.max(0, data.path().size() - 1 - elapsedTicks);
                     float power = ImpactPredictor.resolveExplosionPower(fireball);
                     float warningPower = power <= 0.0f ? 1.0f : power;
@@ -651,7 +651,7 @@ public class FireballPredictorClient {
     }
 
     private static boolean isThreateningPlayer(LocalPlayer player, AbstractHurtingProjectile projectile, TrackedPrediction trackedPrediction, int elapsedTicks, double dangerRadiusSq) {
-        if (player == null || trackedPrediction == null) {
+        if (player == null || projectile == null || trackedPrediction == null) {
             return false;
         }
         PredictionData data = trackedPrediction.predictionData;
@@ -659,39 +659,11 @@ public class FireballPredictorClient {
             return false;
         }
 
-        // 1. Direct entity hit on the player along the path
         HitResult damageHit = trackedPrediction.getOrComputeDamageHit(player.level(), projectile, projectile.tickCount);
-        if (damageHit instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
-            return true;
-        }
-        if (data.hitResult() instanceof net.minecraft.world.phys.EntityHitResult entityHit && entityHit.getEntity() == player) {
-            return true;
-        }
+        TrackedProjectile tracked = INSTANCE != null ? INSTANCE.trackedOwners.get(projectile.getId()) : null;
+        Entity ownerEntity = tracked != null ? tracked.ownerEntity() : projectile.getOwner();
 
-        // 2. Impact detonation point is within blast danger radius of the player
-        Vec3 playerPos = player.position();
-        Vec3 impactPos = damageHit != null ? damageHit.getLocation() : (data.hitResult() != null ? data.hitResult().getLocation() : null);
-        if (impactPos != null && playerPos.distanceToSqr(impactPos) <= dangerRadiusSq) {
-            return true;
-        }
-
-        // 3. Proximity along the flight path (current player position + short-term velocity extrapolation)
-        Vec3 playerVel = player.getDeltaMovement();
-        for (int i = elapsedTicks; i < data.path().size(); i++) {
-            Vec3 pathPoint = data.path().get(i);
-            if (pathPoint.distanceToSqr(playerPos) <= dangerRadiusSq) {
-                return true;
-            }
-            int lookahead = Math.min(5, i - elapsedTicks);
-            if (lookahead > 0) {
-                Vec3 shortExtrapolated = playerPos.add(playerVel.scale(lookahead));
-                if (pathPoint.distanceToSqr(shortExtrapolated) <= dangerRadiusSq) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return TrajectoryPredictor.isThreateningPlayer(player, projectile, data, damageHit, ownerEntity, elapsedTicks, dangerRadiusSq);
     }
 
     private static float getTravelProgress(int age, int ticksToImpact) {
@@ -765,12 +737,35 @@ public class FireballPredictorClient {
                 return true;
             }
 
+            // When there is no terminal block hit, visual hitResult depends on entity collision along the path
+            if (predictionData.hitResult() == null || predictionData.hitResult().getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                HitResult currentDamageHit = getOrComputeDamageHit(world, fireball, fireball.tickCount);
+                if ((currentDamageHit == null) != (predictionData.hitResult() == null)) {
+                    return true;
+                }
+                if (currentDamageHit instanceof net.minecraft.world.phys.EntityHitResult e1
+                        && predictionData.hitResult() instanceof net.minecraft.world.phys.EntityHitResult e2) {
+                    Entity hitEntity = e2.getEntity();
+                    if (hitEntity == null || !hitEntity.isAlive() || e1.getEntity() != hitEntity
+                            || e1.getLocation().distanceToSqr(e2.getLocation()) > maxPosDevSq) {
+                        return true;
+                    }
+                }
+            }
+
             // Check if path is obstructed or block states along it changed
             if (predictionData.hitResult() != null && predictionData.hitResult().getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
                 net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) predictionData.hitResult();
                 net.minecraft.core.BlockPos hitPos = blockHit.getBlockPos();
                 if (world.getBlockState(hitPos).getCollisionShape(world, hitPos).isEmpty()) {
                     return true;
+                }
+                if (TrajectoryPredictor.isWorldCeiling(world, blockHit)) {
+                    boolean shouldSuppress = TrajectoryPredictor.shouldSuppressCeilingDome(world, blockHit, calculatedPower);
+                    boolean isSuppressed = predictionData.renderData() == null || predictionData.renderData().domeQuads().isEmpty();
+                    if (shouldSuppress != isSuppressed) {
+                        return true;
+                    }
                 }
             }
 

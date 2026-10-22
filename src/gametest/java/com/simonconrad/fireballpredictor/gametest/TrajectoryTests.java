@@ -1027,4 +1027,177 @@ public class TrajectoryTests extends GameTestBase {
 
         context.succeed();
     }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testWorldCeilingHidesShockwaveDome(GameTestHelper context) {
+        resetGlobalState();
+        net.minecraft.server.level.ServerLevel level = context.getLevel();
+        int ceilingY = level.getMaxY() - 1;
+        BlockPos baseAbs = context.absolutePos(new BlockPos(3, 1, 3));
+        BlockPos ceilingPos = new BlockPos(baseAbs.getX(), ceilingY, baseAbs.getZ());
+        BlockPos overhangPos = new BlockPos(baseAbs.getX(), ceilingY - 3, baseAbs.getZ());
+        Player player = null;
+
+        try {
+            level.setBlock(ceilingPos, Blocks.BEDROCK.defaultBlockState(), 3);
+
+            net.minecraft.world.phys.BlockHitResult ceilingHit = new net.minecraft.world.phys.BlockHitResult(
+                    Vec3.atCenterOf(ceilingPos), net.minecraft.core.Direction.DOWN, ceilingPos, false
+            );
+
+            if (!TrajectoryPredictor.isWorldCeiling(level, ceilingHit)) {
+                throw fail("Expected isWorldCeiling to return true for bedrock hit at ceilingY=" + ceilingY);
+            }
+
+            TrajectoryPredictor.TrajectoryResult trajResult = new TrajectoryPredictor.TrajectoryResult(
+                    List.of(new Vec3(0, 0, 0), Vec3.atCenterOf(ceilingPos)),
+                    List.of(new Vec3(0, 1, 0)),
+                    ceilingHit,
+                    ceilingHit,
+                    1.0f,
+                    com.simonconrad.fireballpredictor.projectile.VanillaProfiles.of(com.simonconrad.fireballpredictor.projectile.ProjectileKind.LARGE_FIREBALL),
+                    false,
+                    false
+            );
+
+            PredictionData data = TrajectoryPredictor.computePrediction(trajResult, level, 0);
+            if (!data.renderData().domeQuads().isEmpty()) {
+                throw fail("Expected domeQuads to be EMPTY when trajectory hits world ceiling, got " + data.renderData().domeQuads().size());
+            }
+
+            // Hitting top face of ceiling block (e.g. standing on roof) should NOT be classified as ceiling hit
+            net.minecraft.world.phys.BlockHitResult topHit = new net.minecraft.world.phys.BlockHitResult(
+                    Vec3.atCenterOf(ceilingPos), net.minecraft.core.Direction.UP, ceilingPos, false
+            );
+            if (TrajectoryPredictor.isWorldCeiling(level, topHit)) {
+                throw fail("Expected isWorldCeiling to return false for hit from above (Direction.UP)");
+            }
+
+            // Hit above ceiling level (e.g. above Nether roof) should NOT be world ceiling
+            BlockPos aboveCeilingPos = new BlockPos(ceilingPos.getX(), level.getMaxY() + 5, ceilingPos.getZ());
+            net.minecraft.world.phys.BlockHitResult aboveCeilingHit = new net.minecraft.world.phys.BlockHitResult(
+                    Vec3.atCenterOf(aboveCeilingPos), net.minecraft.core.Direction.DOWN, aboveCeilingPos, false
+            );
+            if (TrajectoryPredictor.isWorldCeiling(level, aboveCeilingHit)) {
+                throw fail("Expected isWorldCeiling to return false for hit above ceiling height");
+            }
+
+            // Destructible player-placed block at build limit (e.g. skybase at Y = maxY - 1) should NOT be world ceiling
+            level.setBlock(ceilingPos, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            if (TrajectoryPredictor.isWorldCeiling(level, ceilingHit)) {
+                throw fail("Expected isWorldCeiling to return false for destructible player block at ceilingY");
+            }
+            level.setBlock(ceilingPos, Blocks.BEDROCK.defaultBlockState(), 3);
+
+            // Uneven Nether-style bedrock overhang (ceilingY - 3) hit from below or side should be classified as world ceiling
+            level.setBlock(overhangPos, Blocks.BEDROCK.defaultBlockState(), 3);
+            net.minecraft.world.phys.BlockHitResult overhangSideHit = new net.minecraft.world.phys.BlockHitResult(
+                    Vec3.atCenterOf(overhangPos), net.minecraft.core.Direction.NORTH, overhangPos, false
+            );
+            if (!TrajectoryPredictor.isWorldCeiling(level, overhangSideHit)) {
+                throw fail("Expected isWorldCeiling to return true for side hit on bedrock overhang at ceilingY - 3");
+            }
+
+            // When a player IS within danger radius at the ceiling, dome must be rendered
+            player = context.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            Vec3 playerPos = Vec3.atCenterOf(ceilingPos).subtract(0, 1.0, 0);
+            player.setPos(playerPos.x, playerPos.y, playerPos.z);
+            level.addFreshEntity(player);
+
+            PredictionData dangerData = TrajectoryPredictor.computePrediction(trajResult, level, 0);
+            if (dangerData.renderData().domeQuads().isEmpty()) {
+                throw fail("Expected domeQuads to NOT be empty when player is in blast danger at world ceiling");
+            }
+        } finally {
+            if (player != null) {
+                player.discard();
+            }
+            level.setBlock(ceilingPos, Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(overhangPos, Blocks.AIR.defaultBlockState(), 3);
+        }
+
+        context.succeed();
+    }
+
+    @GameTest(structure = "fabric-gametest-api-v1:empty", maxTicks = 10)
+    public void testDodgingAndWindChargeThreatWarnings(GameTestHelper context) {
+        resetGlobalState();
+        net.minecraft.server.level.ServerLevel level = context.getLevel();
+        Player player = null;
+        LargeFireball fireball = null;
+        net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge selfWindCharge = null;
+        net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge breezeCharge = null;
+
+        try {
+            player = context.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            // Place at Y=25 above neighboring test structures in the GameTest grid so no block is hit along +X
+            Vec3 playerStart = context.absoluteVec(new Vec3(5.0, 25.0, 3.5));
+            player.setPos(playerStart.x, playerStart.y, playerStart.z);
+            level.addFreshEntity(player);
+
+            // 1. Open-air fireball (no wall behind player): initially hits player, then player dodges
+            fireball = spawnProjectile(context, EntityTypes.FIREBALL, 0.0, false);
+            Vec3 fireballStart = context.absoluteVec(new Vec3(1.5, 25.0, 3.5));
+            fireball.setPos(fireballStart.x, fireballStart.y, fireballStart.z);
+            PredictionData openAirPred = TrajectoryPredictor.predict(fireball, level);
+            double dangerRadiusSq = 16.0; // (1.0 * 4.0)^2
+
+            net.minecraft.world.phys.HitResult initialDamageHit = TrajectoryPredictor.findDamageHitResult(level, fireball, openAirPred);
+            if (!TrajectoryPredictor.isThreateningPlayer(player, fireball, openAirPred, initialDamageHit, null, 0, dangerRadiusSq)) {
+                throw fail("Expected fireball aimed directly at player to threaten player");
+            }
+
+            // Player dodges far out of the path (and has resting ground gravity velocity)
+            Vec3 dodgedPos = context.absoluteVec(new Vec3(5.0, 25.0, 12.0));
+            player.setPos(dodgedPos.x, dodgedPos.y, dodgedPos.z);
+            player.setOnGround(true);
+            player.setDeltaMovement(0.0, -0.0784, 0.0);
+
+            net.minecraft.world.phys.HitResult dodgedDamageHit = TrajectoryPredictor.findDamageHitResult(level, fireball, openAirPred);
+            if (dodgedDamageHit != null) {
+                throw fail("Expected findDamageHitResult to return null after player dodges open-air fireball, got " + dodgedDamageHit);
+            }
+            if (TrajectoryPredictor.isThreateningPlayer(player, fireball, openAirPred, dodgedDamageHit, null, 0, dangerRadiusSq)) {
+                throw fail("Expected open-air fireball to NOT threaten player after dodging out of path");
+            }
+
+            // 2. Moving player stepping into the path in the next few ticks triggers lookahead warning
+            Vec3 steppingPos = context.absoluteVec(new Vec3(3.0, 25.0, 4.7));
+            Vec3 stepVel = context.absoluteVec(new Vec3(0.0, 0.0, -0.6)).subtract(context.absoluteVec(Vec3.ZERO));
+            player.setPos(steppingPos.x, steppingPos.y, steppingPos.z);
+            player.setDeltaMovement(stepVel.x, -0.0784, stepVel.z); // moving into path at step=2
+            net.minecraft.world.phys.HitResult steppingDamageHit = TrajectoryPredictor.findDamageHitResult(level, fireball, openAirPred);
+            if (!TrajectoryPredictor.isThreateningPlayer(player, fireball, openAirPred, steppingDamageHit, null, 0, dangerRadiusSq)) {
+                throw fail("Expected moving player stepping into projectile path to trigger lookahead threat warning");
+            }
+
+            // 3. Self-thrown wind charge must NOT trigger threat warning even at close range / while moving
+            selfWindCharge = spawnProjectile(context, EntityTypes.WIND_CHARGE, 0.0, false);
+            selfWindCharge.setOwner(player);
+            selfWindCharge.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
+            PredictionData selfWindPred = TrajectoryPredictor.predict(selfWindCharge, level);
+            net.minecraft.world.phys.HitResult selfWindHit = TrajectoryPredictor.findDamageHitResult(level, selfWindCharge, selfWindPred);
+            if (TrajectoryPredictor.isThreateningPlayer(player, selfWindCharge, selfWindPred, selfWindHit, player, 0, 23.04)) {
+                throw fail("Expected self-thrown WindCharge to NOT trigger player threat warning");
+            }
+
+            // 4. Hostile BreezeWindCharge aimed at player MUST trigger threat warning
+            player.setPos(playerStart.x, playerStart.y, playerStart.z);
+            player.setDeltaMovement(Vec3.ZERO);
+            breezeCharge = spawnProjectile(context, EntityTypes.BREEZE_WIND_CHARGE, 0.0, false);
+            breezeCharge.setPos(fireballStart.x, fireballStart.y, fireballStart.z);
+            PredictionData breezePred = TrajectoryPredictor.predict(breezeCharge, level);
+            net.minecraft.world.phys.HitResult breezeHit = TrajectoryPredictor.findDamageHitResult(level, breezeCharge, breezePred);
+            if (!TrajectoryPredictor.isThreateningPlayer(player, breezeCharge, breezePred, breezeHit, null, 0, 144.0)) {
+                throw fail("Expected incoming BreezeWindCharge to trigger player threat warning");
+            }
+        } finally {
+            if (player != null) player.discard();
+            if (fireball != null) fireball.discard();
+            if (selfWindCharge != null) selfWindCharge.discard();
+            if (breezeCharge != null) breezeCharge.discard();
+        }
+
+        context.succeed();
+    }
 }

@@ -10,6 +10,9 @@ import com.simonconrad.fireballpredictor.tracking.MobGriefingState;
 import com.simonconrad.fireballpredictor.tracking.OwnerClassifier;
 import com.simonconrad.fireballpredictor.tracking.ProjectileOwner;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.EntityGetter;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -241,7 +244,8 @@ public class TrajectoryPredictor {
             brokenBlocks = ImpactPredictor.predictBrokenBlocks(result.explosionPower, result.profile, result.isDangerous, result.hitResult.getLocation(), world);
         }
         
-        PredictionRenderData renderData = createRenderData(result.explosionPower);
+        boolean suppressDome = shouldSuppressCeilingDome(world, result.hitResult, result.explosionPower);
+        PredictionRenderData renderData = suppressDome ? PredictionRenderData.EMPTY : createRenderData(result.explosionPower);
         Vec3 initialVelocity = result.velocities.isEmpty() ? Vec3.ZERO : result.velocities.get(0);
         
         return new PredictionData(result.path, result.velocities, result.hitResult, result.damageHitResult, brokenBlocks, initialVelocity, renderData, predictionAge);
@@ -330,6 +334,19 @@ public class TrajectoryPredictor {
     }
 
     public static boolean canHitEntity(AbstractHurtingProjectile fireball, Entity entity) {
+        if (fireball == null || entity == null) {
+            return false;
+        }
+        Entity owner = fireball.getOwner();
+        if (owner == entity) {
+            if (entity.getBoundingBox().inflate(0.5).contains(fireball.position())) {
+                return false;
+            }
+            Vec3 toEntity = entity.getBoundingBox().getCenter().subtract(fireball.position());
+            if (fireball.getDeltaMovement().dot(toEntity) <= 0.0) {
+                return false;
+            }
+        }
         if (fireball instanceof ProjectileAccessor accessor) {
             try {
                 return accessor.fireballpredictor$canHitEntity(entity);
@@ -343,16 +360,16 @@ public class TrajectoryPredictor {
     /**
      * Dynamically finds the first entity intercepted along the remaining flight path of the projectile
      * based on current entity positions in the level. If no entity is intercepted, returns the predicted
-     * block hit result at the end of the path.
+     * block hit result at the end of the path (or {@code null} if the path only had an open-air entity hit).
      */
     public static HitResult findDamageHitResult(Level world, AbstractHurtingProjectile fireball, PredictionData data) {
         if (data == null || data.path() == null || data.path().size() < 2) {
-            return data != null ? data.hitResult() : null;
+            return data != null && !(data.hitResult() instanceof EntityHitResult) ? data.hitResult() : null;
         }
 
         int elapsedTicks = Math.max(0, fireball.tickCount - data.predictionAge());
         if (elapsedTicks >= data.path().size() - 1) {
-            return data.hitResult();
+            return data.hitResult() instanceof EntityHitResult ? null : data.hitResult();
         }
 
         for (int i = elapsedTicks; i < data.path().size() - 1; i++) {
@@ -370,7 +387,67 @@ public class TrajectoryPredictor {
             }
         }
 
-        return data.hitResult();
+        return data.hitResult() instanceof EntityHitResult ? null : data.hitResult();
+    }
+
+    /**
+     * Evaluates whether a tracked projectile currently poses a direct-hit, blast-radius, or
+     * short-term physical interception threat to {@code player}.
+     */
+    public static boolean isThreateningPlayer(
+            Player player,
+            AbstractHurtingProjectile projectile,
+            PredictionData data,
+            HitResult damageHit,
+            Entity ownerEntity,
+            int elapsedTicks,
+            double dangerRadiusSq
+    ) {
+        if (player == null || projectile == null || data == null || data.path() == null || data.path().isEmpty()) {
+            return false;
+        }
+
+        boolean isOwnedByPlayer = ownerEntity == player || projectile.getOwner() == player;
+        if (isOwnedByPlayer && projectile instanceof net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) {
+            return false;
+        }
+
+        AABB playerBox = player.getBoundingBox();
+        Vec3 toPlayer = playerBox.getCenter().subtract(projectile.position());
+        boolean isOutgoingFromOwner = isOwnedByPlayer && projectile.getDeltaMovement().dot(toPlayer) <= 0.0;
+
+        // 1. Direct entity hit on the player along the path (dynamically queried against live entity state)
+        if (!isOutgoingFromOwner && damageHit instanceof EntityHitResult entityHit && entityHit.getEntity() == player) {
+            return true;
+        }
+
+        // 2. Impact detonation point is within blast danger radius of the player
+        Vec3 playerPos = player.position();
+        HitResult fallbackHit = data.hitResult() instanceof EntityHitResult ? null : data.hitResult();
+        Vec3 impactPos = damageHit != null ? damageHit.getLocation() : (fallbackHit != null ? fallbackHit.getLocation() : null);
+        if (impactPos != null && playerPos.distanceToSqr(impactPos) <= dangerRadiusSq) {
+            return true;
+        }
+
+        // 3. Physical interception lookahead for a moving player stepping into the projectile in the next few ticks
+        if (!isOutgoingFromOwner && canHitEntity(projectile, player)) {
+            Vec3 rawVel = player.getDeltaMovement();
+            Vec3 playerVel = player.onGround() && rawVel.y < 0.0 ? new Vec3(rawVel.x, 0.0, rawVel.z) : rawVel;
+            if (playerVel.lengthSqr() > 1e-4) {
+                int maxLookahead = Math.min(5, data.path().size() - 1 - elapsedTicks);
+                for (int step = 1; step <= maxLookahead; step++) {
+                    int pathIndex = elapsedTicks + step;
+                    Vec3 prevPoint = data.path().get(pathIndex - 1);
+                    Vec3 pathPoint = data.path().get(pathIndex);
+                    AABB futurePlayerBox = playerBox.move(playerVel.scale(step)).inflate(0.3);
+                    if (futurePlayerBox.contains(pathPoint) || futurePlayerBox.clip(prevPoint, pathPoint).isPresent()) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -466,5 +543,58 @@ public class TrajectoryPredictor {
 
         double margin = Math.max(domeRadius, 1.5);
         return new AABB(minX - margin, minY - margin, minZ - margin, maxX + margin, maxY + margin, maxZ + margin);
+    }
+
+    public static boolean shouldSuppressCeilingDome(BlockGetter world, HitResult hitResult, float explosionPower) {
+        if (!isWorldCeiling(world, hitResult)) {
+            return false;
+        }
+        if (world instanceof EntityGetter entityGetter && hitResult != null) {
+            double dangerRadius = explosionPower * 2.0;
+            if (dangerRadius > 0.0) {
+                Vec3 hitPos = hitResult.getLocation();
+                double dangerRadiusSq = dangerRadius * dangerRadius;
+                AABB dangerBox = new AABB(hitPos, hitPos).inflate(dangerRadius);
+                List<Player> nearbyPlayers = entityGetter.getEntitiesOfClass(
+                        Player.class,
+                        dangerBox,
+                        p -> p != null && p.isAlive() && !p.isSpectator()
+                );
+                for (Player p : nearbyPlayers) {
+                    if (p.position().distanceToSqr(hitPos) <= dangerRadiusSq
+                            || p.getBoundingBox().distanceToSqr(hitPos) <= dangerRadiusSq) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public static boolean isWorldCeiling(BlockGetter world, HitResult hitResult) {
+        if (world == null || hitResult == null) {
+            return false;
+        }
+        if (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof net.minecraft.world.phys.BlockHitResult blockHit) {
+            if (blockHit.getDirection() == Direction.UP) {
+                return false;
+            }
+
+            BlockPos pos = blockHit.getBlockPos();
+            int maxY = world.getMaxY();
+            int logicalCeiling = maxY;
+            if (world instanceof net.minecraft.world.level.LevelReader reader) {
+                logicalCeiling = reader.getMinY() + reader.dimensionType().logicalHeight();
+            }
+            int ceilingY = Math.min(maxY, logicalCeiling);
+
+            if (pos.getY() >= ceilingY - 5 && pos.getY() < ceilingY) {
+                net.minecraft.world.level.block.state.BlockState state = world.getBlockState(pos);
+                return state.is(net.minecraft.world.level.block.Blocks.BEDROCK)
+                        || state.is(net.minecraft.world.level.block.Blocks.BARRIER)
+                        || state.getDestroySpeed(world, pos) < 0.0f;
+            }
+        }
+        return false;
     }
 }
